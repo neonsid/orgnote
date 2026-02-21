@@ -2,6 +2,7 @@
 
 import { Fish, Sparkles, BrainCog } from "lucide-react";
 import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
 import { DashboardDemo } from "@/components/dashboard/dashboard-demo";
 import { FeaturesSection } from "@/components/features-section";
 
@@ -53,6 +54,7 @@ export default function Home() {
           <FeaturesSection />
         </section>
       </main>
+      <Footer />
     </div>
   );
 }
