@@ -1,1 +1,2 @@
-- [] Add theme switcher in header
+- [] Complete dashboard
+- [] Prevent user from going to landing page
