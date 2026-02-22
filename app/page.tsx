@@ -13,13 +13,6 @@ export default function Home() {
   const { data: session, isPending } = authClient.useSession();
   const router = useRouter();
 
-  // Redirect logged-in users to the dashboard
-  useEffect(() => {
-    if (!isPending && session?.user) {
-      router.replace("/dashboard");
-    }
-  }, [isPending, session, router]);
-
   // Show nothing while checking session (avoids flash of landing page)
   if (isPending || session?.user) {
     return (

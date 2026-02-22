@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useReducer } from "react";
 import {
   Dialog,
   DialogContent,
@@ -20,18 +20,56 @@ interface SignupDialogProps {
   onLoginClick: () => void;
 }
 
+interface SignupState {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  loading: boolean;
+  googleLoading: boolean;
+  error: string;
+}
+
+type SignupAction =
+  | { type: "SET_FIELD"; field: "name" | "email" | "password" | "confirmPassword"; value: string }
+  | { type: "SET_LOADING"; value: boolean }
+  | { type: "SET_GOOGLE_LOADING"; value: boolean }
+  | { type: "SET_ERROR"; value: string }
+  | { type: "CLEAR_ERROR" };
+
+const initialSignupState: SignupState = {
+  name: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  loading: false,
+  googleLoading: false,
+  error: "",
+};
+
+function signupReducer(state: SignupState, action: SignupAction): SignupState {
+  switch (action.type) {
+    case "SET_FIELD":
+      return { ...state, [action.field]: action.value };
+    case "SET_LOADING":
+      return { ...state, loading: action.value };
+    case "SET_GOOGLE_LOADING":
+      return { ...state, googleLoading: action.value };
+    case "SET_ERROR":
+      return { ...state, error: action.value };
+    case "CLEAR_ERROR":
+      return { ...state, error: "" };
+    default:
+      return state;
+  }
+}
+
 export function SignupDialog({
   open,
   onOpenChange,
   onLoginClick,
 }: SignupDialogProps) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [state, dispatch] = useReducer(signupReducer, initialSignupState);
 
   const handleLoginClick = () => {
     onOpenChange(false);
@@ -39,50 +77,50 @@ export function SignupDialog({
   };
 
   const handleGoogleSignUp = async () => {
-    setGoogleLoading(true);
-    setError("");
+    dispatch({ type: "SET_GOOGLE_LOADING", value: true });
+    dispatch({ type: "CLEAR_ERROR" });
     try {
       await authClient.signIn.social({
         provider: "google",
         callbackURL: "/dashboard",
       });
     } catch {
-      setError("Failed to sign up with Google. Please try again.");
-      setGoogleLoading(false);
+      dispatch({ type: "SET_ERROR", value: "Failed to sign up with Google. Please try again." });
+      dispatch({ type: "SET_GOOGLE_LOADING", value: false });
     }
   };
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    dispatch({ type: "CLEAR_ERROR" });
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+    if (state.password !== state.confirmPassword) {
+      dispatch({ type: "SET_ERROR", value: "Passwords do not match." });
       return;
     }
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    if (state.password.length < 8) {
+      dispatch({ type: "SET_ERROR", value: "Password must be at least 8 characters." });
       return;
     }
 
-    setLoading(true);
+    dispatch({ type: "SET_LOADING", value: true });
     try {
       const result = await authClient.signUp.email({
-        name,
-        email,
-        password,
+        name: state.name,
+        email: state.email,
+        password: state.password,
       });
       if (result.error) {
-        setError(result.error.message || "Failed to create account.");
+        dispatch({ type: "SET_ERROR", value: result.error.message || "Failed to create account." });
       } else {
         onOpenChange(false);
         window.location.href = "/dashboard";
       }
     } catch {
-      setError("Failed to sign up. Please try again.");
+      dispatch({ type: "SET_ERROR", value: "Failed to sign up. Please try again." });
     } finally {
-      setLoading(false);
+      dispatch({ type: "SET_LOADING", value: false });
     }
   };
 
@@ -101,17 +139,17 @@ export function SignupDialog({
             variant="outline"
             className="w-full border border-input bg-background"
             onClick={handleGoogleSignUp}
-            disabled={googleLoading}
+            disabled={state.googleLoading}
           >
-            {googleLoading ? (
+            {state.googleLoading ? (
               <span className="size-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
               <GoogleLogoIcon className="size-5" weight="bold" />
             )}
             Sign up with Google
           </Button>
-          {error && (
-            <p className="text-sm text-red-500 text-center">{error}</p>
+          {state.error && (
+            <p className="text-sm text-red-500 text-center">{state.error}</p>
           )}
           <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
             <span className="relative z-10 bg-background px-2 text-muted-foreground">
@@ -126,8 +164,8 @@ export function SignupDialog({
                 type="text"
                 placeholder="Your name"
                 autoComplete="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={state.name}
+                onChange={(e) => dispatch({ type: "SET_FIELD", field: "name", value: e.target.value })}
                 required
               />
             </div>
@@ -138,8 +176,8 @@ export function SignupDialog({
                 type="email"
                 placeholder="hello@example.com"
                 autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={state.email}
+                onChange={(e) => dispatch({ type: "SET_FIELD", field: "email", value: e.target.value })}
                 required
               />
             </div>
@@ -150,8 +188,8 @@ export function SignupDialog({
                 type="password"
                 placeholder="••••••••"
                 autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={state.password}
+                onChange={(e) => dispatch({ type: "SET_FIELD", field: "password", value: e.target.value })}
                 required
               />
             </div>
@@ -162,13 +200,13 @@ export function SignupDialog({
                 type="password"
                 placeholder="••••••••"
                 autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                value={state.confirmPassword}
+                onChange={(e) => dispatch({ type: "SET_FIELD", field: "confirmPassword", value: e.target.value })}
                 required
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating account…" : "Sign up"}
+            <Button type="submit" className="w-full" disabled={state.loading}>
+              {state.loading ? "Creating account…" : "Sign up"}
             </Button>
           </form>
           <p className="text-center text-sm text-muted-foreground">

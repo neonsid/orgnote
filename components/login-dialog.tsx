@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useReducer } from "react";
 import {
   Dialog,
   DialogContent,
@@ -20,16 +20,52 @@ interface LoginDialogProps {
   onSignupClick: () => void;
 }
 
+interface LoginState {
+  email: string;
+  password: string;
+  loading: boolean;
+  googleLoading: boolean;
+  error: string;
+}
+
+type LoginAction =
+  | { type: "SET_FIELD"; field: "email" | "password"; value: string }
+  | { type: "SET_LOADING"; value: boolean }
+  | { type: "SET_GOOGLE_LOADING"; value: boolean }
+  | { type: "SET_ERROR"; value: string }
+  | { type: "CLEAR_ERROR" };
+
+const initialLoginState: LoginState = {
+  email: "",
+  password: "",
+  loading: false,
+  googleLoading: false,
+  error: "",
+};
+
+function loginReducer(state: LoginState, action: LoginAction): LoginState {
+  switch (action.type) {
+    case "SET_FIELD":
+      return { ...state, [action.field]: action.value };
+    case "SET_LOADING":
+      return { ...state, loading: action.value };
+    case "SET_GOOGLE_LOADING":
+      return { ...state, googleLoading: action.value };
+    case "SET_ERROR":
+      return { ...state, error: action.value };
+    case "CLEAR_ERROR":
+      return { ...state, error: "" };
+    default:
+      return state;
+  }
+}
+
 export function LoginDialog({
   open,
   onOpenChange,
   onSignupClick,
 }: LoginDialogProps) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [state, dispatch] = useReducer(loginReducer, initialLoginState);
 
   const handleSignupClick = () => {
     onOpenChange(false);
@@ -37,38 +73,38 @@ export function LoginDialog({
   };
 
   const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
-    setError("");
+    dispatch({ type: "SET_GOOGLE_LOADING", value: true });
+    dispatch({ type: "CLEAR_ERROR" });
     try {
       await authClient.signIn.social({
         provider: "google",
         callbackURL: "/dashboard",
       });
     } catch {
-      setError("Failed to sign in with Google. Please try again.");
-      setGoogleLoading(false);
+      dispatch({ type: "SET_ERROR", value: "Failed to sign in with Google. Please try again." });
+      dispatch({ type: "SET_GOOGLE_LOADING", value: false });
     }
   };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError("");
+    dispatch({ type: "SET_LOADING", value: true });
+    dispatch({ type: "CLEAR_ERROR" });
     try {
       const result = await authClient.signIn.email({
-        email,
-        password,
+        email: state.email,
+        password: state.password,
       });
       if (result.error) {
-        setError(result.error.message || "Invalid email or password.");
+        dispatch({ type: "SET_ERROR", value: result.error.message || "Invalid email or password." });
       } else {
         onOpenChange(false);
         window.location.href = "/dashboard";
       }
     } catch {
-      setError("Failed to sign in. Please try again.");
+      dispatch({ type: "SET_ERROR", value: "Failed to sign in. Please try again." });
     } finally {
-      setLoading(false);
+      dispatch({ type: "SET_LOADING", value: false });
     }
   };
 
@@ -87,17 +123,17 @@ export function LoginDialog({
             variant="outline"
             className="w-full border border-input bg-background"
             onClick={handleGoogleSignIn}
-            disabled={googleLoading}
+            disabled={state.googleLoading}
           >
-            {googleLoading ? (
+            {state.googleLoading ? (
               <span className="size-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
               <GoogleLogoIcon className="size-5" weight="bold" />
             )}
             Sign in with Google
           </Button>
-          {error && (
-            <p className="text-sm text-red-500 text-center">{error}</p>
+          {state.error && (
+            <p className="text-sm text-red-500 text-center">{state.error}</p>
           )}
           <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
             <span className="relative z-10 bg-background px-2 text-muted-foreground">
@@ -112,8 +148,8 @@ export function LoginDialog({
                 type="email"
                 placeholder="hello@example.com"
                 autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={state.email}
+                onChange={(e) => dispatch({ type: "SET_FIELD", field: "email", value: e.target.value })}
                 required
               />
             </div>
@@ -132,13 +168,13 @@ export function LoginDialog({
                 type="password"
                 placeholder="••••••••"
                 autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={state.password}
+                onChange={(e) => dispatch({ type: "SET_FIELD", field: "password", value: e.target.value })}
                 required
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in…" : "Login"}
+            <Button type="submit" className="w-full" disabled={state.loading}>
+              {state.loading ? "Signing in…" : "Login"}
             </Button>
           </form>
           <p className="text-center text-sm text-muted-foreground">

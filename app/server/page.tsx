@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import Home from "./inner";
 import { preloadQuery, preloadedQueryResult } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import Image from "next/image";
+
+export const metadata: Metadata = {
+  title: "Server Demo | Orgnote",
+  description:
+    "Convex + Next.js server-side data preloading demonstration page.",
+};
 
 export default async function ServerPage() {
   const preloaded = await preloadQuery(api.myFunctions.listNumbers, {

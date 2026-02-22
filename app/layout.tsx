@@ -16,6 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Orgnote",
+  description:
+    "AI-powered bookmark manager — save links and get instant summaries so every bookmark makes sense at a glance.",
   icons: {
     icon: "logo.svg",
   },

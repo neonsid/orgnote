@@ -1,9 +1,13 @@
-"use client";
-
-import { useState } from "react";
+import type { Metadata } from "next";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
-import { ChevronDown } from "lucide-react";
+import { FAQItem } from "@/components/faq-content";
+
+export const metadata: Metadata = {
+    title: "FAQ | Orgnote",
+    description:
+        "Frequently asked questions about Orgnote — the AI-powered bookmark manager that helps you save, organise, and recall web links.",
+};
 
 const FAQ_ITEMS = [
     {
@@ -42,36 +46,6 @@ const FAQ_ITEMS = [
             "You can delete your account at any time from the Settings page. All your data will be permanently removed within 30 days of the request.",
     },
 ];
-
-function FAQItem({
-    question,
-    answer,
-}: {
-    question: string;
-    answer: string;
-}) {
-    const [open, setOpen] = useState(false);
-
-    return (
-        <div className="border border-border rounded-xl overflow-hidden transition-colors hover:border-foreground/20">
-            <button
-                type="button"
-                onClick={() => setOpen((v) => !v)}
-                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm sm:text-base font-medium text-foreground transition-colors hover:bg-accent/50"
-            >
-                {question}
-                <ChevronDown
-                    className={`size-4 shrink-0 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-                />
-            </button>
-            {open && (
-                <div className="px-5 pb-4 text-sm text-muted-foreground leading-relaxed animate-in fade-in slide-in-from-top-1 duration-200">
-                    {answer}
-                </div>
-            )}
-        </div>
-    );
-}
 
 export default function FAQPage() {
     return (

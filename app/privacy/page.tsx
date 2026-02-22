@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+
+export const metadata: Metadata = {
+    title: "Privacy Policy | Orgnote",
+    description:
+        "Learn how Orgnote collects, uses, and protects your personal data. We never sell your information or use it for advertising.",
+};
 
 const SECTIONS = [
     {
