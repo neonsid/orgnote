@@ -1,17 +1,17 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { Fish } from "lucide-react";
+import { Fish, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { authClient } from "@/lib/auth-client";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { GroupSelector } from "@/components/dashboard/group-selector";
 import { BookmarkSearch } from "@/components/dashboard/bookmark-search";
 import { BookmarkList } from "@/components/dashboard/bookmark-list";
-import {
-  groups,
-  bookmarks as initialBookmarks,
-  type Bookmark,
-} from "@/lib/dummy-data";
+import { UserInfo } from "@/components/dashboard/user-info";
+import { type Bookmark, bookmarks as initialBookmarks } from "@/lib/dummy-data";
 
 const COLORS = [
   "#3b82f6",
@@ -34,9 +34,25 @@ function extractDomain(input: string): string {
 }
 
 export default function DashboardPage() {
-  const [selectedGroupId, setSelectedGroupId] = useState("personal");
+  const { data: session, isPending: isSessionLoading } =
+    authClient.useSession();
+
+  const userId = session?.user?.id ?? "";
+
+  // Fetch groups from Convex (skip query while session is loading)
+  const groups = useQuery(api.groups.list, userId ? { userId } : "skip");
+
+  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
   const [search, setSearch] = useState("");
   const [tempBookmarks, setTempBookmarks] = useState<Bookmark[]>([]);
+
+  // Auto-select the first group when groups load
+  const effectiveGroupId = useMemo(() => {
+    if (selectedGroupId && groups?.some((g) => g._id === selectedGroupId)) {
+      return selectedGroupId;
+    }
+    return groups?.[0]?._id ?? "";
+  }, [selectedGroupId, groups]);
 
   const handleSubmit = useCallback(
     (value: string) => {
@@ -61,24 +77,24 @@ export default function DashboardPage() {
           : null,
         fallbackColor: COLORS[Math.floor(Math.random() * COLORS.length)],
         createdAt: new Date().toISOString().split("T")[0],
-        groupId: selectedGroupId,
+        groupId: effectiveGroupId,
       };
 
       setTempBookmarks((prev) => [newBookmark, ...prev]);
       setSearch("");
     },
-    [selectedGroupId],
+    [effectiveGroupId],
   );
 
   const allBookmarks = useMemo(() => {
     const groupTemp = tempBookmarks.filter(
-      (b) => b.groupId === selectedGroupId,
+      (b) => b.groupId === effectiveGroupId,
     );
     const groupInitial = initialBookmarks.filter(
-      (b) => b.groupId === selectedGroupId,
+      (b) => b.groupId === effectiveGroupId,
     );
     return [...groupTemp, ...groupInitial];
-  }, [selectedGroupId, tempBookmarks]);
+  }, [effectiveGroupId, tempBookmarks]);
 
   const filteredBookmarks = useMemo(() => {
     if (!search.trim()) return allBookmarks;
@@ -89,6 +105,34 @@ export default function DashboardPage() {
     );
   }, [allBookmarks, search]);
 
+  // Loading state while session or groups are being fetched
+  if (isSessionLoading || groups === undefined) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="size-6 text-muted-foreground animate-spin" />
+      </div>
+    );
+  }
+
+  // Not logged in
+  if (!session?.user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <p className="text-muted-foreground">
+            Please sign in to view your dashboard.
+          </p>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-lg bg-foreground text-background px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            Go to Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Dashboard header */}
@@ -96,7 +140,7 @@ export default function DashboardPage() {
         <div className="flex h-14 items-center justify-between px-3 sm:px-6">
           <div className="flex items-center gap-1.5 sm:gap-2">
             <Link
-              href="/"
+              href="/dashboard"
               className="flex items-center gap-2 text-foreground hover:opacity-80 transition-opacity"
             >
               <div className="size-8 rounded-lg bg-linear-to-br from-blue-50 to-cyan-50 dark:from-blue-950/40 dark:to-cyan-950/30 border border-border flex items-center justify-center">
@@ -109,13 +153,17 @@ export default function DashboardPage() {
             <span className="text-muted-foreground select-none">/</span>
             <GroupSelector
               groups={groups}
-              selectedGroupId={selectedGroupId}
+              selectedGroupId={effectiveGroupId}
               onSelect={setSelectedGroupId}
+              userId={userId}
             />
           </div>
 
-          <div className="flex items-center justify-center rounded-md border border-input bg-background p-2 hover:bg-accent hover:text-accent-foreground transition-colors">
-            <AnimatedThemeToggler aria-label="Toggle theme" />
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center rounded-md border border-input bg-background p-2 hover:bg-accent hover:text-accent-foreground transition-colors">
+              <AnimatedThemeToggler aria-label="Toggle theme" />
+            </div>
+            <UserInfo user={session.user} />
           </div>
         </div>
       </header>

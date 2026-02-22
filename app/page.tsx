@@ -1,12 +1,34 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Fish, Sparkles, BrainCog } from "lucide-react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { DashboardDemo } from "@/components/dashboard/dashboard-demo";
 import { FeaturesSection } from "@/components/features-section";
+import { authClient } from "@/lib/auth-client";
 
 export default function Home() {
+  const { data: session, isPending } = authClient.useSession();
+  const router = useRouter();
+
+  // Redirect logged-in users to the dashboard
+  useEffect(() => {
+    if (!isPending && session?.user) {
+      router.replace("/dashboard");
+    }
+  }, [isPending, session, router]);
+
+  // Show nothing while checking session (avoids flash of landing page)
+  if (isPending || session?.user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="size-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
