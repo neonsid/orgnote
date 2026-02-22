@@ -115,7 +115,6 @@ export function CreateGroupDialog({
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={handleKeyDown}
-              autoFocus
               disabled={isSubmitting}
             />
           </div>
