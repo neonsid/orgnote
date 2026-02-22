@@ -2,13 +2,14 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { Fish } from "lucide-react";
-import { LandingGroupSelector } from "@/components/landing/group-selector";
+import { LandingGroupSelector } from "@/components/dashboard/landing-group-selector";
 import { BookmarkSearch } from "@/components/dashboard/bookmark-search";
 import { BookmarkList } from "@/components/dashboard/bookmark-list";
 import {
-  groups,
+  groups as initialGroups,
   bookmarks as initialBookmarks,
   type Bookmark,
+  type Group,
 } from "@/lib/dummy-data";
 
 const COLORS = [
@@ -35,6 +36,12 @@ export function DashboardDemo() {
   const [selectedGroupId, setSelectedGroupId] = useState("personal");
   const [search, setSearch] = useState("");
   const [tempBookmarks, setTempBookmarks] = useState<Bookmark[]>([]);
+  // Ephemeral groups: starts with dummy-data groups, user can add more (lost on refresh)
+  const [allGroups, setAllGroups] = useState<Group[]>(initialGroups);
+
+  const handleCreateGroup = useCallback((newGroup: Group) => {
+    setAllGroups((prev) => [...prev, newGroup]);
+  }, []);
 
   const handleSubmit = useCallback(
     (value: string) => {
@@ -42,7 +49,7 @@ export function DashboardDemo() {
       const isUrl = domain.includes(".");
       const title = isUrl
         ? domain.split(".")[0].charAt(0).toUpperCase() +
-          domain.split(".")[0].slice(1)
+        domain.split(".")[0].slice(1)
         : value;
 
       const newBookmark: Bookmark = {
@@ -100,9 +107,10 @@ export function DashboardDemo() {
           </div>
           <span className="text-muted-foreground select-none">/</span>
           <LandingGroupSelector
-            groups={groups}
+            groups={allGroups}
             selectedGroupId={selectedGroupId}
             onSelect={setSelectedGroupId}
+            onCreateGroup={handleCreateGroup}
           />
         </div>
       </div>
