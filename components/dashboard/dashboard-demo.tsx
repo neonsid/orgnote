@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { Fish } from "lucide-react";
-import { GroupSelector } from "@/components/dashboard/group-selector";
+import { LandingGroupSelector } from "@/components/landing/group-selector";
 import { BookmarkSearch } from "@/components/dashboard/bookmark-search";
 import { BookmarkList } from "@/components/dashboard/bookmark-list";
 import {
@@ -42,7 +42,7 @@ export function DashboardDemo() {
       const isUrl = domain.includes(".");
       const title = isUrl
         ? domain.split(".")[0].charAt(0).toUpperCase() +
-        domain.split(".")[0].slice(1)
+          domain.split(".")[0].slice(1)
         : value;
 
       const newBookmark: Bookmark = {
@@ -99,7 +99,7 @@ export function DashboardDemo() {
             />
           </div>
           <span className="text-muted-foreground select-none">/</span>
-          <GroupSelector
+          <LandingGroupSelector
             groups={groups}
             selectedGroupId={selectedGroupId}
             onSelect={setSelectedGroupId}

@@ -68,31 +68,8 @@ export function UserInfo({ user }: UserInfoProps) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1 z-50 min-w-[220px] rounded-xl border border-border bg-background shadow-lg animate-in fade-in slide-in-from-top-1 duration-150">
-          <div className="p-3 border-b border-border">
-            <div className="flex items-center gap-2.5">
-              {user.image ? (
-                <img
-                  src={user.image}
-                  alt={user.name}
-                  className="size-8 rounded-full object-cover"
-                />
-              ) : (
-                <span className="flex items-center justify-center size-8 rounded-full bg-muted-foreground text-background text-sm font-bold select-none">
-                  {initial}
-                </span>
-              )}
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-medium text-foreground truncate">
-                  {user.name}
-                </span>
-                <span className="text-xs text-muted-foreground truncate">
-                  {user.email}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="p-1.5">
+        <div className="absolute right-0 top-full mt-1 z-50 min-w-55 rounded-xl border border-border bg-background shadow-lg animate-in fade-in slide-in-from-top-1 duration-150">
+          <div className="">
             <button
               id="user-settings-button"
               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"

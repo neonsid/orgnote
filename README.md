@@ -1,2 +1,4 @@
 - [] Complete dashboard
 - [] Prevent user from going to landing page
+- [] Add _id as delete
+- [] Fix landing page type errors

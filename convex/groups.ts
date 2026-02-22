@@ -34,3 +34,27 @@ export const create = mutation({
     });
   },
 });
+
+export const deleteGroup = mutation({
+  args: {
+    groupId: v.id("groups"),
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const group = await ctx.db.get(args.groupId);
+
+    if (!group) {
+      throw new Error("Group not found");
+    }
+
+    // Verify ownership
+    if (group.userProvidedId !== args.userId) {
+      throw new Error("Forbidden: You don't own this group");
+    }
+
+    // Safe to delete
+    await ctx.db.delete(args.groupId);
+
+    return { success: true, deletedId: args.groupId };
+  },
+});
