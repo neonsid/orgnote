@@ -18,8 +18,10 @@ export default defineSchema({
     title: v.string(),
     description: v.optional(v.string()),
     url: v.string(),
+    imageUrl: v.string(),
+    doneReading: v.boolean(),
     createdAt: v.number(),
-    updatedAt: v.number(),
+    updatedAt: v.optional(v.number()),
     groupId: v.id("groups"),
-  }),
+  }).index("groupId", ["groupId"]),
 });

@@ -1,19 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Fish, Sparkles, BrainCog } from "lucide-react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
-import { DashboardDemo } from "@/components/dashboard/dashboard-demo";
+import { DashboardDemo } from "@/components/landing/dashboard-demo";
 import { FeaturesSection } from "@/components/features-section";
 import { authClient } from "@/lib/auth-client";
 
 export default function Home() {
   const { data: session, isPending } = authClient.useSession();
-  const router = useRouter();
 
-  // Show nothing while checking session (avoids flash of landing page)
   if (isPending || session?.user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
