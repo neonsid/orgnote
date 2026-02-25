@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useCallback } from 'react'
+import { Id } from '@/convex/_generated/dataModel'
 import { Fish } from 'lucide-react'
 import { LandingGroupSelector } from '@/components/landing/landing-group-selector'
 import { BookmarkSearch } from '@/components/dashboard/bookmark-search'
@@ -34,7 +35,7 @@ function extractDomain(input: string): string {
 
 export function DashboardDemo() {
   const [selectedGroupId, setSelectedGroupId] = useState('personal')
-  const [search, setSearch] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
   const [tempBookmarks, setTempBookmarks] = useState<Bookmark[]>([])
   // Ephemeral groups: starts with dummy-data groups, user can add more (lost on refresh)
   const [allGroups, setAllGroups] = useState<Group[]>(initialGroups)
@@ -70,7 +71,7 @@ export function DashboardDemo() {
       }
 
       setTempBookmarks((prev) => [newBookmark, ...prev])
-      setSearch('')
+      setDebouncedQuery('')
     },
     [selectedGroupId]
   )
@@ -84,13 +85,20 @@ export function DashboardDemo() {
   }, [selectedGroupId, tempBookmarks])
 
   const filteredBookmarks = useMemo(() => {
-    if (!search.trim()) return allBookmarks
-    const q = search.toLowerCase()
+    if (!debouncedQuery.trim()) return allBookmarks
+    const q = debouncedQuery.toLowerCase()
     return allBookmarks.filter(
       (b) =>
         b.title.toLowerCase().includes(q) || b.domain.toLowerCase().includes(q)
     )
-  }, [allBookmarks, search])
+  }, [allBookmarks, debouncedQuery])
+
+  // Stable no-op handlers so React.memo on BookmarkList isn't defeated
+  const noop = useCallback(() => {}, [])
+  const noopMove = useCallback(
+    (_bookmarkId: Id<'bookmarks'>, _newGroupId: Id<'groups'>) => {},
+    []
+  )
 
   return (
     <div className="w-full max-w-2xl mx-auto rounded-2xl border border-border bg-card shadow-xl overflow-hidden">
@@ -115,20 +123,22 @@ export function DashboardDemo() {
 
       {/* Hybrid input */}
       <div className="px-3 sm:px-5 sm:pt-4 my-4 sm:pb-3">
-        <BookmarkSearch
-          value={search}
-          onChange={setSearch}
-          onSubmit={handleSubmit}
-        />
+        <BookmarkSearch onSearch={setDebouncedQuery} onSubmit={handleSubmit} />
       </div>
 
       {/* Bookmark list */}
       <BookmarkList
-        bookmarks={filteredBookmarks}
-        onCopy={() => {}}
-        onRename={() => {}}
-        onDelete={() => {}}
-        onMove={() => {}}
+        bookmarks={
+          filteredBookmarks as React.ComponentProps<
+            typeof BookmarkList
+          >['bookmarks']
+        }
+        groups={[]}
+        loading={false}
+        onCopy={noop}
+        onRename={noop}
+        onDelete={noop}
+        onMove={noopMove}
       />
 
       {/* Footer count */}

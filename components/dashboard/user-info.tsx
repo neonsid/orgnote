@@ -5,7 +5,9 @@ import { ChevronsUpDown, LogOut, Settings, Keyboard } from 'lucide-react'
 import { authClient } from '@/lib/auth-client'
 import { useRouter } from 'next/navigation'
 import { KeyboardShortcutsDialog } from '@/components/dashboard/keyboard-shortcuts-dialog'
+import { useIsSmallMobile } from '@/hooks/use-mobile'
 import Image from 'next/image'
+import { AnimatedThemeToggler } from '../ui/animated-theme-toggler'
 
 interface UserInfoProps {
   user: {
@@ -21,15 +23,17 @@ export function UserInfo({ user }: UserInfoProps) {
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
+  const isSmallMobile = useIsSmallMobile()
 
   const initial = user.name?.charAt(0)?.toUpperCase() ?? 'U'
 
-  // Truncate name for display
   const maxLen = 14
   const displayName =
     user.name.length > maxLen ? user.name.slice(0, maxLen) + '…' : user.name
 
   useEffect(() => {
+    if (!open) return
+
     function handleClickOutside(e: MouseEvent) {
       if (
         containerRef.current &&
@@ -38,14 +42,16 @@ export function UserInfo({ user }: UserInfoProps) {
         setOpen(false)
       }
     }
+
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  }, [open])
 
   const handleSignOut = async () => {
     await authClient.signOut()
     router.push('/')
   }
+  const themeToggleRef = useRef<{ toggle: () => void }>(null)
 
   return (
     <>
@@ -53,9 +59,8 @@ export function UserInfo({ user }: UserInfoProps) {
         <button
           id="user-info-trigger"
           onClick={() => setOpen(!open)}
-          className="inline-flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+          className="inline-flex items-center gap-1.5 sm:gap-2 rounded-lg px-1.5 sm:px-2.5 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
         >
-          {/* Avatar */}
           {user.image ? (
             <Image
               width={24}
@@ -69,19 +74,36 @@ export function UserInfo({ user }: UserInfoProps) {
               {initial}
             </span>
           )}
-          <span className="max-w-[120px] truncate">{displayName}</span>
+          <span className="hidden sm:inline max-w-[120px] truncate">
+            {displayName}
+          </span>
           <ChevronsUpDown className="size-3.5 text-muted-foreground shrink-0" />
         </button>
 
         {open && (
           <div className="absolute right-0 top-full mt-1 z-50 min-w-55 rounded-xl border border-border bg-background shadow-lg animate-in fade-in slide-in-from-top-1 duration-150">
             <div className="p-1.5">
+              {isSmallMobile && (
+                <>
+                  <button
+                    id="theme-changing-button"
+                    onClick={() => themeToggleRef.current?.toggle()}
+                    className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                  >
+                    <span>Theme</span>
+                    <AnimatedThemeToggler
+                      iconOnly
+                      triggerRef={themeToggleRef}
+                    />
+                  </button>
+                </>
+              )}
               <button
                 id="user-settings-button"
-                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                className="flex w-full items-center justify-between  gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
               >
-                <Settings className="size-4 text-muted-foreground" />
                 Settings
+                <Settings className="size-4 text-muted-foreground" />
               </button>
               <button
                 id="user-keyboard-shortcuts-button"
@@ -89,21 +111,19 @@ export function UserInfo({ user }: UserInfoProps) {
                   setOpen(false)
                   setShortcutsOpen(true)
                 }}
-                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
               >
-                <Keyboard className="size-4 text-muted-foreground" />
                 Keyboard Shortcuts
+                <Keyboard className="size-4 text-muted-foreground" />
               </button>
-
               <div className="my-1 h-px bg-border" />
-
               <button
                 id="user-signout-button"
                 onClick={handleSignOut}
-                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
               >
-                <LogOut className="size-4 text-muted-foreground" />
                 Sign out
+                <LogOut className="size-4 text-muted-foreground" />
               </button>
             </div>
           </div>

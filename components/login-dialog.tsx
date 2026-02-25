@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { GoogleLogoIcon } from '@phosphor-icons/react'
 import { authClient } from '@/lib/auth-client'
+import { useRouter } from 'next/navigation'
 
 interface LoginDialogProps {
   open: boolean
@@ -66,6 +67,7 @@ export function LoginDialog({
   onSignupClick,
 }: LoginDialogProps) {
   const [state, dispatch] = useReducer(loginReducer, initialLoginState)
+  const router = useRouter()
 
   const handleSignupClick = () => {
     onOpenChange(false)
@@ -105,7 +107,7 @@ export function LoginDialog({
         })
       } else {
         onOpenChange(false)
-        window.location.href = '/dashboard'
+        router.push('/dashboard')
       }
     } catch {
       dispatch({

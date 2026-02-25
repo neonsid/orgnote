@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, memo } from 'react'
 import { Fish, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useQuery, useMutation } from 'convex/react'
@@ -11,16 +11,11 @@ import { GroupSelector } from '@/components/dashboard/group-selector'
 import { BookmarkSearch } from '@/components/dashboard/bookmark-search'
 import { BookmarkList } from '@/components/dashboard/bookmark-list'
 import { UserInfo } from '@/components/dashboard/user-info'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { RenameBookmarkDialog } from '@/components/dashboard/rename-bookmark-dialog'
+import { DeleteBookmarkDialog } from '@/components/dashboard/delete-bookmark-dialog'
 import { type Doc, type Id } from '@/convex/_generated/dataModel'
+import { type ConvexGroup } from '@/components/dashboard/group-selector'
+import { toast } from 'sonner'
 
 type Bookmark = {
   id: Id<'bookmarks'>
@@ -52,6 +47,56 @@ function extractDomain(input: string): string {
     return ''
   }
 }
+interface DashboardHeaderProps {
+  groups: ConvexGroup[]
+  effectiveGroupId: string
+  onSelectGroup: (id: string) => void
+  userId: string
+  user: { id: string; name: string; email: string; image?: string | null }
+}
+
+const DashboardHeader = memo(function DashboardHeader({
+  groups,
+  effectiveGroupId,
+  onSelectGroup,
+  userId,
+  user,
+}: DashboardHeaderProps) {
+  return (
+    <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+      <div className="flex h-14 items-center justify-between px-3 sm:px-6 gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 text-foreground hover:opacity-80 transition-opacity"
+          >
+            <div className="size-8 rounded-lg bg-linear-to-br from-blue-50 to-cyan-50 dark:from-blue-950/40 dark:to-cyan-950/30 border border-border flex items-center justify-center">
+              <Fish
+                className="size-5 text-blue-600 dark:text-blue-400"
+                strokeWidth={1.5}
+              />
+            </div>
+          </Link>
+          <span className="text-muted-foreground select-none">/</span>
+          <GroupSelector
+            groups={groups}
+            selectedGroupId={effectiveGroupId}
+            onSelect={onSelectGroup}
+            userId={userId}
+          />
+        </div>
+
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Theme toggler — hidden on mobile, shown in UserInfo dropdown instead */}
+          <div className="hidden sm:flex items-center justify-center rounded-md border border-input bg-background p-1.5 sm:p-2 hover:bg-accent hover:text-accent-foreground transition-colors">
+            <AnimatedThemeToggler aria-label="Toggle theme" />
+          </div>
+          <UserInfo user={user} />
+        </div>
+      </div>
+    </header>
+  )
+})
 
 export default function DashboardPage() {
   const { data: session, isPending: isSessionLoading } = authClient.useSession()
@@ -62,15 +107,14 @@ export default function DashboardPage() {
   const groups = useQuery(api.groups.list, userId ? { userId } : 'skip')
 
   const [selectedGroupId, setSelectedGroupId] = useState<string>('')
-  const [search, setSearch] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
 
-  // Dialog states
+  // Dialog coordination — only open/close + which bookmark is selected
   const [renameDialogOpen, setRenameDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(
     null
   )
-  const [newTitle, setNewTitle] = useState('')
 
   // Auto-select the first group when groups load
   const effectiveGroupId = useMemo(() => {
@@ -89,8 +133,6 @@ export default function DashboardPage() {
   const loadingBookMarks = convexBookmarks === undefined
 
   const createBookmark = useMutation(api.bookmarks.createBookMark)
-  const deleteBookmark = useMutation(api.bookmarks.deleteBookMark)
-  const renameBookmark = useMutation(api.bookmarks.renameBookMark)
   const moveBookmark = useMutation(api.bookmarks.moveBookMark)
 
   const handleSubmit = useCallback(
@@ -118,7 +160,7 @@ export default function DashboardPage() {
           ? `https://www.google.com/s2/favicons?domain=${domain}&sz=256`
           : '',
       })
-      setSearch('')
+      setDebouncedQuery('')
     },
     [effectiveGroupId, createBookmark]
   )
@@ -138,22 +180,23 @@ export default function DashboardPage() {
   }, [convexBookmarks])
 
   const filteredBookmarks: Bookmark[] = useMemo(() => {
-    if (!search.trim()) return allBookmarks
-    const q = search.toLowerCase()
+    if (!debouncedQuery.trim()) return allBookmarks
+    const q = debouncedQuery.toLowerCase()
     return allBookmarks.filter(
       (b) =>
         b.title.toLowerCase().includes(q) || b.domain.toLowerCase().includes(q)
     )
-  }, [allBookmarks, search])
+  }, [allBookmarks, debouncedQuery])
 
   // Context menu handlers
   const handleCopy = useCallback((bookmark: Bookmark) => {
     navigator.clipboard.writeText(bookmark.url)
+    // Add green color here
+    toast.success('URL copied successfully')
   }, [])
 
   const handleRename = useCallback((bookmark: Bookmark) => {
     setSelectedBookmark(bookmark)
-    setNewTitle(bookmark.title)
     setRenameDialogOpen(true)
   }, [])
 
@@ -161,33 +204,13 @@ export default function DashboardPage() {
     (bookmarkId: Id<'bookmarks'>, newGroupId: Id<'groups'>) => {
       moveBookmark({ bookmarkId: bookmarkId, groupId: newGroupId })
     },
-    []
+    [moveBookmark]
   )
 
   const handleDelete = useCallback((bookmark: Bookmark) => {
     setSelectedBookmark(bookmark)
     setDeleteDialogOpen(true)
   }, [])
-
-  const handleRenameConfirm = useCallback(async () => {
-    if (!selectedBookmark || !newTitle.trim()) return
-    await renameBookmark({
-      bookmarkId: selectedBookmark.id as Id<'bookmarks'>,
-      title: newTitle.trim(),
-    })
-    setRenameDialogOpen(false)
-    setSelectedBookmark(null)
-    setNewTitle('')
-  }, [selectedBookmark, newTitle, renameBookmark])
-
-  const handleDeleteConfirm = useCallback(async () => {
-    if (!selectedBookmark) return
-    await deleteBookmark({
-      bookmarkId: selectedBookmark.id as Id<'bookmarks'>,
-    })
-    setDeleteDialogOpen(false)
-    setSelectedBookmark(null)
-  }, [selectedBookmark, deleteBookmark])
 
   // Loading state while session or groups are being fetched
   if (isSessionLoading || groups === undefined) {
@@ -218,46 +241,21 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Dashboard header */}
-      <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-        <div className="flex h-14 items-center justify-between px-3 sm:px-6">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2 text-foreground hover:opacity-80 transition-opacity"
-            >
-              <div className="size-8 rounded-lg bg-linear-to-br from-blue-50 to-cyan-50 dark:from-blue-950/40 dark:to-cyan-950/30 border border-border flex items-center justify-center">
-                <Fish
-                  className="size-5 text-blue-600 dark:text-blue-400"
-                  strokeWidth={1.5}
-                />
-              </div>
-            </Link>
-            <span className="text-muted-foreground select-none">/</span>
-            <GroupSelector
-              groups={groups}
-              selectedGroupId={effectiveGroupId}
-              onSelect={setSelectedGroupId}
-              userId={userId}
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center rounded-md border border-input bg-background p-2 hover:bg-accent hover:text-accent-foreground transition-colors">
-              <AnimatedThemeToggler aria-label="Toggle theme" />
-            </div>
-            <UserInfo user={session.user} />
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
+      {/* Memoised header — isolated from search/bookmark state */}
+      <DashboardHeader
+        groups={groups}
+        effectiveGroupId={effectiveGroupId}
+        onSelectGroup={setSelectedGroupId}
+        userId={userId}
+        user={session.user}
+      />
 
       {/* Main content */}
-      <main className="flex-1 w-full max-w-4xl mx-auto px-3 sm:px-6 py-4 sm:py-6 mt-10">
+      <main className="flex-1 w-full max-w-4xl mx-auto px-3 sm:px-6 py-4 sm:py-6 mt-2 sm:mt-10">
         <div className="mb-4 sm:mb-6">
           <BookmarkSearch
-            value={search}
-            onChange={setSearch}
+            onSearch={setDebouncedQuery}
             onSubmit={handleSubmit}
           />
         </div>
@@ -275,57 +273,19 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Rename Dialog */}
-      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Rename Bookmark</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <Input
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="Bookmark title"
-              onKeyDown={(e) => e.key === 'Enter' && handleRenameConfirm()}
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setRenameDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleRenameConfirm}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Rename Dialog — owns its own state for the title input */}
+      <RenameBookmarkDialog
+        bookmark={selectedBookmark}
+        open={renameDialogOpen}
+        onOpenChange={setRenameDialogOpen}
+      />
 
-      {/* Delete Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Delete Bookmark</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-muted-foreground">
-              Are you sure you want to delete &quot;{selectedBookmark?.title}
-              &quot;? This action cannot be undone.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteConfirm}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Delete Dialog — owns its own mutation */}
+      <DeleteBookmarkDialog
+        bookmark={selectedBookmark}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+      />
     </div>
   )
 }

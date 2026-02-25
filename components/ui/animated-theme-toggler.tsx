@@ -8,15 +8,20 @@ import { cn } from '@/lib/utils'
 
 interface AnimatedThemeTogglerProps extends React.ComponentPropsWithoutRef<'button'> {
   duration?: number
+  iconOnly?: boolean
+  triggerRef?: React.RefObject<{ toggle: () => void } | null>
 }
 
 export const AnimatedThemeToggler = ({
   className,
   duration = 400,
+  iconOnly = false,
+  triggerRef,
   ...props
 }: AnimatedThemeTogglerProps) => {
   const [isDark, setIsDark] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const updateTheme = () => {
@@ -35,7 +40,8 @@ export const AnimatedThemeToggler = ({
   }, [])
 
   const toggleTheme = useCallback(async () => {
-    if (!buttonRef.current) return
+    const element = iconOnly ? containerRef.current : buttonRef.current
+    if (!element) return
 
     await document.startViewTransition(() => {
       flushSync(() => {
@@ -46,8 +52,7 @@ export const AnimatedThemeToggler = ({
       })
     }).ready
 
-    const { top, left, width, height } =
-      buttonRef.current.getBoundingClientRect()
+    const { top, left, width, height } = element.getBoundingClientRect()
     const x = left + width / 2
     const y = top + height / 2
     const maxRadius = Math.hypot(
@@ -68,7 +73,27 @@ export const AnimatedThemeToggler = ({
         pseudoElement: '::view-transition-new(root)',
       }
     )
-  }, [isDark, duration])
+  }, [isDark, duration, iconOnly])
+
+  useEffect(() => {
+    if (triggerRef) {
+      ;(triggerRef as React.MutableRefObject<{ toggle: () => void }>).current =
+        { toggle: toggleTheme }
+    }
+  }, [triggerRef, toggleTheme])
+
+  const icon = isDark ? <Sun className="size-4" /> : <Moon className="size-4" />
+
+  if (iconOnly) {
+    return (
+      <div
+        ref={containerRef}
+        className={cn('text-muted-foreground', className)}
+      >
+        {icon}
+      </div>
+    )
+  }
 
   return (
     <button
@@ -77,7 +102,7 @@ export const AnimatedThemeToggler = ({
       className={cn(className)}
       {...props}
     >
-      {isDark ? <Sun /> : <Moon />}
+      {icon}
       <span className="sr-only">Toggle theme</span>
     </button>
   )
