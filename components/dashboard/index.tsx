@@ -86,6 +86,8 @@ export default function DashboardPage() {
     effectiveGroupId ? { groupId: effectiveGroupId as Id<'groups'> } : 'skip'
   )
 
+  const loadingBookMarks = convexBookmarks === undefined
+
   const createBookmark = useMutation(api.bookmarks.createBookMark)
   const deleteBookmark = useMutation(api.bookmarks.deleteBookMark)
   const renameBookmark = useMutation(api.bookmarks.renameBookMark)
@@ -262,6 +264,7 @@ export default function DashboardPage() {
 
         <div className="rounded-xl overflow-hidden">
           <BookmarkList
+            loading={loadingBookMarks}
             groups={groups}
             bookmarks={filteredBookmarks}
             onCopy={handleCopy}
@@ -269,12 +272,6 @@ export default function DashboardPage() {
             onDelete={handleDelete}
             onMove={handleMove}
           />
-        </div>
-
-        <div className="mt-3 sm:mt-4 px-1 text-xs text-muted-foreground">
-          {filteredBookmarks.length} bookmark
-          {filteredBookmarks.length !== 1 ? 's' : ''}
-          {search && ' found'}
         </div>
       </main>
 
