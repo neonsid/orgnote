@@ -125,7 +125,13 @@ export function DashboardDemo() {
       </div>
 
       {/* Bookmark list */}
-      <BookmarkList bookmarks={filteredBookmarks} />
+      <BookmarkList
+        bookmarks={filteredBookmarks}
+        onCopy={() => {}}
+        onRename={() => {}}
+        onDelete={() => {}}
+        onMove={() => {}}
+      />
 
       {/* Footer count */}
     </div>

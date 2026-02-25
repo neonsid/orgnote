@@ -38,3 +38,45 @@ export const listBookMarks = query({
       .collect();
   },
 });
+
+export const deleteBookMark = mutation({
+  args: { bookmarkId: v.id("bookmarks") },
+  handler: async (ctx, args) => {
+    const bookmark = await ctx.db.get(args.bookmarkId);
+    if (!bookmark) {
+      throw new Error("Bookmark not found");
+    }
+    await ctx.db.delete(args.bookmarkId);
+    return { success: true, deletedId: args.bookmarkId };
+  },
+});
+
+export const renameBookMark = mutation({
+  args: { bookmarkId: v.id("bookmarks"), title: v.string() },
+  handler: async (ctx, args) => {
+    const bookmark = await ctx.db.get(args.bookmarkId);
+    if (!bookmark) {
+      throw new Error("Bookmark not found");
+    }
+    await ctx.db.patch(args.bookmarkId, {
+      title: args.title,
+      updatedAt: Date.now(),
+    });
+    return { success: true };
+  },
+});
+
+export const moveBookMark = mutation({
+  args: { bookmarkId: v.id("bookmarks"), groupId: v.id("groups") },
+  handler: async (ctx, args) => {
+    const bookmark = await ctx.db.get(args.bookmarkId);
+    if (!bookmark) {
+      throw new Error("Bookmark not found");
+    }
+    await ctx.db.patch(args.bookmarkId, {
+      groupId: args.groupId,
+      updatedAt: Date.now(),
+    });
+    return { success: true };
+  },
+});

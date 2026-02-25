@@ -65,7 +65,7 @@ export function KeyboardShortcutsDialog({
                           /
                         </span>
                       ) : (
-                        <kbd className="inline-flex items-center justify-center min-w-[28px] h-7 px-1.5 rounded-md bg-muted border border-border text-xs font-medium text-muted-foreground select-none">
+                        <kbd className="inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-md bg-muted border border-border text-xs font-medium text-muted-foreground select-none">
                           {key}
                         </kbd>
                       )}

@@ -1,17 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import {
-  ChevronsUpDown,
-  LogOut,
-  Settings,
-  Globe,
-  Keyboard,
-  HelpCircle,
-} from "lucide-react";
+import { ChevronsUpDown, LogOut, Settings, Keyboard } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { KeyboardShortcutsDialog } from "@/components/dashboard/keyboard-shortcuts-dialog";
+import Image from "next/image";
 
 interface UserInfoProps {
   user: {
@@ -63,7 +57,9 @@ export function UserInfo({ user }: UserInfoProps) {
         >
           {/* Avatar */}
           {user.image ? (
-            <img
+            <Image
+              width={24}
+              height={24}
               src={user.image}
               alt={user.name}
               className="size-6 rounded-full object-cover"
