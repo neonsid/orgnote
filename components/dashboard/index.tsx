@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/input'
 import { type Doc, type Id } from '@/convex/_generated/dataModel'
 
 type Bookmark = {
-  id: string
+  id: Id<'bookmarks'>
   title: string
   domain: string
   url: string
@@ -66,13 +66,11 @@ export default function DashboardPage() {
 
   // Dialog states
   const [renameDialogOpen, setRenameDialogOpen] = useState(false)
-  const [moveDialogOpen, setMoveDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(
     null
   )
   const [newTitle, setNewTitle] = useState('')
-  const [targetGroupId, setTargetGroupId] = useState<string>('')
 
   // Auto-select the first group when groups load
   const effectiveGroupId = useMemo(() => {
@@ -157,11 +155,12 @@ export default function DashboardPage() {
     setRenameDialogOpen(true)
   }, [])
 
-  const handleMove = useCallback((bookmark: Bookmark) => {
-    setSelectedBookmark(bookmark)
-    setTargetGroupId(bookmark.groupId)
-    setMoveDialogOpen(true)
-  }, [])
+  const handleMove = useCallback(
+    (bookmarkId: Id<'bookmarks'>, newGroupId: Id<'groups'>) => {
+      moveBookmark({ bookmarkId: bookmarkId, groupId: newGroupId })
+    },
+    []
+  )
 
   const handleDelete = useCallback((bookmark: Bookmark) => {
     setSelectedBookmark(bookmark)
@@ -178,17 +177,6 @@ export default function DashboardPage() {
     setSelectedBookmark(null)
     setNewTitle('')
   }, [selectedBookmark, newTitle, renameBookmark])
-
-  const handleMoveConfirm = useCallback(async () => {
-    if (!selectedBookmark || !targetGroupId) return
-    await moveBookmark({
-      bookmarkId: selectedBookmark.id as Id<'bookmarks'>,
-      groupId: targetGroupId as Id<'groups'>,
-    })
-    setMoveDialogOpen(false)
-    setSelectedBookmark(null)
-    setTargetGroupId('')
-  }, [selectedBookmark, targetGroupId, moveBookmark])
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!selectedBookmark) return
@@ -274,6 +262,7 @@ export default function DashboardPage() {
 
         <div className="rounded-xl overflow-hidden">
           <BookmarkList
+            groups={groups}
             bookmarks={filteredBookmarks}
             onCopy={handleCopy}
             onRename={handleRename}
@@ -311,40 +300,6 @@ export default function DashboardPage() {
               Cancel
             </Button>
             <Button onClick={handleRenameConfirm}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Move Dialog */}
-      <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Move Bookmark</DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-2">
-            {groups?.map((group) => (
-              <button
-                key={group._id}
-                onClick={() => setTargetGroupId(group._id)}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
-                  targetGroupId === group._id
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border hover:bg-muted'
-                }`}
-              >
-                <div
-                  className="size-3 rounded-full"
-                  style={{ backgroundColor: group.color }}
-                />
-                <span className="text-sm">{group.title}</span>
-              </button>
-            ))}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleMoveConfirm}>Move</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

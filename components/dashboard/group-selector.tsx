@@ -17,7 +17,7 @@ export interface ConvexGroup {
   _creationTime: number
 }
 
-const FALLBACK_COLORS = [
+export const FALLBACK_COLORS = [
   '#f59e0b',
   '#3b82f6',
   '#10b981',

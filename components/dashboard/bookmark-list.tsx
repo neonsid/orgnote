@@ -7,13 +7,17 @@ import {
   ContextMenuTrigger,
   ContextMenuContent,
   ContextMenuItem,
-  ContextMenuSeparator,
   ContextMenuShortcut,
+  ContextMenuSub,
+  ContextMenuSubTrigger,
+  ContextMenuSubContent,
 } from '@/components/ui/context-menu'
-import { Copy, Pencil, Trash2, FolderInput } from 'lucide-react'
+import { Copy, Pencil, Trash2, ChevronsRightIcon } from 'lucide-react'
+import { ConvexGroup, FALLBACK_COLORS } from './group-selector'
+import { Id } from '@/convex/_generated/dataModel'
 
 interface Bookmark {
-  id: string
+  id: Id<'bookmarks'>
   title: string
   domain: string
   url: string
@@ -25,10 +29,11 @@ interface Bookmark {
 
 interface BookmarkListProps {
   bookmarks: Bookmark[]
+  groups: ConvexGroup[]
   onCopy: (bookmark: Bookmark) => void
   onRename: (bookmark: Bookmark) => void
   onDelete: (bookmark: Bookmark) => void
-  onMove: (bookmark: Bookmark) => void
+  onMove: (bookmarkId: Id<'bookmarks'>, newGroupId: Id<'groups'>) => void
 }
 
 function formatDate(dateStr: string): string {
@@ -75,6 +80,7 @@ function FaviconIcon({ bookmark }: { bookmark: Bookmark }) {
 
 export function BookmarkList({
   bookmarks,
+  groups,
   onCopy,
   onRename,
   onDelete,
@@ -151,18 +157,36 @@ export function BookmarkList({
                   </kbd>
                 </ContextMenuShortcut>
               </ContextMenuItem>
-              <ContextMenuItem onClick={() => onMove(bookmark)}>
-                <FolderInput className="size-4 mr-2" />
-                Move to
-                <ContextMenuShortcut className="flex items-center gap-1">
-                  <kbd className="inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-md bg-muted border border-border text-xs font-medium text-muted-foreground select-none">
-                    ⌘
-                  </kbd>
-                  <kbd className="inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-md bg-muted border border-border text-xs font-medium text-muted-foreground select-none">
-                    M
-                  </kbd>
-                </ContextMenuShortcut>
-              </ContextMenuItem>
+              <ContextMenuSub>
+                <ContextMenuSubTrigger className="flex items-center">
+                  <ChevronsRightIcon className="size-4 mr-2" />
+                  Move to
+                </ContextMenuSubTrigger>
+
+                <ContextMenuSubContent className="w-48">
+                  {groups
+                    .filter((group) => group._id !== bookmark.groupId)
+                    .map((group, i) => (
+                      <ContextMenuItem
+                        key={group._id}
+                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                        onClick={() => onMove(bookmark.id, group._id)}
+                      >
+                        <span
+                          className="size-2.5 rounded-full shrink-0"
+                          style={{
+                            backgroundColor:
+                              group.color ||
+                              FALLBACK_COLORS[i % FALLBACK_COLORS.length],
+                          }}
+                        />
+                        <span className="flex-1 text-left font-medium">
+                          {group.title}
+                        </span>
+                      </ContextMenuItem>
+                    ))}
+                </ContextMenuSubContent>
+              </ContextMenuSub>
               <ContextMenuItem
                 variant="destructive"
                 onClick={() => onDelete(bookmark)}
