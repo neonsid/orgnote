@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { Fish, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { authClient } from "@/lib/auth-client";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
@@ -11,7 +11,27 @@ import { GroupSelector } from "@/components/dashboard/group-selector";
 import { BookmarkSearch } from "@/components/dashboard/bookmark-search";
 import { BookmarkList } from "@/components/dashboard/bookmark-list";
 import { UserInfo } from "@/components/dashboard/user-info";
-import { type Bookmark, bookmarks as initialBookmarks } from "@/lib/dummy-data";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { type Doc, type Id } from "@/convex/_generated/dataModel";
+
+type Bookmark = {
+  id: string;
+  title: string;
+  domain: string;
+  url: string;
+  favicon: string | null;
+  fallbackColor: string;
+  createdAt: string;
+  groupId: string;
+};
 
 const COLORS = [
   "#3b82f6",
@@ -44,7 +64,16 @@ export default function DashboardPage() {
 
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
   const [search, setSearch] = useState("");
-  const [tempBookmarks, setTempBookmarks] = useState<Bookmark[]>([]);
+
+  // Dialog states
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(
+    null,
+  );
+  const [newTitle, setNewTitle] = useState("");
+  const [targetGroupId, setTargetGroupId] = useState<string>("");
 
   // Auto-select the first group when groups load
   const effectiveGroupId = useMemo(() => {
@@ -54,8 +83,19 @@ export default function DashboardPage() {
     return groups?.[0]?._id ?? "";
   }, [selectedGroupId, groups]);
 
+  // Fetch bookmarks from Convex (skip query while no group selected)
+  const convexBookmarks = useQuery(
+    api.bookmarks.listBookMarks,
+    effectiveGroupId ? { groupId: effectiveGroupId as Id<"groups"> } : "skip",
+  );
+
+  const createBookmark = useMutation(api.bookmarks.createBookMark);
+  const deleteBookmark = useMutation(api.bookmarks.deleteBookMark);
+  const renameBookmark = useMutation(api.bookmarks.renameBookMark);
+  const moveBookmark = useMutation(api.bookmarks.moveBookMark);
+
   const handleSubmit = useCallback(
-    (value: string) => {
+    async (value: string) => {
       const domain = extractDomain(value);
       const isUrl = domain.includes(".");
       const title = isUrl
@@ -63,40 +103,42 @@ export default function DashboardPage() {
           domain.split(".")[0].slice(1)
         : value;
 
-      const newBookmark: Bookmark = {
-        id: `temp-${Date.now()}`,
-        title,
-        domain: isUrl ? domain : "",
-        url: isUrl
-          ? value.startsWith("http")
-            ? value
-            : `https://${value}`
-          : "#",
-        favicon: isUrl
-          ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
-          : null,
-        fallbackColor: COLORS[Math.floor(Math.random() * COLORS.length)],
-        createdAt: new Date().toISOString().split("T")[0],
-        groupId: effectiveGroupId,
-      };
+      const url = isUrl
+        ? value.startsWith("http")
+          ? value
+          : `https://${value}`
+        : "#";
 
-      setTempBookmarks((prev) => [newBookmark, ...prev]);
+      if (!effectiveGroupId) return;
+
+      await createBookmark({
+        title,
+        url,
+        groupId: effectiveGroupId as Id<"groups">,
+        imageUrl: isUrl
+          ? `https://www.google.com/s2/favicons?domain=${domain}&sz=256`
+          : "",
+      });
       setSearch("");
     },
-    [effectiveGroupId],
+    [effectiveGroupId, createBookmark],
   );
 
   const allBookmarks = useMemo(() => {
-    const groupTemp = tempBookmarks.filter(
-      (b) => b.groupId === effectiveGroupId,
-    );
-    const groupInitial = initialBookmarks.filter(
-      (b) => b.groupId === effectiveGroupId,
-    );
-    return [...groupTemp, ...groupInitial];
-  }, [effectiveGroupId, tempBookmarks]);
+    if (!convexBookmarks) return [];
+    return convexBookmarks.map((b: Doc<"bookmarks">) => ({
+      id: b._id,
+      title: b.title,
+      domain: extractDomain(b.url),
+      url: b.url,
+      favicon: b.imageUrl || null,
+      fallbackColor: COLORS[b.title.charCodeAt(0) % COLORS.length],
+      createdAt: new Date(b.createdAt).toISOString().split("T")[0],
+      groupId: b.groupId,
+    }));
+  }, [convexBookmarks]);
 
-  const filteredBookmarks = useMemo(() => {
+  const filteredBookmarks: Bookmark[] = useMemo(() => {
     if (!search.trim()) return allBookmarks;
     const q = search.toLowerCase();
     return allBookmarks.filter(
@@ -104,6 +146,59 @@ export default function DashboardPage() {
         b.title.toLowerCase().includes(q) || b.domain.toLowerCase().includes(q),
     );
   }, [allBookmarks, search]);
+
+  // Context menu handlers
+  const handleCopy = useCallback((bookmark: Bookmark) => {
+    navigator.clipboard.writeText(bookmark.url);
+  }, []);
+
+  const handleRename = useCallback((bookmark: Bookmark) => {
+    setSelectedBookmark(bookmark);
+    setNewTitle(bookmark.title);
+    setRenameDialogOpen(true);
+  }, []);
+
+  const handleMove = useCallback((bookmark: Bookmark) => {
+    setSelectedBookmark(bookmark);
+    setTargetGroupId(bookmark.groupId);
+    setMoveDialogOpen(true);
+  }, []);
+
+  const handleDelete = useCallback((bookmark: Bookmark) => {
+    setSelectedBookmark(bookmark);
+    setDeleteDialogOpen(true);
+  }, []);
+
+  const handleRenameConfirm = useCallback(async () => {
+    if (!selectedBookmark || !newTitle.trim()) return;
+    await renameBookmark({
+      bookmarkId: selectedBookmark.id as Id<"bookmarks">,
+      title: newTitle.trim(),
+    });
+    setRenameDialogOpen(false);
+    setSelectedBookmark(null);
+    setNewTitle("");
+  }, [selectedBookmark, newTitle, renameBookmark]);
+
+  const handleMoveConfirm = useCallback(async () => {
+    if (!selectedBookmark || !targetGroupId) return;
+    await moveBookmark({
+      bookmarkId: selectedBookmark.id as Id<"bookmarks">,
+      groupId: targetGroupId as Id<"groups">,
+    });
+    setMoveDialogOpen(false);
+    setSelectedBookmark(null);
+    setTargetGroupId("");
+  }, [selectedBookmark, targetGroupId, moveBookmark]);
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!selectedBookmark) return;
+    await deleteBookmark({
+      bookmarkId: selectedBookmark.id as Id<"bookmarks">,
+    });
+    setDeleteDialogOpen(false);
+    setSelectedBookmark(null);
+  }, [selectedBookmark, deleteBookmark]);
 
   // Loading state while session or groups are being fetched
   if (isSessionLoading || groups === undefined) {
@@ -179,7 +274,13 @@ export default function DashboardPage() {
         </div>
 
         <div className="rounded-xl overflow-hidden">
-          <BookmarkList bookmarks={filteredBookmarks} />
+          <BookmarkList
+            bookmarks={filteredBookmarks}
+            onCopy={handleCopy}
+            onRename={handleRename}
+            onDelete={handleDelete}
+            onMove={handleMove}
+          />
         </div>
 
         <div className="mt-3 sm:mt-4 px-1 text-xs text-muted-foreground">
@@ -188,6 +289,92 @@ export default function DashboardPage() {
           {search && " found"}
         </div>
       </main>
+
+      {/* Rename Dialog */}
+      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rename Bookmark</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              placeholder="Bookmark title"
+              onKeyDown={(e) => e.key === "Enter" && handleRenameConfirm()}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRenameDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleRenameConfirm}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Move Dialog */}
+      <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Move Bookmark</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-2">
+            {groups?.map((group) => (
+              <button
+                key={group._id}
+                onClick={() => setTargetGroupId(group._id)}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                  targetGroupId === group._id
+                    ? "border-primary bg-primary/10"
+                    : "border-border hover:bg-muted"
+                }`}
+              >
+                <div
+                  className="size-3 rounded-full"
+                  style={{ backgroundColor: group.color }}
+                />
+                <span className="text-sm">{group.title}</span>
+              </button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleMoveConfirm}>Move</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Bookmark</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete &quot;{selectedBookmark?.title}
+              &quot;? This action cannot be undone.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
