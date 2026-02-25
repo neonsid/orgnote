@@ -1,33 +1,33 @@
-"use client";
+'use client'
 
-import { useState, useRef, useEffect } from "react";
-import { ChevronsUpDown, LogOut, Settings, Keyboard } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
-import { KeyboardShortcutsDialog } from "@/components/dashboard/keyboard-shortcuts-dialog";
-import Image from "next/image";
+import { useState, useRef, useEffect } from 'react'
+import { ChevronsUpDown, LogOut, Settings, Keyboard } from 'lucide-react'
+import { authClient } from '@/lib/auth-client'
+import { useRouter } from 'next/navigation'
+import { KeyboardShortcutsDialog } from '@/components/dashboard/keyboard-shortcuts-dialog'
+import Image from 'next/image'
 
 interface UserInfoProps {
   user: {
-    id: string;
-    name: string;
-    email: string;
-    image?: string | null;
-  };
+    id: string
+    name: string
+    email: string
+    image?: string | null
+  }
 }
 
 export function UserInfo({ user }: UserInfoProps) {
-  const [open, setOpen] = useState(false);
-  const [shortcutsOpen, setShortcutsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
+  const [open, setOpen] = useState(false)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
 
-  const initial = user.name?.charAt(0)?.toUpperCase() ?? "U";
+  const initial = user.name?.charAt(0)?.toUpperCase() ?? 'U'
 
   // Truncate name for display
-  const maxLen = 14;
+  const maxLen = 14
   const displayName =
-    user.name.length > maxLen ? user.name.slice(0, maxLen) + "…" : user.name;
+    user.name.length > maxLen ? user.name.slice(0, maxLen) + '…' : user.name
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -35,17 +35,17 @@ export function UserInfo({ user }: UserInfoProps) {
         containerRef.current &&
         !containerRef.current.contains(e.target as Node)
       ) {
-        setOpen(false);
+        setOpen(false)
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const handleSignOut = async () => {
-    await authClient.signOut();
-    router.push("/");
-  };
+    await authClient.signOut()
+    router.push('/')
+  }
 
   return (
     <>
@@ -86,8 +86,8 @@ export function UserInfo({ user }: UserInfoProps) {
               <button
                 id="user-keyboard-shortcuts-button"
                 onClick={() => {
-                  setOpen(false);
-                  setShortcutsOpen(true);
+                  setOpen(false)
+                  setShortcutsOpen(true)
                 }}
                 className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
               >
@@ -115,5 +115,5 @@ export function UserInfo({ user }: UserInfoProps) {
         onOpenChange={setShortcutsOpen}
       />
     </>
-  );
+  )
 }

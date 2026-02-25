@@ -8,19 +8,19 @@
  * @module
  */
 
-import type * as bookmarks from "../bookmarks.js";
-import type * as groups from "../groups.js";
+import type * as bookmarks from '../bookmarks.js'
+import type * as groups from '../groups.js'
 
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
-} from "convex/server";
+} from 'convex/server'
 
 declare const fullApi: ApiFromModules<{
-  bookmarks: typeof bookmarks;
-  groups: typeof groups;
-}>;
+  bookmarks: typeof bookmarks
+  groups: typeof groups
+}>
 
 /**
  * A utility for referencing Convex functions in your app's public API.
@@ -32,8 +32,8 @@ declare const fullApi: ApiFromModules<{
  */
 export declare const api: FilterApi<
   typeof fullApi,
-  FunctionReference<any, "public">
->;
+  FunctionReference<any, 'public'>
+>
 
 /**
  * A utility for referencing Convex functions in your app's internal API.
@@ -45,7 +45,7 @@ export declare const api: FilterApi<
  */
 export declare const internal: FilterApi<
   typeof fullApi,
-  FunctionReference<any, "internal">
->;
+  FunctionReference<any, 'internal'>
+>
 
-export declare const components: {};
+export declare const components: {}

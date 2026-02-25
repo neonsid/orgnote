@@ -1,9 +1,9 @@
-"use client";
+'use client'
 
-import { useState, useCallback } from "react";
-import { Check, Plus, ChevronsUpDownIcon } from "lucide-react";
-import { Popover as PopoverPrimitive } from "radix-ui";
-import { type Group } from "@/lib/dummy-data";
+import { useState, useCallback } from 'react'
+import { Check, Plus, ChevronsUpDownIcon } from 'lucide-react'
+import { Popover as PopoverPrimitive } from 'radix-ui'
+import { type Group } from '@/lib/dummy-data'
 import {
   Dialog,
   DialogContent,
@@ -11,27 +11,27 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 const LANDING_GROUP_COLORS = [
-  { value: "#f59e0b", label: "Amber" },
-  { value: "#3b82f6", label: "Blue" },
-  { value: "#10b981", label: "Emerald" },
-  { value: "#ef4444", label: "Red" },
-  { value: "#8b5cf6", label: "Violet" },
-  { value: "#ec4899", label: "Pink" },
-  { value: "#06b6d4", label: "Cyan" },
-  { value: "#f97316", label: "Orange" },
-];
+  { value: '#f59e0b', label: 'Amber' },
+  { value: '#3b82f6', label: 'Blue' },
+  { value: '#10b981', label: 'Emerald' },
+  { value: '#ef4444', label: 'Red' },
+  { value: '#8b5cf6', label: 'Violet' },
+  { value: '#ec4899', label: 'Pink' },
+  { value: '#06b6d4', label: 'Cyan' },
+  { value: '#f97316', label: 'Orange' },
+]
 
 interface LandingGroupSelectorProps {
-  groups: Group[];
-  selectedGroupId: string;
-  onSelect: (groupId: string) => void;
-  onCreateGroup: (group: Group) => void;
+  groups: Group[]
+  selectedGroupId: string
+  onSelect: (groupId: string) => void
+  onCreateGroup: (group: Group) => void
 }
 
 export function LandingGroupSelector({
@@ -40,44 +40,44 @@ export function LandingGroupSelector({
   onSelect,
   onCreateGroup,
 }: LandingGroupSelectorProps) {
-  const [open, setOpen] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [name, setName] = useState("");
+  const [open, setOpen] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [name, setName] = useState('')
   const [selectedColor, setSelectedColor] = useState(
-    LANDING_GROUP_COLORS[0].value,
-  );
+    LANDING_GROUP_COLORS[0].value
+  )
 
-  const selectedGroup = groups.find((g) => g.id === selectedGroupId);
+  const selectedGroup = groups.find((g) => g.id === selectedGroupId)
 
   const handleCreate = useCallback(() => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
+    const trimmed = name.trim()
+    if (!trimmed) return
 
     const newGroup: Group = {
       id: `local-${Date.now()}`,
       name: trimmed,
       color: selectedColor,
       bookmarkCount: 0,
-    };
+    }
 
-    onCreateGroup(newGroup);
-    onSelect(newGroup.id);
+    onCreateGroup(newGroup)
+    onSelect(newGroup.id)
 
     // Reset form
-    setName("");
-    setSelectedColor(LANDING_GROUP_COLORS[0].value);
-    setDialogOpen(false);
-  }, [name, selectedColor, onCreateGroup, onSelect]);
+    setName('')
+    setSelectedColor(LANDING_GROUP_COLORS[0].value)
+    setDialogOpen(false)
+  }, [name, selectedColor, onCreateGroup, onSelect])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        handleCreate();
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        handleCreate()
       }
     },
-    [handleCreate],
-  );
+    [handleCreate]
+  )
 
   return (
     <>
@@ -93,7 +93,7 @@ export function LandingGroupSelector({
             />
             {selectedGroup?.name}
             <ChevronsUpDownIcon
-              className={`size-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+              className={`size-4 text-muted-foreground transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
             />
           </button>
         </PopoverPrimitive.Trigger>
@@ -110,8 +110,8 @@ export function LandingGroupSelector({
                   key={group.id}
                   id={`landing-group-option-${group.id}`}
                   onClick={() => {
-                    onSelect(group.id);
-                    setOpen(false);
+                    onSelect(group.id)
+                    setOpen(false)
                   }}
                   className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                 >
@@ -137,8 +137,8 @@ export function LandingGroupSelector({
               <button
                 id="landing-create-group-button"
                 onClick={() => {
-                  setOpen(false);
-                  setDialogOpen(true);
+                  setOpen(false)
+                  setDialogOpen(true)
                 }}
                 className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground transition-colors"
               >
@@ -215,5 +215,5 @@ export function LandingGroupSelector({
         </DialogContent>
       </Dialog>
     </>
-  );
+  )
 }

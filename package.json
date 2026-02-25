@@ -11,6 +11,8 @@
     "build": "next build",
     "db:push": "prisma db push",
     "start": "next start",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
     "lint": "eslint . --ignore-pattern \"convex/_generated/**\""
   },
   "dependencies": {
@@ -55,4 +57,3 @@
     ]
   }
 }
-

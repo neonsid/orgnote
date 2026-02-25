@@ -1,204 +1,203 @@
-"use client";
+'use client'
 
-import { useState, useMemo, useCallback } from "react";
-import { Fish, Loader2 } from "lucide-react";
-import Link from "next/link";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { authClient } from "@/lib/auth-client";
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
-import { GroupSelector } from "@/components/dashboard/group-selector";
-import { BookmarkSearch } from "@/components/dashboard/bookmark-search";
-import { BookmarkList } from "@/components/dashboard/bookmark-list";
-import { UserInfo } from "@/components/dashboard/user-info";
+import { useState, useMemo, useCallback } from 'react'
+import { Fish, Loader2 } from 'lucide-react'
+import Link from 'next/link'
+import { useQuery, useMutation } from 'convex/react'
+import { api } from '@/convex/_generated/api'
+import { authClient } from '@/lib/auth-client'
+import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
+import { GroupSelector } from '@/components/dashboard/group-selector'
+import { BookmarkSearch } from '@/components/dashboard/bookmark-search'
+import { BookmarkList } from '@/components/dashboard/bookmark-list'
+import { UserInfo } from '@/components/dashboard/user-info'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { type Doc, type Id } from "@/convex/_generated/dataModel";
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { type Doc, type Id } from '@/convex/_generated/dataModel'
 
 type Bookmark = {
-  id: string;
-  title: string;
-  domain: string;
-  url: string;
-  favicon: string | null;
-  fallbackColor: string;
-  createdAt: string;
-  groupId: string;
-};
+  id: string
+  title: string
+  domain: string
+  url: string
+  favicon: string | null
+  fallbackColor: string
+  createdAt: string
+  groupId: string
+}
 
 const COLORS = [
-  "#3b82f6",
-  "#ef4444",
-  "#10b981",
-  "#f59e0b",
-  "#8b5cf6",
-  "#ec4899",
-  "#06b6d4",
-  "#f97316",
-];
+  '#3b82f6',
+  '#ef4444',
+  '#10b981',
+  '#f59e0b',
+  '#8b5cf6',
+  '#ec4899',
+  '#06b6d4',
+  '#f97316',
+]
 
 function extractDomain(input: string): string {
   try {
-    const url = new URL(input.startsWith("http") ? input : `https://${input}`);
-    return url.hostname.replace("www.", "");
+    const url = new URL(input.startsWith('http') ? input : `https://${input}`)
+    return url.hostname.replace('www.', '')
   } catch {
-    return "";
+    return ''
   }
 }
 
 export default function DashboardPage() {
-  const { data: session, isPending: isSessionLoading } =
-    authClient.useSession();
+  const { data: session, isPending: isSessionLoading } = authClient.useSession()
 
-  const userId = session?.user?.id ?? "";
+  const userId = session?.user?.id ?? ''
 
   // Fetch groups from Convex (skip query while session is loading)
-  const groups = useQuery(api.groups.list, userId ? { userId } : "skip");
+  const groups = useQuery(api.groups.list, userId ? { userId } : 'skip')
 
-  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
-  const [search, setSearch] = useState("");
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('')
+  const [search, setSearch] = useState('')
 
   // Dialog states
-  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
-  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false)
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(
-    null,
-  );
-  const [newTitle, setNewTitle] = useState("");
-  const [targetGroupId, setTargetGroupId] = useState<string>("");
+    null
+  )
+  const [newTitle, setNewTitle] = useState('')
+  const [targetGroupId, setTargetGroupId] = useState<string>('')
 
   // Auto-select the first group when groups load
   const effectiveGroupId = useMemo(() => {
     if (selectedGroupId && groups?.some((g) => g._id === selectedGroupId)) {
-      return selectedGroupId;
+      return selectedGroupId
     }
-    return groups?.[0]?._id ?? "";
-  }, [selectedGroupId, groups]);
+    return groups?.[0]?._id ?? ''
+  }, [selectedGroupId, groups])
 
   // Fetch bookmarks from Convex (skip query while no group selected)
   const convexBookmarks = useQuery(
     api.bookmarks.listBookMarks,
-    effectiveGroupId ? { groupId: effectiveGroupId as Id<"groups"> } : "skip",
-  );
+    effectiveGroupId ? { groupId: effectiveGroupId as Id<'groups'> } : 'skip'
+  )
 
-  const createBookmark = useMutation(api.bookmarks.createBookMark);
-  const deleteBookmark = useMutation(api.bookmarks.deleteBookMark);
-  const renameBookmark = useMutation(api.bookmarks.renameBookMark);
-  const moveBookmark = useMutation(api.bookmarks.moveBookMark);
+  const createBookmark = useMutation(api.bookmarks.createBookMark)
+  const deleteBookmark = useMutation(api.bookmarks.deleteBookMark)
+  const renameBookmark = useMutation(api.bookmarks.renameBookMark)
+  const moveBookmark = useMutation(api.bookmarks.moveBookMark)
 
   const handleSubmit = useCallback(
     async (value: string) => {
-      const domain = extractDomain(value);
-      const isUrl = domain.includes(".");
+      const domain = extractDomain(value)
+      const isUrl = domain.includes('.')
       const title = isUrl
-        ? domain.split(".")[0].charAt(0).toUpperCase() +
-          domain.split(".")[0].slice(1)
-        : value;
+        ? domain.split('.')[0].charAt(0).toUpperCase() +
+          domain.split('.')[0].slice(1)
+        : value
 
       const url = isUrl
-        ? value.startsWith("http")
+        ? value.startsWith('http')
           ? value
           : `https://${value}`
-        : "#";
+        : '#'
 
-      if (!effectiveGroupId) return;
+      if (!effectiveGroupId) return
 
       await createBookmark({
         title,
         url,
-        groupId: effectiveGroupId as Id<"groups">,
+        groupId: effectiveGroupId as Id<'groups'>,
         imageUrl: isUrl
           ? `https://www.google.com/s2/favicons?domain=${domain}&sz=256`
-          : "",
-      });
-      setSearch("");
+          : '',
+      })
+      setSearch('')
     },
-    [effectiveGroupId, createBookmark],
-  );
+    [effectiveGroupId, createBookmark]
+  )
 
   const allBookmarks = useMemo(() => {
-    if (!convexBookmarks) return [];
-    return convexBookmarks.map((b: Doc<"bookmarks">) => ({
+    if (!convexBookmarks) return []
+    return convexBookmarks.map((b: Doc<'bookmarks'>) => ({
       id: b._id,
       title: b.title,
       domain: extractDomain(b.url),
       url: b.url,
       favicon: b.imageUrl || null,
       fallbackColor: COLORS[b.title.charCodeAt(0) % COLORS.length],
-      createdAt: new Date(b.createdAt).toISOString().split("T")[0],
+      createdAt: new Date(b.createdAt).toISOString().split('T')[0],
       groupId: b.groupId,
-    }));
-  }, [convexBookmarks]);
+    }))
+  }, [convexBookmarks])
 
   const filteredBookmarks: Bookmark[] = useMemo(() => {
-    if (!search.trim()) return allBookmarks;
-    const q = search.toLowerCase();
+    if (!search.trim()) return allBookmarks
+    const q = search.toLowerCase()
     return allBookmarks.filter(
       (b) =>
-        b.title.toLowerCase().includes(q) || b.domain.toLowerCase().includes(q),
-    );
-  }, [allBookmarks, search]);
+        b.title.toLowerCase().includes(q) || b.domain.toLowerCase().includes(q)
+    )
+  }, [allBookmarks, search])
 
   // Context menu handlers
   const handleCopy = useCallback((bookmark: Bookmark) => {
-    navigator.clipboard.writeText(bookmark.url);
-  }, []);
+    navigator.clipboard.writeText(bookmark.url)
+  }, [])
 
   const handleRename = useCallback((bookmark: Bookmark) => {
-    setSelectedBookmark(bookmark);
-    setNewTitle(bookmark.title);
-    setRenameDialogOpen(true);
-  }, []);
+    setSelectedBookmark(bookmark)
+    setNewTitle(bookmark.title)
+    setRenameDialogOpen(true)
+  }, [])
 
   const handleMove = useCallback((bookmark: Bookmark) => {
-    setSelectedBookmark(bookmark);
-    setTargetGroupId(bookmark.groupId);
-    setMoveDialogOpen(true);
-  }, []);
+    setSelectedBookmark(bookmark)
+    setTargetGroupId(bookmark.groupId)
+    setMoveDialogOpen(true)
+  }, [])
 
   const handleDelete = useCallback((bookmark: Bookmark) => {
-    setSelectedBookmark(bookmark);
-    setDeleteDialogOpen(true);
-  }, []);
+    setSelectedBookmark(bookmark)
+    setDeleteDialogOpen(true)
+  }, [])
 
   const handleRenameConfirm = useCallback(async () => {
-    if (!selectedBookmark || !newTitle.trim()) return;
+    if (!selectedBookmark || !newTitle.trim()) return
     await renameBookmark({
-      bookmarkId: selectedBookmark.id as Id<"bookmarks">,
+      bookmarkId: selectedBookmark.id as Id<'bookmarks'>,
       title: newTitle.trim(),
-    });
-    setRenameDialogOpen(false);
-    setSelectedBookmark(null);
-    setNewTitle("");
-  }, [selectedBookmark, newTitle, renameBookmark]);
+    })
+    setRenameDialogOpen(false)
+    setSelectedBookmark(null)
+    setNewTitle('')
+  }, [selectedBookmark, newTitle, renameBookmark])
 
   const handleMoveConfirm = useCallback(async () => {
-    if (!selectedBookmark || !targetGroupId) return;
+    if (!selectedBookmark || !targetGroupId) return
     await moveBookmark({
-      bookmarkId: selectedBookmark.id as Id<"bookmarks">,
-      groupId: targetGroupId as Id<"groups">,
-    });
-    setMoveDialogOpen(false);
-    setSelectedBookmark(null);
-    setTargetGroupId("");
-  }, [selectedBookmark, targetGroupId, moveBookmark]);
+      bookmarkId: selectedBookmark.id as Id<'bookmarks'>,
+      groupId: targetGroupId as Id<'groups'>,
+    })
+    setMoveDialogOpen(false)
+    setSelectedBookmark(null)
+    setTargetGroupId('')
+  }, [selectedBookmark, targetGroupId, moveBookmark])
 
   const handleDeleteConfirm = useCallback(async () => {
-    if (!selectedBookmark) return;
+    if (!selectedBookmark) return
     await deleteBookmark({
-      bookmarkId: selectedBookmark.id as Id<"bookmarks">,
-    });
-    setDeleteDialogOpen(false);
-    setSelectedBookmark(null);
-  }, [selectedBookmark, deleteBookmark]);
+      bookmarkId: selectedBookmark.id as Id<'bookmarks'>,
+    })
+    setDeleteDialogOpen(false)
+    setSelectedBookmark(null)
+  }, [selectedBookmark, deleteBookmark])
 
   // Loading state while session or groups are being fetched
   if (isSessionLoading || groups === undefined) {
@@ -206,7 +205,7 @@ export default function DashboardPage() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="size-6 text-muted-foreground animate-spin" />
       </div>
-    );
+    )
   }
 
   // Not logged in
@@ -225,7 +224,7 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -285,8 +284,8 @@ export default function DashboardPage() {
 
         <div className="mt-3 sm:mt-4 px-1 text-xs text-muted-foreground">
           {filteredBookmarks.length} bookmark
-          {filteredBookmarks.length !== 1 ? "s" : ""}
-          {search && " found"}
+          {filteredBookmarks.length !== 1 ? 's' : ''}
+          {search && ' found'}
         </div>
       </main>
 
@@ -301,7 +300,7 @@ export default function DashboardPage() {
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               placeholder="Bookmark title"
-              onKeyDown={(e) => e.key === "Enter" && handleRenameConfirm()}
+              onKeyDown={(e) => e.key === 'Enter' && handleRenameConfirm()}
             />
           </div>
           <DialogFooter>
@@ -329,8 +328,8 @@ export default function DashboardPage() {
                 onClick={() => setTargetGroupId(group._id)}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
                   targetGroupId === group._id
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:bg-muted"
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border hover:bg-muted'
                 }`}
               >
                 <div
@@ -376,5 +375,5 @@ export default function DashboardPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
 }

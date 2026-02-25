@@ -1,62 +1,62 @@
-"use client";
+'use client'
 
-import { useReducer } from "react";
+import { useReducer } from 'react'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { GoogleLogoIcon } from "@phosphor-icons/react";
-import { authClient } from "@/lib/auth-client";
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { GoogleLogoIcon } from '@phosphor-icons/react'
+import { authClient } from '@/lib/auth-client'
 
 interface LoginDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSignupClick: () => void;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSignupClick: () => void
 }
 
 interface LoginState {
-  email: string;
-  password: string;
-  loading: boolean;
-  googleLoading: boolean;
-  error: string;
+  email: string
+  password: string
+  loading: boolean
+  googleLoading: boolean
+  error: string
 }
 
 type LoginAction =
-  | { type: "SET_FIELD"; field: "email" | "password"; value: string }
-  | { type: "SET_LOADING"; value: boolean }
-  | { type: "SET_GOOGLE_LOADING"; value: boolean }
-  | { type: "SET_ERROR"; value: string }
-  | { type: "CLEAR_ERROR" };
+  | { type: 'SET_FIELD'; field: 'email' | 'password'; value: string }
+  | { type: 'SET_LOADING'; value: boolean }
+  | { type: 'SET_GOOGLE_LOADING'; value: boolean }
+  | { type: 'SET_ERROR'; value: string }
+  | { type: 'CLEAR_ERROR' }
 
 const initialLoginState: LoginState = {
-  email: "",
-  password: "",
+  email: '',
+  password: '',
   loading: false,
   googleLoading: false,
-  error: "",
-};
+  error: '',
+}
 
 function loginReducer(state: LoginState, action: LoginAction): LoginState {
   switch (action.type) {
-    case "SET_FIELD":
-      return { ...state, [action.field]: action.value };
-    case "SET_LOADING":
-      return { ...state, loading: action.value };
-    case "SET_GOOGLE_LOADING":
-      return { ...state, googleLoading: action.value };
-    case "SET_ERROR":
-      return { ...state, error: action.value };
-    case "CLEAR_ERROR":
-      return { ...state, error: "" };
+    case 'SET_FIELD':
+      return { ...state, [action.field]: action.value }
+    case 'SET_LOADING':
+      return { ...state, loading: action.value }
+    case 'SET_GOOGLE_LOADING':
+      return { ...state, googleLoading: action.value }
+    case 'SET_ERROR':
+      return { ...state, error: action.value }
+    case 'CLEAR_ERROR':
+      return { ...state, error: '' }
     default:
-      return state;
+      return state
   }
 }
 
@@ -65,48 +65,57 @@ export function LoginDialog({
   onOpenChange,
   onSignupClick,
 }: LoginDialogProps) {
-  const [state, dispatch] = useReducer(loginReducer, initialLoginState);
+  const [state, dispatch] = useReducer(loginReducer, initialLoginState)
 
   const handleSignupClick = () => {
-    onOpenChange(false);
-    onSignupClick();
-  };
+    onOpenChange(false)
+    onSignupClick()
+  }
 
   const handleGoogleSignIn = async () => {
-    dispatch({ type: "SET_GOOGLE_LOADING", value: true });
-    dispatch({ type: "CLEAR_ERROR" });
+    dispatch({ type: 'SET_GOOGLE_LOADING', value: true })
+    dispatch({ type: 'CLEAR_ERROR' })
     try {
       await authClient.signIn.social({
-        provider: "google",
-        callbackURL: "/dashboard",
-      });
+        provider: 'google',
+        callbackURL: '/dashboard',
+      })
     } catch {
-      dispatch({ type: "SET_ERROR", value: "Failed to sign in with Google. Please try again." });
-      dispatch({ type: "SET_GOOGLE_LOADING", value: false });
+      dispatch({
+        type: 'SET_ERROR',
+        value: 'Failed to sign in with Google. Please try again.',
+      })
+      dispatch({ type: 'SET_GOOGLE_LOADING', value: false })
     }
-  };
+  }
 
   const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    dispatch({ type: "SET_LOADING", value: true });
-    dispatch({ type: "CLEAR_ERROR" });
+    e.preventDefault()
+    dispatch({ type: 'SET_LOADING', value: true })
+    dispatch({ type: 'CLEAR_ERROR' })
     try {
       const result = await authClient.signIn.email({
         email: state.email,
         password: state.password,
-      });
+      })
       if (result.error) {
-        dispatch({ type: "SET_ERROR", value: result.error.message || "Invalid email or password." });
+        dispatch({
+          type: 'SET_ERROR',
+          value: result.error.message || 'Invalid email or password.',
+        })
       } else {
-        onOpenChange(false);
-        window.location.href = "/dashboard";
+        onOpenChange(false)
+        window.location.href = '/dashboard'
       }
     } catch {
-      dispatch({ type: "SET_ERROR", value: "Failed to sign in. Please try again." });
+      dispatch({
+        type: 'SET_ERROR',
+        value: 'Failed to sign in. Please try again.',
+      })
     } finally {
-      dispatch({ type: "SET_LOADING", value: false });
+      dispatch({ type: 'SET_LOADING', value: false })
     }
-  };
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -149,7 +158,13 @@ export function LoginDialog({
                 placeholder="hello@example.com"
                 autoComplete="email"
                 value={state.email}
-                onChange={(e) => dispatch({ type: "SET_FIELD", field: "email", value: e.target.value })}
+                onChange={(e) =>
+                  dispatch({
+                    type: 'SET_FIELD',
+                    field: 'email',
+                    value: e.target.value,
+                  })
+                }
                 required
               />
             </div>
@@ -169,16 +184,22 @@ export function LoginDialog({
                 placeholder="••••••••"
                 autoComplete="current-password"
                 value={state.password}
-                onChange={(e) => dispatch({ type: "SET_FIELD", field: "password", value: e.target.value })}
+                onChange={(e) =>
+                  dispatch({
+                    type: 'SET_FIELD',
+                    field: 'password',
+                    value: e.target.value,
+                  })
+                }
                 required
               />
             </div>
             <Button type="submit" className="w-full" disabled={state.loading}>
-              {state.loading ? "Signing in…" : "Login"}
+              {state.loading ? 'Signing in…' : 'Login'}
             </Button>
           </form>
           <p className="text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
+            Don&apos;t have an account?{' '}
             <button
               type="button"
               onClick={handleSignupClick}
@@ -190,5 +211,5 @@ export function LoginDialog({
         </div>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

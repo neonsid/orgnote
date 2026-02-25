@@ -1,6 +1,6 @@
 - [x] Complete dashboard
 - [x] Prevent user from going to landing page
-- [x] Add _id as delete
+- [x] Add \_id as delete
 - [x] Fix landing page type errors
 - [] Implement add bookmark functionality
 - [] Deploy it on vercel

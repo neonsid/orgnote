@@ -1,21 +1,21 @@
-"use client";
+'use client'
 
-import { Fish, Sparkles, BrainCog } from "lucide-react";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import { DashboardDemo } from "@/components/landing/dashboard-demo";
-import { FeaturesSection } from "@/components/features-section";
-import { authClient } from "@/lib/auth-client";
+import { Fish, Sparkles, BrainCog } from 'lucide-react'
+import { Header } from '@/components/header'
+import { Footer } from '@/components/footer'
+import { DashboardDemo } from '@/components/landing/dashboard-demo'
+import { FeaturesSection } from '@/components/features-section'
+import { authClient } from '@/lib/auth-client'
 
 export default function Home() {
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending } = authClient.useSession()
 
   if (isPending || session?.user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="size-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
       </div>
-    );
+    )
   }
 
   return (
@@ -67,5 +67,5 @@ export default function Home() {
       </main>
       <Footer />
     </div>
-  );
+  )
 }
