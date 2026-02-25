@@ -1,9 +1,9 @@
-"use client";
+'use client'
 
-import { useState, useCallback } from "react";
-import { Loader2, Check } from "lucide-react";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useState, useCallback } from 'react'
+import { Loader2, Check } from 'lucide-react'
+import { useMutation } from 'convex/react'
+import { api } from '@/convex/_generated/api'
 import {
   Dialog,
   DialogContent,
@@ -11,31 +11,31 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 const GROUP_COLORS = [
-  { value: "#f59e0b", label: "Amber" },
-  { value: "#3b82f6", label: "Blue" },
-  { value: "#10b981", label: "Emerald" },
-  { value: "#ef4444", label: "Red" },
-  { value: "#8b5cf6", label: "Violet" },
-  { value: "#ec4899", label: "Pink" },
-  { value: "#06b6d4", label: "Cyan" },
-  { value: "#f97316", label: "Orange" },
-  { value: "#84cc16", label: "Lime" },
-  { value: "#6366f1", label: "Indigo" },
-  { value: "#14b8a6", label: "Teal" },
-  { value: "#a855f7", label: "Purple" },
-];
+  { value: '#f59e0b', label: 'Amber' },
+  { value: '#3b82f6', label: 'Blue' },
+  { value: '#10b981', label: 'Emerald' },
+  { value: '#ef4444', label: 'Red' },
+  { value: '#8b5cf6', label: 'Violet' },
+  { value: '#ec4899', label: 'Pink' },
+  { value: '#06b6d4', label: 'Cyan' },
+  { value: '#f97316', label: 'Orange' },
+  { value: '#84cc16', label: 'Lime' },
+  { value: '#6366f1', label: 'Indigo' },
+  { value: '#14b8a6', label: 'Teal' },
+  { value: '#a855f7', label: 'Purple' },
+]
 
 interface CreateGroupDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  userId: string;
-  onCreated?: (groupId: string) => void;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  userId: string
+  onCreated?: (groupId: string) => void
 }
 
 export function CreateGroupDialog({
@@ -44,31 +44,31 @@ export function CreateGroupDialog({
   userId,
   onCreated,
 }: CreateGroupDialogProps) {
-  const [name, setName] = useState("");
-  const [selectedColor, setSelectedColor] = useState(GROUP_COLORS[0].value);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [name, setName] = useState('')
+  const [selectedColor, setSelectedColor] = useState(GROUP_COLORS[0].value)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const createGroup = useMutation(api.groups.create);
+  const createGroup = useMutation(api.groups.create)
 
   const handleCreate = useCallback(async () => {
-    const trimmed = name.trim();
-    if (!trimmed || isSubmitting) return;
+    const trimmed = name.trim()
+    if (!trimmed || isSubmitting) return
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
       const newGroupId = await createGroup({
         title: trimmed,
         color: selectedColor,
         userId,
-      });
-      setName("");
-      setSelectedColor(GROUP_COLORS[0].value);
-      onOpenChange(false);
-      onCreated?.(newGroupId);
+      })
+      setName('')
+      setSelectedColor(GROUP_COLORS[0].value)
+      onOpenChange(false)
+      onCreated?.(newGroupId)
     } catch (err) {
-      console.error("Failed to create group:", err);
+      console.error('Failed to create group:', err)
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
   }, [
     name,
@@ -78,17 +78,17 @@ export function CreateGroupDialog({
     userId,
     onOpenChange,
     onCreated,
-  ]);
+  ])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        handleCreate();
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        handleCreate()
       }
     },
-    [handleCreate],
-  );
+    [handleCreate]
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -162,11 +162,11 @@ export function CreateGroupDialog({
                 Creating…
               </>
             ) : (
-              "Create"
+              'Create'
             )}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

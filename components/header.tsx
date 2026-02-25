@@ -1,18 +1,18 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import Image from "next/image";
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
-import { Button } from "@/components/ui/button";
-import { LoginDialog } from "@/components/login-dialog";
-import { SignupDialog } from "@/components/signup-dialog";
-import { Menu, X } from "lucide-react";
-import Link from "next/link";
+import { useState } from 'react'
+import Image from 'next/image'
+import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
+import { Button } from '@/components/ui/button'
+import { LoginDialog } from '@/components/login-dialog'
+import { SignupDialog } from '@/components/signup-dialog'
+import { Menu, X } from 'lucide-react'
+import Link from 'next/link'
 
 export function Header() {
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [signupOpen, setSignupOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false)
+  const [signupOpen, setSignupOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
     <>
@@ -59,7 +59,7 @@ export function Header() {
             type="button"
             onClick={() => setMobileMenuOpen((v) => !v)}
             className="md:hidden flex items-center justify-center rounded-md p-2 text-foreground hover:bg-accent transition-colors"
-            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
           >
             {mobileMenuOpen ? (
               <X className="size-5" />
@@ -86,8 +86,8 @@ export function Header() {
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  setLoginOpen(true);
-                  setMobileMenuOpen(false);
+                  setLoginOpen(true)
+                  setMobileMenuOpen(false)
                 }}
                 className="justify-start font-medium text-sm h-10"
               >
@@ -96,8 +96,8 @@ export function Header() {
               <Button
                 size="sm"
                 onClick={() => {
-                  setSignupOpen(true);
-                  setMobileMenuOpen(false);
+                  setSignupOpen(true)
+                  setMobileMenuOpen(false)
                 }}
                 className="font-medium text-sm h-10"
               >
@@ -119,7 +119,5 @@ export function Header() {
         onLoginClick={() => setLoginOpen(true)}
       />
     </>
-  );
+  )
 }
-
-

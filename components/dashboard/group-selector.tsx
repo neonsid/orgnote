@@ -1,38 +1,38 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { Check, Plus, ChevronsUpDownIcon, Trash2Icon } from "lucide-react";
-import { Popover as PopoverPrimitive } from "radix-ui";
-import { Id } from "@/convex/_generated/dataModel";
-import { CreateGroupDialog } from "@/components/dashboard/create-group-dialog";
-import { DeleteGroupDialog } from "@/components/dashboard/delete-group-dialog";
+import { useState } from 'react'
+import { Check, Plus, ChevronsUpDownIcon, Trash2Icon } from 'lucide-react'
+import { Popover as PopoverPrimitive } from 'radix-ui'
+import { Id } from '@/convex/_generated/dataModel'
+import { CreateGroupDialog } from '@/components/dashboard/create-group-dialog'
+import { DeleteGroupDialog } from '@/components/dashboard/delete-group-dialog'
 
 /**
  * Convex group shape (from the database).
  */
 export interface ConvexGroup {
-  _id: Id<"groups">;
-  title: string;
-  color: string;
-  _creationTime: number;
+  _id: Id<'groups'>
+  title: string
+  color: string
+  _creationTime: number
 }
 
 const FALLBACK_COLORS = [
-  "#f59e0b",
-  "#3b82f6",
-  "#10b981",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-  "#06b6d4",
-  "#f97316",
-];
+  '#f59e0b',
+  '#3b82f6',
+  '#10b981',
+  '#ef4444',
+  '#8b5cf6',
+  '#ec4899',
+  '#06b6d4',
+  '#f97316',
+]
 
 interface GroupSelectorProps {
-  groups: ConvexGroup[];
-  selectedGroupId: string;
-  onSelect: (groupId: string) => void;
-  userId: string;
+  groups: ConvexGroup[]
+  selectedGroupId: string
+  onSelect: (groupId: string) => void
+  userId: string
 }
 
 export function GroupSelector({
@@ -41,11 +41,11 @@ export function GroupSelector({
   onSelect,
   userId,
 }: GroupSelectorProps) {
-  const [open, setOpen] = useState(false);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [open, setOpen] = useState(false)
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
-  const selectedGroup = groups.find((g) => g._id === selectedGroupId);
+  const selectedGroup = groups.find((g) => g._id === selectedGroupId)
 
   return (
     <>
@@ -61,9 +61,9 @@ export function GroupSelector({
                 backgroundColor: selectedGroup?.color ?? FALLBACK_COLORS[0],
               }}
             />
-            {selectedGroup?.title ?? "Select Group"}
+            {selectedGroup?.title ?? 'Select Group'}
             <ChevronsUpDownIcon
-              className={`size-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+              className={`size-4 text-muted-foreground transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
             />
           </button>
         </PopoverPrimitive.Trigger>
@@ -80,8 +80,8 @@ export function GroupSelector({
                   key={group._id}
                   id={`group-option-${group._id}`}
                   onClick={() => {
-                    onSelect(group._id);
-                    setOpen(false);
+                    onSelect(group._id)
+                    setOpen(false)
                   }}
                   className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                 >
@@ -107,8 +107,8 @@ export function GroupSelector({
               <button
                 id="create-group-button"
                 onClick={() => {
-                  setOpen(false);
-                  setCreateDialogOpen(true);
+                  setOpen(false)
+                  setCreateDialogOpen(true)
                 }}
                 className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground transition-colors"
               >
@@ -118,9 +118,9 @@ export function GroupSelector({
               <button
                 id="delete-group-button"
                 onClick={() => {
-                  setOpen(false);
+                  setOpen(false)
                   if (selectedGroup) {
-                    setDeleteDialogOpen(true);
+                    setDeleteDialogOpen(true)
                   }
                 }}
                 className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground transition-colors"
@@ -154,12 +154,12 @@ export function GroupSelector({
           groupColor={selectedGroup.color || FALLBACK_COLORS[0]}
           onDeleted={(deletedId) => {
             if (deletedId === selectedGroupId && groups.length > 1) {
-              const nextGroup = groups.find((g) => g._id !== deletedId);
-              if (nextGroup) onSelect(nextGroup._id);
+              const nextGroup = groups.find((g) => g._id !== deletedId)
+              if (nextGroup) onSelect(nextGroup._id)
             }
           }}
         />
       )}
     </>
-  );
+  )
 }

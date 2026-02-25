@@ -1,98 +1,96 @@
-"use client";
+'use client'
 
-import { useState, useMemo, useCallback } from "react";
-import { Fish } from "lucide-react";
-import { LandingGroupSelector } from "@/components/landing/landing-group-selector";
-import { BookmarkSearch } from "@/components/dashboard/bookmark-search";
-import { BookmarkList } from "@/components/dashboard/bookmark-list";
+import { useState, useMemo, useCallback } from 'react'
+import { Fish } from 'lucide-react'
+import { LandingGroupSelector } from '@/components/landing/landing-group-selector'
+import { BookmarkSearch } from '@/components/dashboard/bookmark-search'
+import { BookmarkList } from '@/components/dashboard/bookmark-list'
 import {
   groups as initialGroups,
   bookmarks as initialBookmarks,
   type Bookmark,
   type Group,
-} from "@/lib/dummy-data";
+} from '@/lib/dummy-data'
 
 const COLORS = [
-  "#3b82f6",
-  "#ef4444",
-  "#10b981",
-  "#f59e0b",
-  "#8b5cf6",
-  "#ec4899",
-  "#06b6d4",
-  "#f97316",
-];
+  '#3b82f6',
+  '#ef4444',
+  '#10b981',
+  '#f59e0b',
+  '#8b5cf6',
+  '#ec4899',
+  '#06b6d4',
+  '#f97316',
+]
 
 function extractDomain(input: string): string {
   try {
-    const url = new URL(input.startsWith("http") ? input : `https://${input}`);
-    return url.hostname.replace("www.", "");
+    const url = new URL(input.startsWith('http') ? input : `https://${input}`)
+    return url.hostname.replace('www.', '')
   } catch {
-    return "";
+    return ''
   }
 }
 
 export function DashboardDemo() {
-  const [selectedGroupId, setSelectedGroupId] = useState("personal");
-  const [search, setSearch] = useState("");
-  const [tempBookmarks, setTempBookmarks] = useState<Bookmark[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState('personal')
+  const [search, setSearch] = useState('')
+  const [tempBookmarks, setTempBookmarks] = useState<Bookmark[]>([])
   // Ephemeral groups: starts with dummy-data groups, user can add more (lost on refresh)
-  const [allGroups, setAllGroups] = useState<Group[]>(initialGroups);
+  const [allGroups, setAllGroups] = useState<Group[]>(initialGroups)
 
   const handleCreateGroup = useCallback((newGroup: Group) => {
-    setAllGroups((prev) => [...prev, newGroup]);
-  }, []);
+    setAllGroups((prev) => [...prev, newGroup])
+  }, [])
 
   const handleSubmit = useCallback(
     (value: string) => {
-      const domain = extractDomain(value);
-      const isUrl = domain.includes(".");
+      const domain = extractDomain(value)
+      const isUrl = domain.includes('.')
       const title = isUrl
-        ? domain.split(".")[0].charAt(0).toUpperCase() +
-          domain.split(".")[0].slice(1)
-        : value;
+        ? domain.split('.')[0].charAt(0).toUpperCase() +
+          domain.split('.')[0].slice(1)
+        : value
 
       const newBookmark: Bookmark = {
         id: `temp-${Date.now()}`,
         title,
-        domain: isUrl ? domain : "",
+        domain: isUrl ? domain : '',
         url: isUrl
-          ? value.startsWith("http")
+          ? value.startsWith('http')
             ? value
             : `https://${value}`
-          : "#",
+          : '#',
         favicon: isUrl
           ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
           : null,
         fallbackColor: COLORS[Math.floor(Math.random() * COLORS.length)],
-        createdAt: new Date().toISOString().split("T")[0],
+        createdAt: new Date().toISOString().split('T')[0],
         groupId: selectedGroupId,
-      };
+      }
 
-      setTempBookmarks((prev) => [newBookmark, ...prev]);
-      setSearch("");
+      setTempBookmarks((prev) => [newBookmark, ...prev])
+      setSearch('')
     },
-    [selectedGroupId],
-  );
+    [selectedGroupId]
+  )
 
   const allBookmarks = useMemo(() => {
-    const groupTemp = tempBookmarks.filter(
-      (b) => b.groupId === selectedGroupId,
-    );
+    const groupTemp = tempBookmarks.filter((b) => b.groupId === selectedGroupId)
     const groupInitial = initialBookmarks.filter(
-      (b) => b.groupId === selectedGroupId,
-    );
-    return [...groupTemp, ...groupInitial];
-  }, [selectedGroupId, tempBookmarks]);
+      (b) => b.groupId === selectedGroupId
+    )
+    return [...groupTemp, ...groupInitial]
+  }, [selectedGroupId, tempBookmarks])
 
   const filteredBookmarks = useMemo(() => {
-    if (!search.trim()) return allBookmarks;
-    const q = search.toLowerCase();
+    if (!search.trim()) return allBookmarks
+    const q = search.toLowerCase()
     return allBookmarks.filter(
       (b) =>
-        b.title.toLowerCase().includes(q) || b.domain.toLowerCase().includes(q),
-    );
-  }, [allBookmarks, search]);
+        b.title.toLowerCase().includes(q) || b.domain.toLowerCase().includes(q)
+    )
+  }, [allBookmarks, search])
 
   return (
     <div className="w-full max-w-2xl mx-auto rounded-2xl border border-border bg-card shadow-xl overflow-hidden">
@@ -135,5 +133,5 @@ export function DashboardDemo() {
 
       {/* Footer count */}
     </div>
-  );
+  )
 }

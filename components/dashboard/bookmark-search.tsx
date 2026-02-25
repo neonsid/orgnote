@@ -1,11 +1,11 @@
-"use client";
+'use client'
 
-import { Plus, Command } from "lucide-react";
+import { Plus, Command } from 'lucide-react'
 
 interface BookmarkSearchProps {
-  value: string;
-  onChange: (value: string) => void;
-  onSubmit: (value: string) => void;
+  value: string
+  onChange: (value: string) => void
+  onSubmit: (value: string) => void
 }
 
 export function BookmarkSearch({
@@ -22,8 +22,8 @@ export function BookmarkSearch({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter" && value.trim()) {
-            onSubmit(value.trim());
+          if (e.key === 'Enter' && value.trim()) {
+            onSubmit(value.trim())
           }
         }}
         placeholder="Insert a link, color, or just plain text..."
@@ -38,5 +38,5 @@ export function BookmarkSearch({
         </kbd>
       </div>
     </div>
-  );
+  )
 }

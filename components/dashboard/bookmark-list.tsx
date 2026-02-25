@@ -1,7 +1,7 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import Image from "next/image";
+import { useState } from 'react'
+import Image from 'next/image'
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -9,43 +9,43 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuShortcut,
-} from "@/components/ui/context-menu";
-import { Copy, Pencil, Trash2, FolderInput } from "lucide-react";
+} from '@/components/ui/context-menu'
+import { Copy, Pencil, Trash2, FolderInput } from 'lucide-react'
 
 interface Bookmark {
-  id: string;
-  title: string;
-  domain: string;
-  url: string;
-  favicon: string | null;
-  fallbackColor: string;
-  createdAt: string;
-  groupId: string;
+  id: string
+  title: string
+  domain: string
+  url: string
+  favicon: string | null
+  fallbackColor: string
+  createdAt: string
+  groupId: string
 }
 
 interface BookmarkListProps {
-  bookmarks: Bookmark[];
-  onCopy: (bookmark: Bookmark) => void;
-  onRename: (bookmark: Bookmark) => void;
-  onDelete: (bookmark: Bookmark) => void;
-  onMove: (bookmark: Bookmark) => void;
+  bookmarks: Bookmark[]
+  onCopy: (bookmark: Bookmark) => void
+  onRename: (bookmark: Bookmark) => void
+  onDelete: (bookmark: Bookmark) => void
+  onMove: (bookmark: Bookmark) => void
 }
 
 function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
 
-  if (days === 0) return "Today";
-  if (days === 1) return "Yesterday";
-  if (days < 7) return `${days} days ago`;
-  if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (days === 0) return 'Today'
+  if (days === 1) return 'Yesterday'
+  if (days < 7) return `${days} days ago`
+  if (days < 30) return `${Math.floor(days / 7)} weeks ago`
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 function FaviconIcon({ bookmark }: { bookmark: Bookmark }) {
-  const [imgError, setImgError] = useState(false);
+  const [imgError, setImgError] = useState(false)
 
   if (bookmark.favicon && !imgError) {
     return (
@@ -60,7 +60,7 @@ function FaviconIcon({ bookmark }: { bookmark: Bookmark }) {
           unoptimized
         />
       </div>
-    );
+    )
   }
 
   return (
@@ -70,7 +70,7 @@ function FaviconIcon({ bookmark }: { bookmark: Bookmark }) {
     >
       {bookmark.title.charAt(0).toUpperCase()}
     </div>
-  );
+  )
 }
 
 export function BookmarkList({
@@ -88,7 +88,7 @@ export function BookmarkList({
           Try a different search or press Enter to add
         </p>
       </div>
-    );
+    )
   }
 
   return (
@@ -183,5 +183,5 @@ export function BookmarkList({
         ))}
       </div>
     </div>
-  );
+  )
 }

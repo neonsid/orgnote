@@ -1,17 +1,17 @@
-import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { v } from 'convex/values'
+import { mutation, query } from './_generated/server'
 
 export const list = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
     return await ctx.db
-      .query("groups")
-      .withIndex("by_user_provided_id", (q) =>
-        q.eq("userProvidedId", args.userId),
+      .query('groups')
+      .withIndex('by_user_provided_id', (q) =>
+        q.eq('userProvidedId', args.userId)
       )
-      .collect();
+      .collect()
   },
-});
+})
 
 export const create = mutation({
   args: {
@@ -20,41 +20,41 @@ export const create = mutation({
     userId: v.string(),
   },
   handler: async (ctx, args) => {
-    const currentTime = Date.now();
+    const currentTime = Date.now()
 
     if (!args.userId) {
-      throw new Error("UserId not found");
+      throw new Error('UserId not found')
     }
 
-    return await ctx.db.insert("groups", {
+    return await ctx.db.insert('groups', {
       title: args.title,
       color: args.color,
       userProvidedId: args.userId,
       createdAt: currentTime,
-    });
+    })
   },
-});
+})
 
 export const deleteGroup = mutation({
   args: {
-    groupId: v.id("groups"),
+    groupId: v.id('groups'),
     userId: v.string(),
   },
   handler: async (ctx, args) => {
-    const group = await ctx.db.get(args.groupId);
+    const group = await ctx.db.get(args.groupId)
 
     if (!group) {
-      throw new Error("Group not found");
+      throw new Error('Group not found')
     }
 
     // Verify ownership
     if (group.userProvidedId !== args.userId) {
-      throw new Error("Forbidden: You don't own this group");
+      throw new Error("Forbidden: You don't own this group")
     }
 
     // Safe to delete
-    await ctx.db.delete(args.groupId);
+    await ctx.db.delete(args.groupId)
 
-    return { success: true, deletedId: args.groupId };
+    return { success: true, deletedId: args.groupId }
   },
-});
+})
