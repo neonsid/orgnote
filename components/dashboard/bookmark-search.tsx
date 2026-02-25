@@ -1,31 +1,67 @@
 'use client'
 
+import { memo, useState, useRef, useCallback, useEffect } from 'react'
 import { Plus, Command } from 'lucide-react'
 
 interface BookmarkSearchProps {
-  value: string
-  onChange: (value: string) => void
+  /** Called with the debounced search query for filtering */
+  onSearch: (query: string) => void
+  /** Called when the user presses Enter to submit/create a bookmark */
   onSubmit: (value: string) => void
 }
 
-export function BookmarkSearch({
-  value,
-  onChange,
+const DEBOUNCE_MS = 300
+
+export const BookmarkSearch = memo(function BookmarkSearch({
+  onSearch,
   onSubmit,
 }: BookmarkSearchProps) {
+  const [localValue, setLocalValue] = useState('')
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [])
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value
+      setLocalValue(val)
+
+      // Debounce the filter callback
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      debounceRef.current = setTimeout(() => {
+        onSearch(val)
+      }, DEBOUNCE_MS)
+    },
+    [onSearch]
+  )
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter' && localValue.trim()) {
+        // Cancel any pending debounce
+        if (debounceRef.current) clearTimeout(debounceRef.current)
+        onSubmit(localValue.trim())
+        setLocalValue('')
+        onSearch('')
+      }
+    },
+    [localValue, onSubmit, onSearch]
+  )
+
   return (
     <div className="relative flex items-center w-full">
       <Plus className="absolute left-3 size-4 text-muted-foreground pointer-events-none" />
       <input
         id="bookmark-input"
         type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && value.trim()) {
-            onSubmit(value.trim())
-          }
-        }}
+        value={localValue}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
         placeholder="Insert a link, color, or just plain text..."
         className="w-full h-10 rounded-xl border border-border bg-background pl-9 pr-20 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
       />
@@ -39,4 +75,4 @@ export function BookmarkSearch({
       </div>
     </div>
   )
-}
+})

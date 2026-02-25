@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import { Check, Plus, ChevronsUpDownIcon, Trash2Icon } from 'lucide-react'
 import { Popover as PopoverPrimitive } from 'radix-ui'
 import { Id } from '@/convex/_generated/dataModel'
@@ -35,7 +35,7 @@ interface GroupSelectorProps {
   userId: string
 }
 
-export function GroupSelector({
+export const GroupSelector = memo(function GroupSelector({
   groups,
   selectedGroupId,
   onSelect,
@@ -53,7 +53,7 @@ export function GroupSelector({
         <PopoverPrimitive.Trigger asChild>
           <button
             id="group-selector-trigger"
-            className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-base font-semibold text-foreground hover:bg-muted transition-colors"
+            className="inline-flex items-center gap-1.5 sm:gap-2 rounded-lg px-2 sm:px-3 py-1.5 text-sm sm:text-base font-semibold text-foreground hover:bg-muted transition-colors min-w-0 max-w-[160px] sm:max-w-none"
           >
             <span
               className="size-2.5 rounded-full shrink-0"
@@ -61,9 +61,11 @@ export function GroupSelector({
                 backgroundColor: selectedGroup?.color ?? FALLBACK_COLORS[0],
               }}
             />
-            {selectedGroup?.title ?? 'Select Group'}
+            <span className="truncate">
+              {selectedGroup?.title ?? 'Select Group'}
+            </span>
             <ChevronsUpDownIcon
-              className={`size-4 text-muted-foreground transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+              className={`size-4 text-muted-foreground transition-transform duration-200 shrink-0 ${open ? 'rotate-180' : ''}`}
             />
           </button>
         </PopoverPrimitive.Trigger>
@@ -162,4 +164,4 @@ export function GroupSelector({
       )}
     </>
   )
-}
+})
