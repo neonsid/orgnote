@@ -1,9 +1,8 @@
-'use client'
+"use client";
 
-import { useState, memo, useRef } from 'react'
-import Image from 'next/image'
-import { motion, AnimatePresence, Variants } from 'motion/react'
-import { Shimmer } from '@/components/ai-elements/shimmer'
+import { useState, memo, useRef } from "react";
+import Image from "next/image";
+import { Shimmer } from "@/components/ai-elements/shimmer";
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -13,31 +12,36 @@ import {
   ContextMenuSub,
   ContextMenuSubTrigger,
   ContextMenuSubContent,
-} from '@/components/ui/context-menu'
-import { Copy, Pencil, Trash2, ChevronsRightIcon } from 'lucide-react'
-import { ConvexGroup, FALLBACK_COLORS } from './group-selector'
-import { Id } from '@/convex/_generated/dataModel'
-import { useIsSmallMobile } from '@/hooks/use-mobile'
+} from "@/components/ui/context-menu";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import { Copy, Pencil, Trash2, ChevronsRightIcon } from "lucide-react";
+import { ConvexGroup, FALLBACK_COLORS } from "./group-selector";
+import { Id } from "@/convex/_generated/dataModel";
+import { useIsSmallMobile } from "@/hooks/use-mobile";
 
 interface Bookmark {
-  id: Id<'bookmarks'>
-  title: string
-  domain: string
-  url: string
-  favicon: string | null
-  fallbackColor: string
-  createdAt: string
-  groupId: string
+  id: Id<"bookmarks">;
+  title: string;
+  domain: string;
+  url: string;
+  favicon: string | null;
+  fallbackColor: string;
+  createdAt: string;
+  groupId: string;
 }
 
 interface BookmarkListProps {
-  bookmarks: Bookmark[]
-  groups: ConvexGroup[]
-  loading: boolean
-  onCopy: (bookmark: Bookmark) => void
-  onRename: (bookmark: Bookmark) => void
-  onDelete: (bookmark: Bookmark) => void
-  onMove: (bookmarkId: Id<'bookmarks'>, newGroupId: Id<'groups'>) => void
+  bookmarks: Bookmark[];
+  groups: ConvexGroup[];
+  loading: boolean;
+  onCopy: (bookmark: Bookmark) => void;
+  onRename: (bookmark: Bookmark) => void;
+  onDelete: (bookmark: Bookmark) => void;
+  onMove: (bookmarkId: Id<"bookmarks">, newGroupId: Id<"groups">) => void;
 }
 
 /* =========================
@@ -45,10 +49,10 @@ interface BookmarkListProps {
 ========================= */
 
 const KEYBOARD_SHORTCUTS = {
-  copy: ['⌘', 'C'],
-  rename: ['⌘', 'E'],
-  delete: ['⌘', '⌫'],
-}
+  copy: ["⌘", "C"],
+  rename: ["⌘", "E"],
+  delete: ["⌘", "⌫"],
+};
 
 function KeyboardShortcut({ keys }: { keys: string[] }) {
   return (
@@ -62,24 +66,24 @@ function KeyboardShortcut({ keys }: { keys: string[] }) {
         </kbd>
       ))}
     </ContextMenuShortcut>
-  )
+  );
 }
 
 function formatDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-  if (days === 0) return 'Today'
-  if (days === 1) return 'Yesterday'
-  if (days < 7) return `${days} days ago`
-  if (days < 30) return `${Math.floor(days / 7)} weeks ago`
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  if (days === 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function FaviconIcon({ bookmark }: { bookmark: Bookmark }) {
-  const [imgError, setImgError] = useState(false)
+  const [imgError, setImgError] = useState(false);
 
   if (bookmark.favicon && !imgError) {
     return (
@@ -94,7 +98,7 @@ function FaviconIcon({ bookmark }: { bookmark: Bookmark }) {
           unoptimized
         />
       </div>
-    )
+    );
   }
 
   return (
@@ -104,7 +108,146 @@ function FaviconIcon({ bookmark }: { bookmark: Bookmark }) {
     >
       {bookmark.title.charAt(0).toUpperCase()}
     </div>
-  )
+  );
+}
+
+/* =========================
+   Menu Content Component
+========================= */
+
+interface MenuContentProps {
+  bookmark: Bookmark;
+  groups: ConvexGroup[];
+  isMobile: boolean;
+  onCopy: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+  onMove: (groupId: Id<"groups">) => void;
+  onClose?: () => void;
+}
+
+function MenuContent({
+  bookmark,
+  groups,
+  isMobile,
+  onCopy,
+  onRename,
+  onDelete,
+  onMove,
+  onClose,
+}: MenuContentProps) {
+  const handleAction = (action: () => void) => {
+    action();
+    onClose?.();
+  };
+
+  if (isMobile) {
+    return (
+      <div className="w-56 py-1">
+        <button
+          onClick={() => handleAction(onCopy)}
+          className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
+        >
+          <Copy className="size-4 mr-2" />
+          Copy
+        </button>
+
+        <button
+          onClick={() => handleAction(onRename)}
+          className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
+        >
+          <Pencil className="size-4 mr-2" />
+          Rename
+        </button>
+
+        <div className="relative group">
+          <button className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm">
+            <ChevronsRightIcon className="size-4 mr-2" />
+            Move to
+          </button>
+          <div className="absolute left-full top-0 ml-1 w-48 bg-popover border rounded-md shadow-lg py-1 hidden group-hover:block z-50">
+            {groups
+              .filter((g) => g._id !== bookmark.groupId)
+              .map((group, i) => (
+                <button
+                  key={group._id}
+                  onClick={() => handleAction(() => onMove(group._id))}
+                  className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
+                >
+                  <span
+                    className="size-2.5 rounded-full mr-2"
+                    style={{
+                      backgroundColor:
+                        group.color ||
+                        FALLBACK_COLORS[i % FALLBACK_COLORS.length],
+                    }}
+                  />
+                  {group.title}
+                </button>
+              ))}
+          </div>
+        </div>
+
+        <button
+          onClick={() => handleAction(onDelete)}
+          className="w-full flex items-center px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 rounded-sm"
+        >
+          <Trash2 className="size-4 mr-2" />
+          Delete
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <ContextMenuContent className="w-56">
+      <ContextMenuItem onClick={onCopy}>
+        <Copy className="size-4 mr-2" />
+        Copy
+        <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.copy} />
+      </ContextMenuItem>
+
+      <ContextMenuItem onClick={onRename}>
+        <Pencil className="size-4 mr-2" />
+        Rename
+        <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.rename} />
+      </ContextMenuItem>
+
+      <ContextMenuSub>
+        <ContextMenuSubTrigger>
+          <ChevronsRightIcon className="size-4 mr-2" />
+          Move to
+        </ContextMenuSubTrigger>
+
+        <ContextMenuSubContent className="w-48">
+          {groups
+            .filter((g) => g._id !== bookmark.groupId)
+            .map((group, i) => (
+              <ContextMenuItem
+                key={group._id}
+                onClick={() => onMove(group._id)}
+              >
+                <span
+                  className="size-2.5 rounded-full mr-2"
+                  style={{
+                    backgroundColor:
+                      group.color ||
+                      FALLBACK_COLORS[i % FALLBACK_COLORS.length],
+                  }}
+                />
+                {group.title}
+              </ContextMenuItem>
+            ))}
+        </ContextMenuSubContent>
+      </ContextMenuSub>
+
+      <ContextMenuItem variant="destructive" onClick={onDelete}>
+        <Trash2 className="size-4 mr-2" />
+        Delete
+        <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.delete} />
+      </ContextMenuItem>
+    </ContextMenuContent>
+  );
 }
 
 /* =========================
@@ -120,37 +263,31 @@ export const BookmarkList = memo(function BookmarkList({
   onMove,
   loading,
 }: BookmarkListProps) {
-  const isSmallMobile = useIsSmallMobile()
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null)
+  const isSmallMobile = useIsSmallMobile();
+  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
   const handleTouchStart = (e: React.TouchEvent, id: string) => {
-    if (!isSmallMobile) return
+    if (!isSmallMobile) return;
 
     longPressTimer.current = setTimeout(() => {
-      e.preventDefault()
-
-      const el = document.getElementById(`bookmark-${id}`)
-      el?.dispatchEvent(
-        new MouseEvent('contextmenu', {
-          bubbles: true,
-          cancelable: true,
-        })
-      )
-    }, 500)
-  }
+      e.preventDefault();
+      setOpenPopoverId(id);
+    }, 500);
+  };
 
   const handleTouchEnd = () => {
     if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current)
+      clearTimeout(longPressTimer.current);
     }
-  }
+  };
 
   if (loading && bookmarks.length === 0) {
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground">
         <Shimmer duration={2}>Loading Bookmarks...</Shimmer>
       </div>
-    )
+    );
   }
 
   if (!loading && bookmarks.length === 0) {
@@ -161,98 +298,99 @@ export const BookmarkList = memo(function BookmarkList({
           Try a different search or press Enter to add
         </p>
       </div>
-    )
+    );
   }
 
   return (
     <div className="w-full px-2 mb-8">
-      {bookmarks.map((bookmark) => (
-        <ContextMenu key={bookmark.id}>
-          <ContextMenuTrigger asChild>
-            <a
-              id={`bookmark-${bookmark.id}`}
-              href={bookmark.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onTouchStart={(e) => handleTouchStart(e, bookmark.id)}
-              onTouchEnd={handleTouchEnd}
-              onTouchMove={handleTouchEnd}
-              className="flex items-center gap-3 px-4 py-2 hover:bg-muted/50 rounded-lg transition-colors"
-            >
-              <FaviconIcon bookmark={bookmark} />
+      {bookmarks.map((bookmark) =>
+        isSmallMobile ? (
+          <Popover
+            key={bookmark.id}
+            open={openPopoverId === bookmark.id}
+            onOpenChange={(open) => setOpenPopoverId(open ? bookmark.id : null)}
+          >
+            <PopoverTrigger asChild>
+              <a
+                href={bookmark.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onTouchStart={(e) => handleTouchStart(e, bookmark.id)}
+                onTouchEnd={handleTouchEnd}
+                onTouchMove={handleTouchEnd}
+                onClick={(e) => {
+                  if (openPopoverId === bookmark.id) {
+                    e.preventDefault();
+                  }
+                }}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-muted/50 rounded-lg transition-colors"
+              >
+                <FaviconIcon bookmark={bookmark} />
 
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{bookmark.title}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {bookmark.domain}
-                </p>
-              </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {bookmark.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {bookmark.domain}
+                  </p>
+                </div>
 
-              <span className="text-xs text-muted-foreground">
-                {formatDate(bookmark.createdAt)}
-              </span>
-            </a>
-          </ContextMenuTrigger>
+                <span className="text-xs text-muted-foreground">
+                  {formatDate(bookmark.createdAt)}
+                </span>
+              </a>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start" sideOffset={4}>
+              <MenuContent
+                bookmark={bookmark}
+                groups={groups}
+                isMobile={true}
+                onCopy={() => onCopy(bookmark)}
+                onRename={() => onRename(bookmark)}
+                onDelete={() => onDelete(bookmark)}
+                onMove={(groupId) => onMove(bookmark.id, groupId)}
+                onClose={() => setOpenPopoverId(null)}
+              />
+            </PopoverContent>
+          </Popover>
+        ) : (
+          <ContextMenu key={bookmark.id}>
+            <ContextMenuTrigger asChild>
+              <a
+                href={bookmark.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-4 py-2 hover:bg-muted/50 rounded-lg transition-colors"
+              >
+                <FaviconIcon bookmark={bookmark} />
 
-          {/* 🔥 FIXED MOBILE CUTTING */}
-          <ContextMenuContent className="w-56 mx-auto mt-10">
-            <ContextMenuItem onClick={() => onCopy(bookmark)}>
-              <Copy className="size-4 mr-2" />
-              Copy
-              {!isSmallMobile && (
-                <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.copy} />
-              )}
-            </ContextMenuItem>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {bookmark.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {bookmark.domain}
+                  </p>
+                </div>
 
-            <ContextMenuItem onClick={() => onRename(bookmark)}>
-              <Pencil className="size-4 mr-2" />
-              Rename
-              {!isSmallMobile && (
-                <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.rename} />
-              )}
-            </ContextMenuItem>
-
-            <ContextMenuSub>
-              <ContextMenuSubTrigger>
-                <ChevronsRightIcon className="size-4 mr-2" />
-                Move to
-              </ContextMenuSubTrigger>
-
-              <ContextMenuSubContent className="w-48">
-                {groups
-                  .filter((g) => g._id !== bookmark.groupId)
-                  .map((group, i) => (
-                    <ContextMenuItem
-                      key={group._id}
-                      onClick={() => onMove(bookmark.id, group._id)}
-                    >
-                      <span
-                        className="size-2.5 rounded-full mr-2"
-                        style={{
-                          backgroundColor:
-                            group.color ||
-                            FALLBACK_COLORS[i % FALLBACK_COLORS.length],
-                        }}
-                      />
-                      {group.title}
-                    </ContextMenuItem>
-                  ))}
-              </ContextMenuSubContent>
-            </ContextMenuSub>
-
-            <ContextMenuItem
-              variant="destructive"
-              onClick={() => onDelete(bookmark)}
-            >
-              <Trash2 className="size-4 mr-2" />
-              Delete
-              {!isSmallMobile && (
-                <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.delete} />
-              )}
-            </ContextMenuItem>
-          </ContextMenuContent>
-        </ContextMenu>
-      ))}
+                <span className="text-xs text-muted-foreground">
+                  {formatDate(bookmark.createdAt)}
+                </span>
+              </a>
+            </ContextMenuTrigger>
+            <MenuContent
+              bookmark={bookmark}
+              groups={groups}
+              isMobile={false}
+              onCopy={() => onCopy(bookmark)}
+              onRename={() => onRename(bookmark)}
+              onDelete={() => onDelete(bookmark)}
+              onMove={(groupId) => onMove(bookmark.id, groupId)}
+            />
+          </ContextMenu>
+        ),
+      )}
     </div>
-  )
-})
+  );
+});
