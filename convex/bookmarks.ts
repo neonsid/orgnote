@@ -66,6 +66,20 @@ export const renameBookMark = mutation({
   },
 })
 
+export const markAsDone = mutation({
+  args: { bookmarkId: v.id('bookmarks') },
+  handler: async (ctx, args) => {
+    const bookmark = await ctx.db.get(args.bookmarkId)
+    if (!bookmark) {
+      throw new Error('Bookmark not found')
+    }
+    await ctx.db.patch(args.bookmarkId, {
+      doneReading: true,
+      updatedAt: Date.now(),
+    })
+    return { success: true }
+  },
+})
 export const moveBookMark = mutation({
   args: { bookmarkId: v.id('bookmarks'), groupId: v.id('groups') },
   handler: async (ctx, args) => {
