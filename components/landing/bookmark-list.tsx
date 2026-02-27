@@ -272,7 +272,7 @@ export const LandingBookmarkList = memo(function LandingBookmarkList({
                 href={bookmark.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 py-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
+                className="flex items-center gap-3 py-2 px-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
               >
                 <FaviconIcon bookmark={bookmark} />
 
@@ -306,7 +306,7 @@ export const LandingBookmarkList = memo(function LandingBookmarkList({
                     rel="noopener noreferrer"
                     onMouseEnter={() => (hoveredBookmarkRef.current = bookmark)}
                     onMouseLeave={() => (hoveredBookmarkRef.current = null)}
-                    className="flex items-center gap-3 py-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
+                    className="flex items-center gap-3 py-2 px-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
                   >
                     <FaviconIcon bookmark={bookmark} />
 

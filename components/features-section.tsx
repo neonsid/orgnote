@@ -1,5 +1,6 @@
 'use client'
 
+import { motion } from 'motion/react'
 import { cn } from '@/lib/utils'
 import {
   Bookmark,
@@ -55,13 +56,50 @@ const features = [
   },
 ]
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      duration: 0.5,
+      ease: [0.25, 0.1, 0.25, 1] as const,
+    },
+  },
+}
+
 export function FeaturesSection() {
   return (
     <section className="w-full max-w-2xl mx-auto">
-      <div className="space-y-6 sm:space-y-8">
+      <motion.div
+        className="space-y-4 sm:space-y-6"
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-50px' }}
+      >
         {features.map((feature) => (
-          <div key={feature.title} className="flex items-start gap-4 sm:gap-5">
-            <div className="shrink-0 mt-0.5">
+          <motion.div
+            key={feature.title}
+            variants={itemVariants}
+            className="flex items-start gap-4 sm:gap-5 py-3 px-3 -mx-3 rounded-lg transition-colors hover:bg-muted/30"
+          >
+            <motion.div
+              className="shrink-0 mt-0.5"
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+            >
               <feature.icon
                 className={cn(
                   'size-5 sm:size-6 text-foreground/70',
@@ -69,7 +107,7 @@ export function FeaturesSection() {
                 )}
                 strokeWidth={1.5}
               />
-            </div>
+            </motion.div>
             <div className="space-y-1">
               <h3 className="text-base sm:text-lg font-semibold text-foreground leading-tight">
                 {feature.title}
@@ -78,9 +116,9 @@ export function FeaturesSection() {
                 {feature.description}
               </p>
             </div>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </section>
   )
 }
