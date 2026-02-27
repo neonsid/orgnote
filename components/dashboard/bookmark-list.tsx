@@ -18,12 +18,20 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-import { Copy, Pencil, Trash2, ChevronsRightIcon } from "lucide-react";
+import {
+  Copy,
+  Pencil,
+  Trash2,
+  ChevronsRightIcon,
+  CheckCircle2,
+  Circle,
+  Check,
+} from "lucide-react";
 import { ConvexGroup, FALLBACK_COLORS } from "./group-selector";
 import { Id } from "@/convex/_generated/dataModel";
 import { useIsSmallMobile } from "@/hooks/use-mobile";
 
-interface Bookmark {
+export interface Bookmark {
   id: Id<"bookmarks">;
   title: string;
   domain: string;
@@ -32,6 +40,7 @@ interface Bookmark {
   fallbackColor: string;
   createdAt: string;
   groupId: string;
+  doneReading: boolean;
 }
 
 interface BookmarkListProps {
@@ -42,6 +51,7 @@ interface BookmarkListProps {
   onRename: (bookmark: Bookmark) => void;
   onDelete: (bookmark: Bookmark) => void;
   onMove: (bookmarkId: Id<"bookmarks">, newGroupId: Id<"groups">) => void;
+  onToggleRead: (bookmarkId: Id<"bookmarks">) => void;
 }
 
 /* =========================
@@ -87,7 +97,7 @@ function FaviconIcon({ bookmark }: { bookmark: Bookmark }) {
 
   if (bookmark.favicon && !imgError) {
     return (
-      <div className="size-7 rounded-lg overflow-hidden shrink-0 border border-border bg-background flex items-center justify-center">
+      <div className="relative size-7 rounded-lg overflow-hidden shrink-0 border border-border bg-background flex items-center justify-center">
         <Image
           src={bookmark.favicon}
           alt=""
@@ -97,16 +107,26 @@ function FaviconIcon({ bookmark }: { bookmark: Bookmark }) {
           onError={() => setImgError(true)}
           unoptimized
         />
+        {bookmark.doneReading && (
+          <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
+            <Check className="size-4 text-primary" />
+          </div>
+        )}
       </div>
     );
   }
 
   return (
     <div
-      className="size-7 rounded-lg shrink-0 flex items-center justify-center text-white text-xs font-bold"
+      className="relative size-7 rounded-lg shrink-0 flex items-center justify-center text-white text-xs font-bold"
       style={{ backgroundColor: bookmark.fallbackColor }}
     >
       {bookmark.title.charAt(0).toUpperCase()}
+      {bookmark.doneReading && (
+        <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center">
+          <Check className="size-4 text-white" />
+        </div>
+      )}
     </div>
   );
 }
@@ -123,6 +143,7 @@ interface MenuContentProps {
   onRename: () => void;
   onDelete: () => void;
   onMove: (groupId: Id<"groups">) => void;
+  onToggleRead: () => void;
   onClose?: () => void;
 }
 
@@ -134,6 +155,7 @@ function MenuContent({
   onRename,
   onDelete,
   onMove,
+  onToggleRead,
   onClose,
 }: MenuContentProps) {
   const handleAction = (action: () => void) => {
@@ -144,6 +166,25 @@ function MenuContent({
   if (isMobile) {
     return (
       <div className="w-56 py-1">
+        <button
+          onClick={() => handleAction(onToggleRead)}
+          className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
+        >
+          {bookmark.doneReading ? (
+            <>
+              <Circle className="size-4 mr-2" />
+              Mark as Unread
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="size-4 mr-2" />
+              Mark as Read
+            </>
+          )}
+        </button>
+
+        <div className="h-px bg-border my-1" />
+
         <button
           onClick={() => handleAction(onCopy)}
           className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
@@ -188,6 +229,8 @@ function MenuContent({
           </div>
         </div>
 
+        <div className="h-px bg-border my-1" />
+
         <button
           onClick={() => handleAction(onDelete)}
           className="w-full flex items-center px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 rounded-sm"
@@ -201,6 +244,20 @@ function MenuContent({
 
   return (
     <ContextMenuContent className="w-56">
+      <ContextMenuItem onClick={onToggleRead}>
+        {bookmark.doneReading ? (
+          <>
+            <Circle className="size-4 mr-2" />
+            Mark as Unread
+          </>
+        ) : (
+          <>
+            <CheckCircle2 className="size-4 mr-2" />
+            Mark as Read
+          </>
+        )}
+      </ContextMenuItem>
+
       <ContextMenuItem onClick={onCopy}>
         <Copy className="size-4 mr-2" />
         Copy
@@ -261,6 +318,7 @@ export const BookmarkList = memo(function BookmarkList({
   onRename,
   onDelete,
   onMove,
+  onToggleRead,
   loading,
 }: BookmarkListProps) {
   const isSmallMobile = useIsSmallMobile();
@@ -328,7 +386,11 @@ export const BookmarkList = memo(function BookmarkList({
                 <FaviconIcon bookmark={bookmark} />
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
+                  <p
+                    className={`text-sm font-medium truncate ${
+                      bookmark.doneReading ? "text-muted-foreground" : ""
+                    }`}
+                  >
                     {bookmark.title}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
@@ -350,6 +412,7 @@ export const BookmarkList = memo(function BookmarkList({
                 onRename={() => onRename(bookmark)}
                 onDelete={() => onDelete(bookmark)}
                 onMove={(groupId) => onMove(bookmark.id, groupId)}
+                onToggleRead={() => onToggleRead(bookmark.id)}
                 onClose={() => setOpenPopoverId(null)}
               />
             </PopoverContent>
@@ -366,7 +429,11 @@ export const BookmarkList = memo(function BookmarkList({
                 <FaviconIcon bookmark={bookmark} />
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
+                  <p
+                    className={`text-sm font-medium truncate ${
+                      bookmark.doneReading ? "text-muted-foreground" : ""
+                    }`}
+                  >
                     {bookmark.title}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
@@ -387,6 +454,7 @@ export const BookmarkList = memo(function BookmarkList({
               onRename={() => onRename(bookmark)}
               onDelete={() => onDelete(bookmark)}
               onMove={(groupId) => onMove(bookmark.id, groupId)}
+              onToggleRead={() => onToggleRead(bookmark.id)}
             />
           </ContextMenu>
         ),
