@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, memo, useRef } from "react";
+import { useState, memo, useRef, useEffect } from "react";
 import Image from "next/image";
+import { motion, AnimatePresence, Variants } from "motion/react";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import {
   ContextMenu,
@@ -59,6 +60,7 @@ interface BookmarkListProps {
 ========================= */
 
 const KEYBOARD_SHORTCUTS = {
+  open: ["⊞", "Enter"],
   copy: ["⌘", "C"],
   rename: ["⌘", "E"],
   delete: ["⌘", "⌫"],
@@ -130,6 +132,50 @@ function FaviconIcon({ bookmark }: { bookmark: Bookmark }) {
     </div>
   );
 }
+
+/* =========================
+   Menu Content Component
+========================= */
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.15,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: {
+    opacity: 0,
+    y: 16,
+    scale: 0.98,
+  },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.5,
+      ease: [0.25, 0.1, 0.25, 1] as const,
+    },
+  },
+};
+
+const headerVariants = {
+  hidden: { opacity: 0, y: -10 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.4,
+      ease: "easeOut",
+    },
+  },
+};
 
 /* =========================
    Menu Content Component
@@ -324,6 +370,31 @@ export const BookmarkList = memo(function BookmarkList({
   const isSmallMobile = useIsSmallMobile();
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const hoveredBookmarkRef = useRef<Bookmark | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        e.preventDefault();
+        if (hoveredBookmarkRef.current) {
+          window.open(
+            hoveredBookmarkRef.current.url,
+            "_blank",
+            "noopener,noreferrer",
+          );
+        }
+      }
+      if ((e.metaKey || e.ctrlKey) && (e.key === "e" || e.key === "E")) {
+        e.preventDefault();
+        if (hoveredBookmarkRef.current) {
+          onRename(hoveredBookmarkRef.current);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onRename]);
 
   const handleTouchStart = (e: React.TouchEvent, id: string) => {
     if (!isSmallMobile) return;
@@ -342,123 +413,188 @@ export const BookmarkList = memo(function BookmarkList({
 
   if (loading && bookmarks.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12 text-muted-foreground">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
+        className="flex items-center justify-center py-12 text-muted-foreground"
+      >
         <Shimmer duration={2}>Loading Bookmarks...</Shimmer>
-      </div>
+      </motion.div>
     );
   }
 
   if (!loading && bookmarks.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+        className="flex flex-col items-center justify-center py-12 text-muted-foreground"
+      >
         <p className="text-sm font-medium">No bookmarks found</p>
         <p className="text-xs mt-1">
           Try a different search or press Enter to add
         </p>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="w-full px-2 mb-8">
-      {bookmarks.map((bookmark) =>
-        isSmallMobile ? (
-          <Popover
-            key={bookmark.id}
-            open={openPopoverId === bookmark.id}
-            onOpenChange={(open) => setOpenPopoverId(open ? bookmark.id : null)}
-          >
-            <PopoverTrigger asChild>
-              <a
-                href={bookmark.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onTouchStart={(e) => handleTouchStart(e, bookmark.id)}
-                onTouchEnd={handleTouchEnd}
-                onTouchMove={handleTouchEnd}
-                onClick={(e) => {
-                  if (openPopoverId === bookmark.id) {
-                    e.preventDefault();
+    <div className="w-full">
+      <AnimatePresence mode="popLayout" initial={false}>
+        {bookmarks.map((bookmark) =>
+          isSmallMobile ? (
+            <motion.div
+              key={bookmark.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.25 }}
+            >
+              <Popover
+                open={openPopoverId === bookmark.id}
+                onOpenChange={(open) =>
+                  setOpenPopoverId(open ? bookmark.id : null)
+                }
+              >
+                <PopoverTrigger asChild>
+                  <a
+                    href={bookmark.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onTouchStart={(e) => handleTouchStart(e, bookmark.id)}
+                    onTouchEnd={handleTouchEnd}
+                    onTouchMove={handleTouchEnd}
+                    onClick={(e) => {
+                      if (openPopoverId === bookmark.id) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onMouseEnter={() => (hoveredBookmarkRef.current = bookmark)}
+                    onMouseLeave={() => (hoveredBookmarkRef.current = null)}
+                    className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
+                  >
+                    <FaviconIcon bookmark={bookmark} />
+
+                    <div className="flex-1 min-w-0 flex items-baseline gap-2">
+                      <span
+                        className={`font-medium text-sm truncate group-hover:text-primary transition-colors ${
+                          bookmark.doneReading
+                            ? "text-muted-foreground"
+                            : "text-foreground"
+                        }`}
+                      >
+                        {bookmark.title}
+                      </span>
+                      <span className="text-xs text-muted-foreground truncate hidden sm:inline">
+                        {bookmark.domain}
+                      </span>
+                    </div>
+
+                    <span className="text-xs text-muted-foreground tabular-nums shrink-0 group-hover:hidden">
+                      {formatDate(bookmark.createdAt)}
+                    </span>
+                    <span className="text-xs text-muted-foreground tabular-nums shrink-0 hidden group-hover:flex items-center gap-1">
+                      {KEYBOARD_SHORTCUTS.open.map((key, index) => (
+                        <kbd
+                          key={index}
+                          className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded bg-muted border border-border text-[10px] font-medium"
+                        >
+                          {key}
+                        </kbd>
+                      ))}
+                    </span>
+                  </a>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-auto p-0"
+                  align="start"
+                  sideOffset={4}
+                >
+                  <MenuContent
+                    bookmark={bookmark}
+                    groups={groups}
+                    isMobile={true}
+                    onCopy={() => onCopy(bookmark)}
+                    onRename={() => onRename(bookmark)}
+                    onDelete={() => onDelete(bookmark)}
+                    onMove={(groupId: Id<"groups">) =>
+                      onMove(bookmark.id, groupId)
+                    }
+                    onToggleRead={() => onToggleRead(bookmark.id)}
+                    onClose={() => setOpenPopoverId(null)}
+                  />
+                </PopoverContent>
+              </Popover>
+            </motion.div>
+          ) : (
+            <motion.div
+              key={bookmark.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.25 }}
+            >
+              <ContextMenu>
+                <ContextMenuTrigger asChild>
+                  <a
+                    href={bookmark.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onMouseEnter={() => (hoveredBookmarkRef.current = bookmark)}
+                    onMouseLeave={() => (hoveredBookmarkRef.current = null)}
+                    className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
+                  >
+                    <FaviconIcon bookmark={bookmark} />
+
+                    <div className="flex-1 min-w-0 flex items-baseline gap-2">
+                      <span
+                        className={`font-medium text-sm truncate group-hover:text-primary transition-colors ${
+                          bookmark.doneReading
+                            ? "text-muted-foreground"
+                            : "text-foreground"
+                        }`}
+                      >
+                        {bookmark.title}
+                      </span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {bookmark.domain}
+                      </span>
+                    </div>
+
+                    <span className="text-xs text-muted-foreground tabular-nums shrink-0 group-hover:hidden">
+                      {formatDate(bookmark.createdAt)}
+                    </span>
+                    <span className="text-xs text-muted-foreground tabular-nums shrink-0 hidden group-hover:flex items-center gap-1">
+                      {KEYBOARD_SHORTCUTS.open.map((key, index) => (
+                        <kbd
+                          key={index}
+                          className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded bg-muted border border-border text-[10px] font-medium"
+                        >
+                          {key}
+                        </kbd>
+                      ))}
+                    </span>
+                  </a>
+                </ContextMenuTrigger>
+                <MenuContent
+                  bookmark={bookmark}
+                  groups={groups}
+                  isMobile={false}
+                  onCopy={() => onCopy(bookmark)}
+                  onRename={() => onRename(bookmark)}
+                  onDelete={() => onDelete(bookmark)}
+                  onMove={(groupId: Id<"groups">) =>
+                    onMove(bookmark.id, groupId)
                   }
-                }}
-                className="flex items-center gap-3 px-4 py-2 hover:bg-muted/50 rounded-lg transition-colors"
-              >
-                <FaviconIcon bookmark={bookmark} />
-
-                <div className="flex-1 min-w-0">
-                  <p
-                    className={`text-sm font-medium truncate ${
-                      bookmark.doneReading ? "text-muted-foreground" : ""
-                    }`}
-                  >
-                    {bookmark.title}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {bookmark.domain}
-                  </p>
-                </div>
-
-                <span className="text-xs text-muted-foreground">
-                  {formatDate(bookmark.createdAt)}
-                </span>
-              </a>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start" sideOffset={4}>
-              <MenuContent
-                bookmark={bookmark}
-                groups={groups}
-                isMobile={true}
-                onCopy={() => onCopy(bookmark)}
-                onRename={() => onRename(bookmark)}
-                onDelete={() => onDelete(bookmark)}
-                onMove={(groupId) => onMove(bookmark.id, groupId)}
-                onToggleRead={() => onToggleRead(bookmark.id)}
-                onClose={() => setOpenPopoverId(null)}
-              />
-            </PopoverContent>
-          </Popover>
-        ) : (
-          <ContextMenu key={bookmark.id}>
-            <ContextMenuTrigger asChild>
-              <a
-                href={bookmark.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 px-4 py-2 hover:bg-muted/50 rounded-lg transition-colors"
-              >
-                <FaviconIcon bookmark={bookmark} />
-
-                <div className="flex-1 min-w-0">
-                  <p
-                    className={`text-sm font-medium truncate ${
-                      bookmark.doneReading ? "text-muted-foreground" : ""
-                    }`}
-                  >
-                    {bookmark.title}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {bookmark.domain}
-                  </p>
-                </div>
-
-                <span className="text-xs text-muted-foreground">
-                  {formatDate(bookmark.createdAt)}
-                </span>
-              </a>
-            </ContextMenuTrigger>
-            <MenuContent
-              bookmark={bookmark}
-              groups={groups}
-              isMobile={false}
-              onCopy={() => onCopy(bookmark)}
-              onRename={() => onRename(bookmark)}
-              onDelete={() => onDelete(bookmark)}
-              onMove={(groupId) => onMove(bookmark.id, groupId)}
-              onToggleRead={() => onToggleRead(bookmark.id)}
-            />
-          </ContextMenu>
-        ),
-      )}
+                  onToggleRead={() => onToggleRead(bookmark.id)}
+                />
+              </ContextMenu>
+            </motion.div>
+          ),
+        )}
+      </AnimatePresence>
     </div>
   );
 });
