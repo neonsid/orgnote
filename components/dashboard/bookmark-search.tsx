@@ -1,57 +1,58 @@
-'use client'
+"use client";
 
-import { memo, useState, useRef, useCallback, useEffect } from 'react'
-import { Plus, Command } from 'lucide-react'
+import { memo, useState, useRef, useCallback, useEffect } from "react";
+import Plus from "lucide-react/dist/esm/icons/plus";
+import Command from "lucide-react/dist/esm/icons/command";
 
 interface BookmarkSearchProps {
   /** Called with the debounced search query for filtering */
-  onSearch: (query: string) => void
+  onSearch: (query: string) => void;
   /** Called when the user presses Enter to submit/create a bookmark */
-  onSubmit: (value: string) => void
+  onSubmit: (value: string) => void;
 }
 
-const DEBOUNCE_MS = 300
+const DEBOUNCE_MS = 300;
 
 export const BookmarkSearch = memo(function BookmarkSearch({
   onSearch,
   onSubmit,
 }: BookmarkSearchProps) {
-  const [localValue, setLocalValue] = useState('')
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [localValue, setLocalValue] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-    }
-  }, [])
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = e.target.value
-      setLocalValue(val)
+      const val = e.target.value;
+      setLocalValue(val);
 
       // Debounce the filter callback
-      if (debounceRef.current) clearTimeout(debounceRef.current)
+      if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
-        onSearch(val)
-      }, DEBOUNCE_MS)
+        onSearch(val);
+      }, DEBOUNCE_MS);
     },
-    [onSearch]
-  )
+    [onSearch],
+  );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter' && localValue.trim()) {
+      if (e.key === "Enter" && localValue.trim()) {
         // Cancel any pending debounce
-        if (debounceRef.current) clearTimeout(debounceRef.current)
-        onSubmit(localValue.trim())
-        setLocalValue('')
-        onSearch('')
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        onSubmit(localValue.trim());
+        setLocalValue("");
+        onSearch("");
       }
     },
-    [localValue, onSubmit, onSearch]
-  )
+    [localValue, onSubmit, onSearch],
+  );
 
   return (
     <div className="relative flex items-center w-full">
@@ -74,5 +75,5 @@ export const BookmarkSearch = memo(function BookmarkSearch({
         </kbd>
       </div>
     </div>
-  )
-})
+  );
+});

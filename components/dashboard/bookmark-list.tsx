@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, memo, useRef, useEffect } from "react";
+import { useState, memo, useRef, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
-import { motion, AnimatePresence, Variants } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import {
   ContextMenu,
@@ -19,15 +19,13 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-import {
-  Copy,
-  Pencil,
-  Trash2,
-  ChevronsRightIcon,
-  CheckCircle2,
-  Circle,
-  Check,
-} from "lucide-react";
+import Copy from "lucide-react/dist/esm/icons/copy";
+import Pencil from "lucide-react/dist/esm/icons/pencil";
+import Trash2 from "lucide-react/dist/esm/icons/trash-2";
+import ChevronsRightIcon from "lucide-react/dist/esm/icons/chevrons-right";
+import CheckCircle2 from "lucide-react/dist/esm/icons/check-circle-2";
+import Circle from "lucide-react/dist/esm/icons/circle";
+import Check from "lucide-react/dist/esm/icons/check";
 import { ConvexGroup, FALLBACK_COLORS } from "./group-selector";
 import { Id } from "@/convex/_generated/dataModel";
 import { useIsSmallMobile } from "@/hooks/use-mobile";
@@ -99,13 +97,12 @@ function FaviconIcon({ bookmark }: { bookmark: Bookmark }) {
 
   if (bookmark.favicon && !imgError) {
     return (
-      <div className="relative size-7 rounded-lg overflow-hidden shrink-0 border border-border bg-background flex items-center justify-center">
+      <div className="relative size-7 rounded-lg overflow-hidden shrink-0 border border-border bg-background">
         <Image
           src={bookmark.favicon}
           alt=""
-          width={20}
-          height={20}
-          className="size-5 rounded-sm"
+          fill
+          className="object-cover"
           onError={() => setImgError(true)}
           unoptimized
         />
@@ -204,16 +201,52 @@ function MenuContent({
   onToggleRead,
   onClose,
 }: MenuContentProps) {
-  const handleAction = (action: () => void) => {
-    action();
-    onClose?.();
-  };
+  const handleAction = useCallback(
+    (action: () => void) => {
+      action();
+      onClose?.();
+    },
+    [onClose],
+  );
+
+  // Pre-filter groups for this bookmark to avoid O(n) filter on every render
+  const otherGroups = useMemo(
+    () =>
+      groups
+        .filter((g) => g._id !== bookmark.groupId)
+        .map((group, i): { group: ConvexGroup; fallbackColor: string } => ({
+          group,
+          fallbackColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length],
+        })),
+    [groups, bookmark.groupId],
+  );
+
+  const handleToggleRead = useCallback(
+    () => handleAction(onToggleRead),
+    [handleAction, onToggleRead],
+  );
+  const handleCopy = useCallback(
+    () => handleAction(onCopy),
+    [handleAction, onCopy],
+  );
+  const handleRename = useCallback(
+    () => handleAction(onRename),
+    [handleAction, onRename],
+  );
+  const handleDelete = useCallback(
+    () => handleAction(onDelete),
+    [handleAction, onDelete],
+  );
+  const handleMove = useCallback(
+    (groupId: Id<"groups">) => handleAction(() => onMove(groupId)),
+    [handleAction, onMove],
+  );
 
   if (isMobile) {
     return (
       <div className="w-56 py-1">
         <button
-          onClick={() => handleAction(onToggleRead)}
+          onClick={handleToggleRead}
           className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
         >
           {bookmark.doneReading ? (
@@ -232,7 +265,7 @@ function MenuContent({
         <div className="h-px bg-border my-1" />
 
         <button
-          onClick={() => handleAction(onCopy)}
+          onClick={handleCopy}
           className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
         >
           <Copy className="size-4 mr-2" />
@@ -240,7 +273,7 @@ function MenuContent({
         </button>
 
         <button
-          onClick={() => handleAction(onRename)}
+          onClick={handleRename}
           className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
         >
           <Pencil className="size-4 mr-2" />
@@ -253,32 +286,28 @@ function MenuContent({
             Move to
           </button>
           <div className="absolute left-full top-0 ml-1 w-48 bg-popover border rounded-md shadow-lg py-1 hidden group-hover:block z-50">
-            {groups
-              .filter((g) => g._id !== bookmark.groupId)
-              .map((group, i) => (
-                <button
-                  key={group._id}
-                  onClick={() => handleAction(() => onMove(group._id))}
-                  className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
-                >
-                  <span
-                    className="size-2.5 rounded-full mr-2"
-                    style={{
-                      backgroundColor:
-                        group.color ||
-                        FALLBACK_COLORS[i % FALLBACK_COLORS.length],
-                    }}
-                  />
-                  {group.title}
-                </button>
-              ))}
+            {otherGroups.map(({ group, fallbackColor }) => (
+              <button
+                key={group._id}
+                onClick={() => handleMove(group._id)}
+                className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
+              >
+                <span
+                  className="size-2.5 rounded-full mr-2"
+                  style={{
+                    backgroundColor: group.color || fallbackColor,
+                  }}
+                />
+                {group.title}
+              </button>
+            ))}
           </div>
         </div>
 
         <div className="h-px bg-border my-1" />
 
         <button
-          onClick={() => handleAction(onDelete)}
+          onClick={handleDelete}
           className="w-full flex items-center px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 rounded-sm"
         >
           <Trash2 className="size-4 mr-2" />
@@ -323,24 +352,17 @@ function MenuContent({
         </ContextMenuSubTrigger>
 
         <ContextMenuSubContent className="w-48">
-          {groups
-            .filter((g) => g._id !== bookmark.groupId)
-            .map((group, i) => (
-              <ContextMenuItem
-                key={group._id}
-                onClick={() => onMove(group._id)}
-              >
-                <span
-                  className="size-2.5 rounded-full mr-2"
-                  style={{
-                    backgroundColor:
-                      group.color ||
-                      FALLBACK_COLORS[i % FALLBACK_COLORS.length],
-                  }}
-                />
-                {group.title}
-              </ContextMenuItem>
-            ))}
+          {otherGroups.map(({ group, fallbackColor }) => (
+            <ContextMenuItem key={group._id} onClick={() => onMove(group._id)}>
+              <span
+                className="size-2.5 rounded-full mr-2"
+                style={{
+                  backgroundColor: group.color || fallbackColor,
+                }}
+              />
+              {group.title}
+            </ContextMenuItem>
+          ))}
         </ContextMenuSubContent>
       </ContextMenuSub>
 
@@ -473,7 +495,7 @@ export const BookmarkList = memo(function BookmarkList({
                     }}
                     onMouseEnter={() => (hoveredBookmarkRef.current = bookmark)}
                     onMouseLeave={() => (hoveredBookmarkRef.current = null)}
-                    className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
+                    className="flex items-center gap-3 py-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
                   >
                     <FaviconIcon bookmark={bookmark} />
 
@@ -544,7 +566,7 @@ export const BookmarkList = memo(function BookmarkList({
                     rel="noopener noreferrer"
                     onMouseEnter={() => (hoveredBookmarkRef.current = bookmark)}
                     onMouseLeave={() => (hoveredBookmarkRef.current = null)}
-                    className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
+                    className="flex items-center gap-3 py-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
                   >
                     <FaviconIcon bookmark={bookmark} />
 
