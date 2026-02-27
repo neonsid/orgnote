@@ -10,11 +10,15 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
 import { authClient } from '@/lib/auth-client'
 import { toast } from 'sonner'
 import Image from 'next/image'
-import { Upload, Download, Key } from 'lucide-react'
+import { Upload, Download, Key, Check, Copy, ExternalLink } from 'lucide-react'
 import { ExportBookmarksDialog } from '@/components/dashboard/export-bookmarks-dialog'
+import { useMutation, useQuery } from 'convex/react'
+import { api } from '@/convex/_generated/api'
 
 interface UserSettingsDialogProps {
   open: boolean
@@ -74,6 +78,46 @@ function passwordReducer(
   }
 }
 
+interface PublicProfileState {
+  isPublic: boolean
+  username: string
+  bio: string
+  github: string
+  twitter: string
+  website: string
+}
+
+type PublicProfileAction =
+  | {
+      type: 'SET_FIELD'
+      field: keyof PublicProfileState
+      value: string | boolean
+    }
+  | { type: 'RESET' }
+
+const initialPublicProfileState: PublicProfileState = {
+  isPublic: false,
+  username: '',
+  bio: '',
+  github: '',
+  twitter: '',
+  website: '',
+}
+
+function publicProfileReducer(
+  state: PublicProfileState,
+  action: PublicProfileAction
+): PublicProfileState {
+  switch (action.type) {
+    case 'SET_FIELD':
+      return { ...state, [action.field]: action.value }
+    case 'RESET':
+      return initialPublicProfileState
+    default:
+      return state
+  }
+}
+
 export function UserSettingsDialog({
   open,
   onOpenChange,
@@ -94,6 +138,14 @@ export function UserSettingsDialog({
     initialPasswordState
   )
 
+  const [publicProfileState, publicProfileDispatch] = useReducer(
+    publicProfileReducer,
+    initialPublicProfileState
+  )
+
+  const upsertProfile = useMutation(api.profile.upsertProfile)
+  const existingProfile = useQuery(api.profile.getProfile, { userId: user.id })
+
   useEffect(() => {
     if (open) {
       authClient.listAccounts().then((result) => {
@@ -107,6 +159,61 @@ export function UserSettingsDialog({
     }
   }, [open])
 
+  // Load existing profile data when dialog opens
+  useEffect(() => {
+    if (open && existingProfile) {
+      publicProfileDispatch({
+        type: 'SET_FIELD',
+        field: 'isPublic',
+        value: existingProfile.isPublic,
+      })
+      if (existingProfile.username) {
+        publicProfileDispatch({
+          type: 'SET_FIELD',
+          field: 'username',
+          value: existingProfile.username,
+        })
+      }
+      if (existingProfile.bio) {
+        publicProfileDispatch({
+          type: 'SET_FIELD',
+          field: 'bio',
+          value: existingProfile.bio,
+        })
+      }
+      if (existingProfile.links) {
+        const link = existingProfile.links
+        if (link.label === 'GitHub') {
+          publicProfileDispatch({
+            type: 'SET_FIELD',
+            field: 'github',
+            value: link.url,
+          })
+        } else if (link.label === 'Twitter') {
+          // Extract username from https://x.com/username
+          const match = link.url.match(/https:\/\/x\.com\/(\w+)/)
+          if (match) {
+            publicProfileDispatch({
+              type: 'SET_FIELD',
+              field: 'twitter',
+              value: match[1],
+            })
+          }
+        } else if (link.label === 'Portfolio') {
+          // Extract domain from https://domain.com
+          const match = link.url.match(/https:\/\/(.+)/)
+          if (match) {
+            publicProfileDispatch({
+              type: 'SET_FIELD',
+              field: 'website',
+              value: match[1],
+            })
+          }
+        }
+      }
+    }
+  }, [open, existingProfile])
+
   const handleClose = () => {
     setName(user.name)
     passwordDispatch({ type: 'RESET' })
@@ -119,7 +226,42 @@ export function UserSettingsDialog({
       if (name !== user.name) {
         await authClient.updateUser({ name })
       }
-      toast.success('Settings saved successfully!')
+
+      // Save public profile data (only if user has entered something)
+      if (
+        publicProfileState.username ||
+        publicProfileState.bio ||
+        publicProfileState.github ||
+        publicProfileState.twitter ||
+        publicProfileState.website
+      ) {
+        const links = [] as Array<{
+          label: 'GitHub' | 'Twitter' | 'Portfolio'
+          url: string
+        }>
+        if (publicProfileState.github)
+          links.push({ label: 'GitHub', url: publicProfileState.github })
+        if (publicProfileState.twitter)
+          links.push({
+            label: 'Twitter',
+            url: `https://x.com/${publicProfileState.twitter}`,
+          })
+        if (publicProfileState.website)
+          links.push({
+            label: 'Portfolio',
+            url: `https://${publicProfileState.website}`,
+          })
+
+        await upsertProfile({
+          userId: user.id,
+          username: publicProfileState.username || undefined,
+          bio: publicProfileState.bio || undefined,
+          links: links[0],
+          isPublic: publicProfileState.isPublic,
+        })
+      }
+
+      toast.success('Profile saved successfully!')
       handleClose()
     } catch {
       toast.error('Failed to save settings')
@@ -358,11 +500,143 @@ export function UserSettingsDialog({
 
           {activeTab === 'public-profile' && (
             <div className="mt-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="public-profile-toggle" className="font-medium">
+                  Public Profile
+                </Label>
+                <Switch
+                  id="public-profile-toggle"
+                  checked={publicProfileState.isPublic}
+                  onCheckedChange={(checked) =>
+                    publicProfileDispatch({
+                      type: 'SET_FIELD',
+                      field: 'isPublic',
+                      value: checked,
+                    })
+                  }
+                />
+              </div>
+
               <div className="space-y-3">
-                <Label>Public Profile URL</Label>
-                <p className="text-sm text-muted-foreground">
-                  Your public profile is not yet available.
-                </p>
+                <Label htmlFor="username">Username</Label>
+                <div className="relative">
+                  <Input
+                    id="username"
+                    value={publicProfileState.username}
+                    onChange={(e) =>
+                      publicProfileDispatch({
+                        type: 'SET_FIELD',
+                        field: 'username',
+                        value: e.target.value,
+                      })
+                    }
+                    placeholder="username"
+                    className="pr-10"
+                  />
+                  {publicProfileState.username.length > 0 && (
+                    <Check className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-green-500" />
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea
+                  id="bio"
+                  value={publicProfileState.bio}
+                  onChange={(e) =>
+                    publicProfileDispatch({
+                      type: 'SET_FIELD',
+                      field: 'bio',
+                      value: e.target.value,
+                    })
+                  }
+                  placeholder="Building cool things on the web"
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="github">GitHub</Label>
+                <Input
+                  id="github"
+                  value={publicProfileState.github}
+                  onChange={(e) =>
+                    publicProfileDispatch({
+                      type: 'SET_FIELD',
+                      field: 'github',
+                      value: e.target.value,
+                    })
+                  }
+                  placeholder="https://github.com/username"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="twitter">X (Twitter)</Label>
+                <Input
+                  id="twitter"
+                  value={publicProfileState.twitter}
+                  onChange={(e) =>
+                    publicProfileDispatch({
+                      type: 'SET_FIELD',
+                      field: 'twitter',
+                      value: e.target.value,
+                    })
+                  }
+                  placeholder="username"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="website">Website</Label>
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
+                    https://
+                  </span>
+                  <Input
+                    id="website"
+                    value={publicProfileState.website}
+                    onChange={(e) =>
+                      publicProfileDispatch({
+                        type: 'SET_FIELD',
+                        field: 'website',
+                        value: e.target.value,
+                      })
+                    }
+                    placeholder="example.com"
+                    className="rounded-l-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const profileUrl = `${window.location.origin}/u/${publicProfileState.username}`
+                    navigator.clipboard.writeText(profileUrl)
+                    toast.success('Profile link copied!')
+                  }}
+                  disabled={!publicProfileState.username}
+                  className="gap-2"
+                >
+                  <Copy className="size-4" />
+                  Copy Profile Link
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    window.open(`/u/${publicProfileState.username}`, '_blank')
+                  }}
+                  disabled={!publicProfileState.username}
+                  className="gap-2"
+                >
+                  <ExternalLink className="size-4" />
+                  Preview Profile
+                </Button>
               </div>
             </div>
           )}
