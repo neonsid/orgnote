@@ -65,7 +65,8 @@ export const GroupSelector = memo(function GroupSelector({
               }}
             />
             <span className="truncate">
-              {selectedGroup?.title ?? "Select Group"}
+              {selectedGroup?.title ??
+                (groups.length === 0 ? "No groups" : "Select Group")}
             </span>
             <ChevronsUpDownIcon
               className={`size-4 text-muted-foreground transition-transform duration-200 shrink-0 ${open ? "rotate-180" : ""}`}
@@ -80,32 +81,43 @@ export const GroupSelector = memo(function GroupSelector({
             className="z-50 min-w-[200px] rounded-xl border border-border bg-background shadow-lg animate-in fade-in slide-in-from-top-1 duration-150"
           >
             <div className="p-1.5">
-              {groups.map((group, i) => (
-                <button
-                  key={group._id}
-                  id={`group-option-${group._id}`}
-                  onClick={() => {
-                    onSelect(group._id);
-                    setOpen(false);
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                >
-                  <span
-                    className="size-2.5 rounded-full shrink-0"
-                    style={{
-                      backgroundColor:
-                        group.color ||
-                        FALLBACK_COLORS[i % FALLBACK_COLORS.length],
+              {groups.length === 0 ? (
+                <div className="px-3 py-4 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    No groups found
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Create a group to get started
+                  </p>
+                </div>
+              ) : (
+                groups.map((group, i) => (
+                  <button
+                    key={group._id}
+                    id={`group-option-${group._id}`}
+                    onClick={() => {
+                      onSelect(group._id);
+                      setOpen(false);
                     }}
-                  />
-                  <span className="flex-1 text-left font-medium">
-                    {group.title}
-                  </span>
-                  {group._id === selectedGroupId && (
-                    <Check className="size-4 text-foreground" />
-                  )}
-                </button>
-              ))}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                  >
+                    <span
+                      className="size-2.5 rounded-full shrink-0"
+                      style={{
+                        backgroundColor:
+                          group.color ||
+                          FALLBACK_COLORS[i % FALLBACK_COLORS.length],
+                      }}
+                    />
+                    <span className="flex-1 text-left font-medium">
+                      {group.title}
+                    </span>
+                    {group._id === selectedGroupId && (
+                      <Check className="size-4 text-foreground" />
+                    )}
+                  </button>
+                ))
+              )}
 
               <div className="my-1 h-px bg-border" />
 
@@ -120,21 +132,23 @@ export const GroupSelector = memo(function GroupSelector({
                 <Plus className="size-4" />
                 <span className="font-medium">Create Group</span>
               </button>
-              <button
-                id="delete-group-button"
-                onClick={() => {
-                  setOpen(false);
-                  if (selectedGroup) {
-                    setDeleteDialogOpen(true);
-                  }
-                }}
-                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground transition-colors"
-              >
-                <Trash2Icon className="size-4 text-destructive" />
-                <span className="font-medium text-destructive">
-                  Delete Group
-                </span>
-              </button>
+              {groups.length > 0 && (
+                <button
+                  id="delete-group-button"
+                  onClick={() => {
+                    setOpen(false);
+                    if (selectedGroup) {
+                      setDeleteDialogOpen(true);
+                    }
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground transition-colors"
+                >
+                  <Trash2Icon className="size-4 text-destructive" />
+                  <span className="font-medium text-destructive">
+                    Delete Group
+                  </span>
+                </button>
+              )}
             </div>
           </PopoverPrimitive.Content>
         </PopoverPrimitive.Portal>

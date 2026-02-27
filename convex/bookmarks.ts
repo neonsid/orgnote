@@ -39,6 +39,49 @@ export const listBookMarks = query({
   },
 });
 
+export const getBookmarksByGroupIds = query({
+  args: { groupIds: v.array(v.id("groups")) },
+  handler: async (ctx, args) => {
+    const bookmarks = [];
+    for (const groupId of args.groupIds) {
+      const groupBookmarks = await ctx.db
+        .query("bookmarks")
+        .withIndex("groupId", (q) => q.eq("groupId", groupId))
+        .collect();
+      const group = await ctx.db.get(groupId);
+      for (const bookmark of groupBookmarks) {
+        bookmarks.push({
+          ...bookmark,
+          groupTitle: group?.title || "Unknown",
+        });
+      }
+    }
+    return bookmarks;
+  },
+});
+
+export const getBookmarkCountsByUser = query({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const groups = await ctx.db
+      .query("groups")
+      .withIndex("by_user_provided_id", (q) =>
+        q.eq("userProvidedId", args.userId),
+      )
+      .collect();
+
+    const counts: Record<string, number> = {};
+    for (const group of groups) {
+      const groupBookmarks = await ctx.db
+        .query("bookmarks")
+        .withIndex("groupId", (q) => q.eq("groupId", group._id))
+        .collect();
+      counts[group._id] = groupBookmarks.length;
+    }
+    return counts;
+  },
+});
+
 export const deleteBookMark = mutation({
   args: { bookmarkId: v.id("bookmarks") },
   handler: async (ctx, args) => {
@@ -107,5 +150,52 @@ export const moveBookMark = mutation({
       updatedAt: Date.now(),
     });
     return { success: true };
+  },
+});
+
+export const getAllUserBookmarks = query({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const groups = await ctx.db
+      .query("groups")
+      .withIndex("by_user_provided_id", (q) =>
+        q.eq("userProvidedId", args.userId),
+      )
+      .collect();
+
+    const bookmarks: {
+      _id: string;
+      title: string;
+      url: string;
+      description?: string;
+      imageUrl: string;
+      doneReading: boolean;
+      createdAt: number;
+      groupId: string;
+      groupTitle: string;
+    }[] = [];
+
+    for (const group of groups) {
+      const groupBookmarks = await ctx.db
+        .query("bookmarks")
+        .withIndex("groupId", (q) => q.eq("groupId", group._id))
+        .collect();
+
+      for (const bookmark of groupBookmarks) {
+        bookmarks.push({
+          _id: bookmark._id,
+          title: bookmark.title,
+          url: bookmark.url,
+          description: bookmark.description,
+          imageUrl: bookmark.imageUrl,
+          doneReading: bookmark.doneReading,
+          createdAt: bookmark.createdAt,
+          groupId: group._id,
+          groupTitle: group.title,
+        });
+      }
+    }
+
+    return bookmarks;
   },
 });
