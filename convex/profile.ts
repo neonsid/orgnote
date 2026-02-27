@@ -1,142 +1,199 @@
-import { v } from 'convex/values'
-import { mutation } from './_generated/server'
+import { v } from "convex/values";
+import { mutation, query } from "./_generated/server";
 
-export const addUserName = mutation({
+export const getProfile = query({
   args: {
-    username: v.string(),
     userId: v.string(),
-    isPublic: v.boolean(),
   },
   handler: async (ctx, args) => {
     if (!args.userId) {
-      throw new Error('UserId not found')
+      return null;
     }
 
-    return await ctx.db.insert('userProfile', {
-      username: args.username,
-      userProvidedId: args.userId,
-      isPublic: args.isPublic ?? false,
-    })
-  },
-})
+    const profile = await ctx.db
+      .query("userProfile")
+      .withIndex("by_user_provided_id", (q) =>
+        q.eq("userProvidedId", args.userId),
+      )
+      .first();
 
-export const addBio = mutation({
+    return profile;
+  },
+});
+
+export const upsertProfile = mutation({
   args: {
     userId: v.string(),
-    bio: v.string(),
-    isPublic: v.boolean(),
-  },
-  handler: async (ctx, args) => {
-    if (!args.userId) {
-      throw new Error('UserId not found')
-    }
-
-    return await ctx.db.insert('userProfile', {
-      bio: args.bio,
-      userProvidedId: args.userId,
-      isPublic: args.isPublic ?? false,
-    })
-  },
-})
-
-export const addSocialLinks = mutation({
-  args: {
-    userId: v.string(),
-    links: v.object({
-      label: v.union(
-        v.literal('GitHub'),
-        v.literal('Twitter'),
-        v.literal('Portfolio')
-      ),
-      url: v.string(),
-    }),
-    isPublic: v.boolean(),
-  },
-  handler: async (ctx, args) => {
-    if (!args.userId) {
-      throw new Error('UserId not found')
-    }
-
-    return await ctx.db.insert('userProfile', {
-      links: args.links,
-      userProvidedId: args.userId,
-      isPublic: args.isPublic ?? false,
-    })
-  },
-})
-
-export const updateSocialLink = mutation({
-  args: {
-    userId: v.string(),
-    userProfileId: v.id('userProfile'),
-    links: v.object({
-      label: v.union(
-        v.literal('GitHub'),
-        v.literal('Twitter'),
-        v.literal('Portfolio')
-      ),
-      url: v.string(),
-    }),
-    isPublic: v.boolean(),
-  },
-  handler: async (ctx, args) => {
-    if (!args.userId) {
-      throw new Error('UserId not found')
-    }
-
-    return await ctx.db.patch(args.userProfileId, {
-      links: args.links,
-      userProvidedId: args.userId,
-      isPublic: args.isPublic ?? false,
-    })
-  },
-})
-export const switchProfileStatus = mutation({
-  args: {
-    userProfileId: v.id('userProfile'),
-    userId: v.string(),
-    isPublic: v.boolean(),
-  },
-  handler: async (ctx, args) => {
-    if (!args.userId) {
-      throw new Error('UserId not found')
-    }
-
-    return await ctx.db.patch(args.userProfileId, {
-      userProvidedId: args.userId,
-      isPublic: args.isPublic,
-    })
-  },
-})
-
-export const completeWholeProfile = mutation({
-  args: {
-    isPublic: v.boolean(),
     username: v.optional(v.string()),
     bio: v.optional(v.string()),
     links: v.optional(
       v.object({
         label: v.union(
-          v.literal('GitHub'),
-          v.literal('Twitter'),
-          v.literal('Portfolio')
+          v.literal("GitHub"),
+          v.literal("Twitter"),
+          v.literal("Portfolio"),
         ),
         url: v.string(),
-      })
+      }),
     ),
-    userId: v.string(),
+    isPublic: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     if (!args.userId) {
-      throw new Error('UserId not found')
+      throw new Error("UserId not found");
     }
 
-    return await ctx.db.insert('userProfile', {
-      username: args.username,
-      bio: args.bio,
-      links: args.links,
-      userProvidedId: args.userId,
-      isPublic: args.isPublic ?? false,
-    })
+    const existingProfile = await ctx.db
+      .query("userProfile")
+      .withIndex("by_user_provided_id", (q) =>
+        q.eq("userProvidedId", args.userId),
+      )
+      .first();
+
+    if (existingProfile) {
+      // Update existing profile with only provided fields
+      const updateData: Record<string, unknown> = {};
+      if (args.username !== undefined) updateData.username = args.username;
+      if (args.bio !== undefined) updateData.bio = args.bio;
+      if (args.links !== undefined) updateData.links = args.links;
+      if (args.isPublic !== undefined) updateData.isPublic = args.isPublic;
+
+      return await ctx.db.patch(existingProfile._id, updateData);
+    } else {
+      // Create new profile
+      return await ctx.db.insert("userProfile", {
+        userProvidedId: args.userId,
+        username: args.username,
+        bio: args.bio,
+        links: args.links,
+        isPublic: args.isPublic ?? false,
+      });
+    }
   },
-})
+});
+
+export const updateUsername = mutation({
+  args: {
+    userId: v.string(),
+    username: v.string(),
+  },
+  handler: async (ctx, args) => {
+    if (!args.userId) {
+      throw new Error("UserId not found");
+    }
+
+    const existingProfile = await ctx.db
+      .query("userProfile")
+      .withIndex("by_user_provided_id", (q) =>
+        q.eq("userProvidedId", args.userId),
+      )
+      .first();
+
+    if (existingProfile) {
+      return await ctx.db.patch(existingProfile._id, {
+        username: args.username,
+      });
+    } else {
+      return await ctx.db.insert("userProfile", {
+        userProvidedId: args.userId,
+        username: args.username,
+        isPublic: false,
+      });
+    }
+  },
+});
+
+export const updateBio = mutation({
+  args: {
+    userId: v.string(),
+    bio: v.string(),
+  },
+  handler: async (ctx, args) => {
+    if (!args.userId) {
+      throw new Error("UserId not found");
+    }
+
+    const existingProfile = await ctx.db
+      .query("userProfile")
+      .withIndex("by_user_provided_id", (q) =>
+        q.eq("userProvidedId", args.userId),
+      )
+      .first();
+
+    if (existingProfile) {
+      return await ctx.db.patch(existingProfile._id, { bio: args.bio });
+    } else {
+      return await ctx.db.insert("userProfile", {
+        userProvidedId: args.userId,
+        bio: args.bio,
+        isPublic: false,
+      });
+    }
+  },
+});
+
+export const updateSocialLinks = mutation({
+  args: {
+    userId: v.string(),
+    links: v.object({
+      label: v.union(
+        v.literal("GitHub"),
+        v.literal("Twitter"),
+        v.literal("Portfolio"),
+      ),
+      url: v.string(),
+    }),
+  },
+  handler: async (ctx, args) => {
+    if (!args.userId) {
+      throw new Error("UserId not found");
+    }
+
+    const existingProfile = await ctx.db
+      .query("userProfile")
+      .withIndex("by_user_provided_id", (q) =>
+        q.eq("userProvidedId", args.userId),
+      )
+      .first();
+
+    if (existingProfile) {
+      return await ctx.db.patch(existingProfile._id, { links: args.links });
+    } else {
+      return await ctx.db.insert("userProfile", {
+        userProvidedId: args.userId,
+        links: args.links,
+        isPublic: false,
+      });
+    }
+  },
+});
+
+export const switchProfileStatus = mutation({
+  args: {
+    userId: v.string(),
+    isPublic: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    if (!args.userId) {
+      throw new Error("UserId not found");
+    }
+
+    const existingProfile = await ctx.db
+      .query("userProfile")
+      .withIndex("by_user_provided_id", (q) =>
+        q.eq("userProvidedId", args.userId),
+      )
+      .first();
+
+    if (existingProfile) {
+      return await ctx.db.patch(existingProfile._id, {
+        isPublic: args.isPublic,
+      });
+    } else {
+      return await ctx.db.insert("userProfile", {
+        userProvidedId: args.userId,
+        isPublic: args.isPublic,
+      });
+    }
+  },
+});
