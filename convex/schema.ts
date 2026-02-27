@@ -7,6 +7,22 @@ export default defineSchema({
     userProvidedId: v.string(),
     email: v.string(),
   }).index('by_user_provided_id', ['userProvidedId']),
+  userProfile: defineTable({
+    isPublic: v.boolean(),
+    username: v.optional(v.string()),
+    bio: v.optional(v.string()),
+    links: v.optional(
+      v.object({
+        label: v.union(
+          v.literal('GitHub'),
+          v.literal('Twitter'),
+          v.literal('Portfolio')
+        ),
+        url: v.string(),
+      })
+    ),
+    userProvidedId: v.string(),
+  }),
   groups: defineTable({
     title: v.string(),
     color: v.string(),
