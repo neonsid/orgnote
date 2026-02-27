@@ -1,57 +1,60 @@
-'use client'
+"use client";
 
-import { useState, useRef, useEffect } from 'react'
-import { ChevronsUpDown, LogOut, Settings, Keyboard } from 'lucide-react'
-import { authClient } from '@/lib/auth-client'
-import { useRouter } from 'next/navigation'
-import { KeyboardShortcutsDialog } from '@/components/dashboard/keyboard-shortcuts-dialog'
-import { useIsSmallMobile } from '@/hooks/use-mobile'
-import Image from 'next/image'
-import { AnimatedThemeToggler } from '../ui/animated-theme-toggler'
+import { useState, useRef, useEffect } from "react";
+import ChevronsUpDown from "lucide-react/dist/esm/icons/chevrons-up-down";
+import LogOut from "lucide-react/dist/esm/icons/log-out";
+import Settings from "lucide-react/dist/esm/icons/settings";
+import Keyboard from "lucide-react/dist/esm/icons/keyboard";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import { KeyboardShortcutsDialog } from "@/components/dashboard/keyboard-shortcuts-dialog";
+import { useIsSmallMobile } from "@/hooks/use-mobile";
+import Image from "next/image";
+import { AnimatedThemeToggler } from "../ui/animated-theme-toggler";
 
 interface UserInfoProps {
   user: {
-    id: string
-    name: string
-    email: string
-    image?: string | null
-  }
+    id: string;
+    name: string;
+    email: string;
+    image?: string | null;
+  };
 }
 
 export function UserInfo({ user }: UserInfoProps) {
-  const [open, setOpen] = useState(false)
-  const [shortcutsOpen, setShortcutsOpen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const router = useRouter()
-  const isSmallMobile = useIsSmallMobile()
+  const [open, setOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const isSmallMobile = useIsSmallMobile();
 
-  const initial = user.name?.charAt(0)?.toUpperCase() ?? 'U'
+  const initial = user.name?.charAt(0)?.toUpperCase() ?? "U";
 
-  const maxLen = 14
+  const maxLen = 14;
   const displayName =
-    user.name.length > maxLen ? user.name.slice(0, maxLen) + '…' : user.name
+    user.name.length > maxLen ? user.name.slice(0, maxLen) + "…" : user.name;
 
   useEffect(() => {
-    if (!open) return
+    if (!open) return;
 
     function handleClickOutside(e: MouseEvent) {
       if (
         containerRef.current &&
         !containerRef.current.contains(e.target as Node)
       ) {
-        setOpen(false)
+        setOpen(false);
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [open])
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
 
   const handleSignOut = async () => {
-    await authClient.signOut()
-    router.push('/')
-  }
-  const themeToggleRef = useRef<{ toggle: () => void }>(null)
+    await authClient.signOut();
+    router.push("/");
+  };
+  const themeToggleRef = useRef<{ toggle: () => void }>(null);
 
   return (
     <>
@@ -108,8 +111,8 @@ export function UserInfo({ user }: UserInfoProps) {
               <button
                 id="user-keyboard-shortcuts-button"
                 onClick={() => {
-                  setOpen(false)
-                  setShortcutsOpen(true)
+                  setOpen(false);
+                  setShortcutsOpen(true);
                 }}
                 className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
               >
@@ -135,5 +138,5 @@ export function UserInfo({ user }: UserInfoProps) {
         onOpenChange={setShortcutsOpen}
       />
     </>
-  )
+  );
 }

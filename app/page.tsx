@@ -1,23 +1,12 @@
-'use client'
-
-import { Fish, Sparkles, BrainCog } from 'lucide-react'
+import Fish from 'lucide-react/dist/esm/icons/fish'
+import Sparkles from 'lucide-react/dist/esm/icons/sparkles'
+import BrainCog from 'lucide-react/dist/esm/icons/brain-cog'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { DashboardDemo } from '@/components/landing/dashboard-demo'
 import { FeaturesSection } from '@/components/features-section'
-import { authClient } from '@/lib/auth-client'
 
 export default function Home() {
-  const { data: session, isPending } = authClient.useSession()
-
-  if (isPending || session?.user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="size-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
