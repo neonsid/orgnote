@@ -1,28 +1,33 @@
-'use client'
+"use client";
 
-import { useState, useCallback, useEffect } from 'react'
-import { useMutation } from 'convex/react'
-import { api } from '@/convex/_generated/api'
-import { type Id } from '@/convex/_generated/dataModel'
+import { useEffect } from "react";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { type Id } from "@/convex/_generated/dataModel";
+import { useForm } from "@tanstack/react-form";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  renameBookmarkSchema,
+  type RenameBookmarkFormData,
+} from "@/lib/validation";
 
 interface Bookmark {
-  id: Id<'bookmarks'>
-  title: string
+  id: Id<"bookmarks">;
+  title: string;
 }
 
 interface RenameBookmarkDialogProps {
-  bookmark: Bookmark | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  bookmark: Bookmark | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export function RenameBookmarkDialog({
@@ -30,24 +35,39 @@ export function RenameBookmarkDialog({
   open,
   onOpenChange,
 }: RenameBookmarkDialogProps) {
-  const [newTitle, setNewTitle] = useState('')
-  const renameBookmark = useMutation(api.bookmarks.renameBookMark)
+  const renameBookmark = useMutation(api.bookmarks.renameBookMark);
+
+  const form = useForm({
+    defaultValues: {
+      title: "",
+    } as RenameBookmarkFormData,
+    validators: {
+      onChange: renameBookmarkSchema,
+      onSubmit: renameBookmarkSchema,
+    },
+    onSubmit: async ({ value }) => {
+      if (!bookmark) return;
+      await renameBookmark({
+        bookmarkId: bookmark.id,
+        title: value.title,
+      });
+      onOpenChange(false);
+    },
+  });
 
   // Sync the input when a new bookmark is selected
   useEffect(() => {
     if (bookmark) {
-      setNewTitle(bookmark.title)
+      form.setFieldValue("title", bookmark.title);
     }
-  }, [bookmark])
+  }, [bookmark, form]);
 
-  const handleConfirm = useCallback(async () => {
-    if (!bookmark || !newTitle.trim()) return
-    await renameBookmark({
-      bookmarkId: bookmark.id,
-      title: newTitle.trim(),
-    })
-    onOpenChange(false)
-  }, [bookmark, newTitle, renameBookmark, onOpenChange])
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!open) {
+      form.reset();
+    }
+  }, [open, form]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -55,21 +75,52 @@ export function RenameBookmarkDialog({
         <DialogHeader>
           <DialogTitle>Rename Bookmark</DialogTitle>
         </DialogHeader>
-        <div className="py-4">
-          <Input
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            placeholder="Bookmark title"
-            onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
-          />
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleConfirm}>Save</Button>
-        </DialogFooter>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            form.handleSubmit();
+          }}
+        >
+          <div className="py-4">
+            <form.Field
+              name="title"
+              children={(field) => (
+                <>
+                  <Input
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    placeholder="Bookmark title"
+                    aria-invalid={field.state.meta.errors.length > 0}
+                  />
+                  {field.state.meta.errors.length > 0 && (
+                    <p className="text-sm text-red-500 mt-2">
+                      {field.state.meta.errors[0]?.message}
+                    </p>
+                  )}
+                </>
+              )}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              type="button"
+            >
+              Cancel
+            </Button>
+            <form.Subscribe
+              selector={(state) => state.canSubmit}
+              children={(canSubmit) => (
+                <Button type="submit" disabled={!canSubmit}>
+                  Save
+                </Button>
+              )}
+            />
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

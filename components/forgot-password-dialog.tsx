@@ -1,6 +1,7 @@
 "use client";
 
-import { useReducer } from "react";
+import { useState } from "react";
+import { useForm } from "@tanstack/react-form";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
+import {
+  forgotPasswordSchema,
+  type ForgotPasswordFormData,
+} from "@/lib/validation";
 
 interface ForgotPasswordDialogProps {
   open: boolean;
@@ -19,93 +24,46 @@ interface ForgotPasswordDialogProps {
   onBackToLogin: () => void;
 }
 
-interface ForgotPasswordState {
-  email: string;
-  loading: boolean;
-  error: string;
-  success: boolean;
-}
-
-type ForgotPasswordAction =
-  | { type: "SET_EMAIL"; value: string }
-  | { type: "SET_LOADING"; value: boolean }
-  | { type: "SET_ERROR"; value: string }
-  | { type: "CLEAR_ERROR" }
-  | { type: "SET_SUCCESS"; value: boolean }
-  | { type: "RESET" };
-
-const initialForgotPasswordState: ForgotPasswordState = {
-  email: "",
-  loading: false,
-  error: "",
-  success: false,
-};
-
-function forgotPasswordReducer(
-  state: ForgotPasswordState,
-  action: ForgotPasswordAction,
-): ForgotPasswordState {
-  switch (action.type) {
-    case "SET_EMAIL":
-      return { ...state, email: action.value };
-    case "SET_LOADING":
-      return { ...state, loading: action.value };
-    case "SET_ERROR":
-      return { ...state, error: action.value };
-    case "CLEAR_ERROR":
-      return { ...state, error: "" };
-    case "SET_SUCCESS":
-      return { ...state, success: action.value };
-    case "RESET":
-      return initialForgotPasswordState;
-    default:
-      return state;
-  }
-}
-
 export function ForgotPasswordDialog({
   open,
   onOpenChange,
   onBackToLogin,
 }: ForgotPasswordDialogProps) {
-  const [state, dispatch] = useReducer(
-    forgotPasswordReducer,
-    initialForgotPasswordState,
-  );
+  const [success, setSuccess] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  const form = useForm({
+    defaultValues: {
+      email: "",
+    } as ForgotPasswordFormData,
+    validators: {
+      onChange: forgotPasswordSchema,
+      onSubmit: forgotPasswordSchema,
+    },
+    onSubmit: async ({ value }) => {
+      setFormError("");
+      try {
+        const result = await authClient.requestPasswordReset({
+          email: value.email,
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+
+        if (result.error) {
+          setFormError(result.error.message || "Failed to send reset email.");
+        } else {
+          setSuccess(true);
+        }
+      } catch {
+        setFormError("Failed to send reset email. Please try again.");
+      }
+    },
+  });
 
   const handleBackToLogin = () => {
     onOpenChange(false);
-    dispatch({ type: "RESET" });
+    form.reset();
+    setSuccess(false);
     onBackToLogin();
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    dispatch({ type: "CLEAR_ERROR" });
-    dispatch({ type: "SET_LOADING", value: true });
-
-    try {
-      const result = await authClient.requestPasswordReset({
-        email: state.email,
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-
-      if (result.error) {
-        dispatch({
-          type: "SET_ERROR",
-          value: result.error.message || "Failed to send reset email.",
-        });
-      } else {
-        dispatch({ type: "SET_SUCCESS", value: true });
-      }
-    } catch {
-      dispatch({
-        type: "SET_ERROR",
-        value: "Failed to send reset email. Please try again.",
-      });
-    } finally {
-      dispatch({ type: "SET_LOADING", value: false });
-    }
   };
 
   return (
@@ -121,10 +79,10 @@ export function ForgotPasswordDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-6 pt-2">
-          {state.error && (
-            <p className="text-sm text-red-500 text-center">{state.error}</p>
+          {formError && (
+            <p className="text-sm text-red-500 text-center">{formError}</p>
           )}
-          {state.success ? (
+          {success ? (
             <div className="flex flex-col gap-4">
               <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                 <p className="text-sm text-green-700 dark:text-green-300 text-center">
@@ -137,24 +95,48 @@ export function ForgotPasswordDialog({
               </Button>
             </div>
           ) : (
-            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-              <div className="grid gap-2">
-                <Label htmlFor="forgot-email">Email</Label>
-                <Input
-                  id="forgot-email"
-                  type="email"
-                  placeholder="hello@example.com"
-                  autoComplete="email"
-                  value={state.email}
-                  onChange={(e) =>
-                    dispatch({ type: "SET_EMAIL", value: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={state.loading}>
-                {state.loading ? "Sending…" : "Send reset link"}
-              </Button>
+            <form
+              className="flex flex-col gap-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                form.handleSubmit();
+              }}
+            >
+              <form.Field
+                name="email"
+                children={(field) => (
+                  <div className="grid gap-2">
+                    <Label htmlFor="forgot-email">Email</Label>
+                    <Input
+                      id="forgot-email"
+                      type="email"
+                      placeholder="hello@example.com"
+                      autoComplete="email"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      aria-invalid={field.state.meta.errors.length > 0}
+                    />
+                    {field.state.meta.errors.length > 0 && (
+                      <p className="text-sm text-red-500">
+                        {field.state.meta.errors[0]?.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+              />
+              <form.Subscribe
+                selector={(state) => [state.canSubmit, state.isSubmitting]}
+                children={([canSubmit, isSubmitting]) => (
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={!canSubmit}
+                  >
+                    {isSubmitting ? "Sending…" : "Send reset link"}
+                  </Button>
+                )}
+              />
               <button
                 type="button"
                 onClick={handleBackToLogin}

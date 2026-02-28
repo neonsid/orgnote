@@ -1,22 +1,39 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useForm } from "@tanstack/react-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
+import {
+  resetPasswordSchema,
+  type ResetPasswordFormData,
+} from "@/lib/validation";
+import { Check, X } from "lucide-react";
+
+interface PasswordRequirementProps {
+  met: boolean;
+  text: string;
+}
+
+function PasswordRequirement({ met, text }: PasswordRequirementProps) {
+  return (
+    <div
+      className={`flex items-center gap-2 text-sm ${met ? "text-green-600" : "text-muted-foreground"}`}
+    >
+      {met ? <Check className="size-4" /> : <X className="size-4" />}
+      <span>{text}</span>
+    </div>
+  );
+}
 
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token");
-
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!token) {
@@ -25,40 +42,35 @@ export default function ResetPasswordPage() {
     }
   }, [token, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+  const form = useForm({
+    defaultValues: {
+      password: "",
+      confirmPassword: "",
+    } as ResetPasswordFormData,
+    validators: {
+      onChange: resetPasswordSchema,
+      onSubmit: resetPasswordSchema,
+    },
+    onSubmit: async ({ value }) => {
+      if (!token) return;
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
+      try {
+        const result = await authClient.resetPassword({
+          newPassword: value.password,
+          token: token,
+        });
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const result = await authClient.resetPassword({
-        newPassword: password,
-        token: token!,
-      });
-
-      if (result.error) {
-        setError(result.error.message || "Failed to reset password");
-      } else {
-        toast.success("Password reset successfully!");
-        router.push("/");
+        if (result.error) {
+          toast.error(result.error.message || "Failed to reset password");
+        } else {
+          toast.success("Password reset successfully!");
+          router.push("/");
+        }
+      } catch {
+        toast.error("Failed to reset password. Please try again.");
       }
-    } catch {
-      setError("Failed to reset password. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+  });
 
   if (!token) {
     return null;
@@ -74,35 +86,101 @@ export default function ResetPasswordPage() {
           </p>
         </div>
 
-        {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            form.handleSubmit();
+          }}
+          className="space-y-4"
+        >
+          <form.Field
+            name="password"
+            children={(field) => {
+              const password = field.state.value;
+              const hasMinLength = password.length >= 8;
+              const hasMaxLength = password.length <= 128;
+              const hasUppercase = /[A-Z]/.test(password);
+              const hasLowercase = /[a-z]/.test(password);
+              const hasNumber = /[0-9]/.test(password);
+              const hasSpecial = /[^A-Za-z0-9]/.test(password);
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="password">New password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirm password</Label>
-            <Input
-              id="confirm-password"
-              type="password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Resetting…" : "Reset password"}
-          </Button>
+              return (
+                <div className="space-y-2">
+                  <Label htmlFor="password">New password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    aria-invalid={field.state.meta.errors.length > 0}
+                  />
+                  {password.length > 0 && (
+                    <div className="space-y-1 mt-2 p-3 bg-muted rounded-md">
+                      <p className="text-sm font-medium mb-2">
+                        Password requirements:
+                      </p>
+                      <PasswordRequirement
+                        met={hasMinLength}
+                        text="At least 8 characters"
+                      />
+                      <PasswordRequirement
+                        met={hasMaxLength}
+                        text="At most 128 characters"
+                      />
+                      <PasswordRequirement
+                        met={hasUppercase}
+                        text="One uppercase letter (A-Z)"
+                      />
+                      <PasswordRequirement
+                        met={hasLowercase}
+                        text="One lowercase letter (a-z)"
+                      />
+                      <PasswordRequirement
+                        met={hasNumber}
+                        text="One number (0-9)"
+                      />
+                      <PasswordRequirement
+                        met={hasSpecial}
+                        text="One special character (!@#$%^&*)"
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            }}
+          />
+          <form.Field
+            name="confirmPassword"
+            children={(field) => (
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  onBlur={field.handleBlur}
+                  aria-invalid={field.state.meta.errors.length > 0}
+                />
+                {field.state.meta.errors.length > 0 && (
+                  <p className="text-sm text-red-500">
+                    {field.state.meta.errors[0]?.message}
+                  </p>
+                )}
+              </div>
+            )}
+          />
+          <form.Subscribe
+            selector={(state) => [state.canSubmit, state.isSubmitting]}
+            children={([canSubmit, isSubmitting]) => (
+              <Button type="submit" className="w-full" disabled={!canSubmit}>
+                {isSubmitting ? "Resetting…" : "Reset password"}
+              </Button>
+            )}
+          />
         </form>
       </div>
     </div>

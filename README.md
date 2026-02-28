@@ -6,5 +6,6 @@
 - [] Deploy it on vercel
 - [] Get normal websites data from orgnote/backend/get-data.ts file
 - [] For twitter use scira
-- [] Add loading state for convex queries
 - [] Add public profile functionality from minimal
+- [] Add form validation across the project
+- [] Restrict the username if it is less than 3 words
