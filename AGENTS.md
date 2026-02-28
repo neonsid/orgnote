@@ -21,3 +21,5 @@
   - `card` - Card containers
   - `tabs` - Tab navigation
   - `toast` / `sonner` - Notifications
+
+- **ALWAYS use pnpm** 
