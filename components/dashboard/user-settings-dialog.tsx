@@ -250,7 +250,7 @@ export function UserSettingsDialog({
           userId: user.id,
           username: value.username || undefined,
           bio: value.bio || undefined,
-          links: links[0],
+          links: links.length > 0 ? links : undefined,
           isPublic: value.isPublic,
         });
       }
@@ -280,21 +280,22 @@ export function UserSettingsDialog({
       if (existingProfile.bio) {
         profileForm.setFieldValue("bio", existingProfile.bio);
       }
-      if (existingProfile.links) {
-        const link = existingProfile.links;
-        if (link.label === "GitHub") {
-          profileForm.setFieldValue("github", link.url);
-        } else if (link.label === "Twitter") {
-          // Extract username from https://x.com/username
-          const match = link.url.match(/https:\/\/x\.com\/(\w+)/);
-          if (match) {
-            profileForm.setFieldValue("twitter", match[1]);
-          }
-        } else if (link.label === "Portfolio") {
-          // Extract domain from https://domain.com
-          const match = link.url.match(/https:\/\/(.+)/);
-          if (match) {
-            profileForm.setFieldValue("website", match[1]);
+      if (existingProfile.links && existingProfile.links.length > 0) {
+        for (const link of existingProfile.links) {
+          if (link.label === "GitHub") {
+            profileForm.setFieldValue("github", link.url);
+          } else if (link.label === "Twitter") {
+            // Extract username from https://x.com/username
+            const match = link.url.match(/https:\/\/x\.com\/(\w+)/);
+            if (match) {
+              profileForm.setFieldValue("twitter", match[1]);
+            }
+          } else if (link.label === "Portfolio") {
+            // Extract domain from https://domain.com
+            const match = link.url.match(/https:\/\/(.+)/);
+            if (match) {
+              profileForm.setFieldValue("website", match[1]);
+            }
           }
         }
       }

@@ -27,14 +27,16 @@ export const upsertProfile = mutation({
     username: v.optional(v.string()),
     bio: v.optional(v.string()),
     links: v.optional(
-      v.object({
-        label: v.union(
-          v.literal("GitHub"),
-          v.literal("Twitter"),
-          v.literal("Portfolio"),
-        ),
-        url: v.string(),
-      }),
+      v.array(
+        v.object({
+          label: v.union(
+            v.literal("GitHub"),
+            v.literal("Twitter"),
+            v.literal("Portfolio"),
+          ),
+          url: v.string(),
+        }),
+      ),
     ),
     isPublic: v.optional(v.boolean()),
   },
@@ -135,14 +137,16 @@ export const updateBio = mutation({
 export const updateSocialLinks = mutation({
   args: {
     userId: v.string(),
-    links: v.object({
-      label: v.union(
-        v.literal("GitHub"),
-        v.literal("Twitter"),
-        v.literal("Portfolio"),
-      ),
-      url: v.string(),
-    }),
+    links: v.array(
+      v.object({
+        label: v.union(
+          v.literal("GitHub"),
+          v.literal("Twitter"),
+          v.literal("Portfolio"),
+        ),
+        url: v.string(),
+      }),
+    ),
   },
   handler: async (ctx, args) => {
     if (!args.userId) {
