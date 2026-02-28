@@ -23,7 +23,7 @@ export interface ConvexGroup {
   _id: Id<"groups">;
   title: string;
   color: string;
-  isPublic: boolean;
+  isPublic?: boolean;
   _creationTime: number;
 }
 
@@ -174,7 +174,7 @@ export const GroupSelector = memo(function GroupSelector({
                     }}
                     className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground transition-colors"
                   >
-                    {selectedGroup.isPublic ? (
+                    {selectedGroup.isPublic === true ? (
                       <>
                         <Globe className="size-4 text-muted-foreground" />
                         <span className="font-medium">Make Private</span>

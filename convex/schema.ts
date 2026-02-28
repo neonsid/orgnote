@@ -31,7 +31,7 @@ export default defineSchema({
     title: v.string(),
     color: v.string(),
     userProvidedId: v.string(), // Denormalized for convenience
-    isPublic: v.boolean(),
+    isPublic: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.optional(v.number()),
   })
