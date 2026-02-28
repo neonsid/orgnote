@@ -1,6 +1,7 @@
 "use client";
 
-import { useReducer, useState } from "react";
+import { useState } from "react";
+import { useForm } from "@tanstack/react-form";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,7 @@ import { GoogleLogoIcon } from "@phosphor-icons/react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { ForgotPasswordDialog } from "@/components/forgot-password-dialog";
+import { loginSchema, type LoginFormData } from "@/lib/validation";
 
 interface LoginDialogProps {
   open: boolean;
@@ -22,54 +24,43 @@ interface LoginDialogProps {
   onSignupClick: () => void;
 }
 
-interface LoginState {
-  email: string;
-  password: string;
-  loading: boolean;
-  googleLoading: boolean;
-  error: string;
-}
-
-type LoginAction =
-  | { type: "SET_FIELD"; field: "email" | "password"; value: string }
-  | { type: "SET_LOADING"; value: boolean }
-  | { type: "SET_GOOGLE_LOADING"; value: boolean }
-  | { type: "SET_ERROR"; value: string }
-  | { type: "CLEAR_ERROR" };
-
-const initialLoginState: LoginState = {
-  email: "",
-  password: "",
-  loading: false,
-  googleLoading: false,
-  error: "",
-};
-
-function loginReducer(state: LoginState, action: LoginAction): LoginState {
-  switch (action.type) {
-    case "SET_FIELD":
-      return { ...state, [action.field]: action.value };
-    case "SET_LOADING":
-      return { ...state, loading: action.value };
-    case "SET_GOOGLE_LOADING":
-      return { ...state, googleLoading: action.value };
-    case "SET_ERROR":
-      return { ...state, error: action.value };
-    case "CLEAR_ERROR":
-      return { ...state, error: "" };
-    default:
-      return state;
-  }
-}
-
 export function LoginDialog({
   open,
   onOpenChange,
   onSignupClick,
 }: LoginDialogProps) {
-  const [state, dispatch] = useReducer(loginReducer, initialLoginState);
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [formError, setFormError] = useState("");
   const router = useRouter();
+
+  const form = useForm({
+    defaultValues: {
+      email: "",
+      password: "",
+    } as LoginFormData,
+    validators: {
+      onChange: loginSchema,
+      onSubmit: loginSchema,
+    },
+    onSubmit: async ({ value }) => {
+      setFormError("");
+      try {
+        const result = await authClient.signIn.email({
+          email: value.email,
+          password: value.password,
+        });
+        if (result.error) {
+          setFormError(result.error.message || "Invalid email or password.");
+        } else {
+          onOpenChange(false);
+          router.push("/dashboard");
+        }
+      } catch {
+        setFormError("Failed to sign in. Please try again.");
+      }
+    },
+  });
 
   const handleSignupClick = () => {
     onOpenChange(false);
@@ -77,47 +68,16 @@ export function LoginDialog({
   };
 
   const handleGoogleSignIn = async () => {
-    dispatch({ type: "SET_GOOGLE_LOADING", value: true });
-    dispatch({ type: "CLEAR_ERROR" });
+    setGoogleLoading(true);
+    setFormError("");
     try {
       await authClient.signIn.social({
         provider: "google",
         callbackURL: "/dashboard",
       });
     } catch {
-      dispatch({
-        type: "SET_ERROR",
-        value: "Failed to sign in with Google. Please try again.",
-      });
-      dispatch({ type: "SET_GOOGLE_LOADING", value: false });
-    }
-  };
-
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    dispatch({ type: "SET_LOADING", value: true });
-    dispatch({ type: "CLEAR_ERROR" });
-    try {
-      const result = await authClient.signIn.email({
-        email: state.email,
-        password: state.password,
-      });
-      if (result.error) {
-        dispatch({
-          type: "SET_ERROR",
-          value: result.error.message || "Invalid email or password.",
-        });
-      } else {
-        onOpenChange(false);
-        router.push("/dashboard");
-      }
-    } catch {
-      dispatch({
-        type: "SET_ERROR",
-        value: "Failed to sign in. Please try again.",
-      });
-    } finally {
-      dispatch({ type: "SET_LOADING", value: false });
+      setFormError("Failed to sign in with Google. Please try again.");
+      setGoogleLoading(false);
     }
   };
 
@@ -137,72 +97,97 @@ export function LoginDialog({
               variant="outline"
               className="w-full border border-input bg-background"
               onClick={handleGoogleSignIn}
-              disabled={state.googleLoading}
+              disabled={googleLoading}
             >
-              {state.googleLoading ? (
+              {googleLoading ? (
                 <span className="size-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
               ) : (
                 <GoogleLogoIcon className="size-5" weight="bold" />
               )}
               Sign in with Google
             </Button>
-            {state.error && (
-              <p className="text-sm text-red-500 text-center">{state.error}</p>
+            {formError && (
+              <p className="text-sm text-red-500 text-center">{formError}</p>
             )}
             <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
               <span className="relative z-10 bg-background px-2 text-muted-foreground">
                 OR CONTINUE WITH EMAIL
               </span>
             </div>
-            <form className="flex flex-col gap-4" onSubmit={handleEmailLogin}>
-              <div className="grid gap-2">
-                <Label htmlFor="login-email">Email</Label>
-                <Input
-                  id="login-email"
-                  type="email"
-                  placeholder="hello@example.com"
-                  autoComplete="email"
-                  value={state.email}
-                  onChange={(e) =>
-                    dispatch({
-                      type: "SET_FIELD",
-                      field: "email",
-                      value: e.target.value,
-                    })
-                  }
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="login-password">Password</Label>
-                  <button
-                    type="button"
-                    onClick={() => setForgotPasswordOpen(true)}
-                    className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+            <form
+              className="flex flex-col gap-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                form.handleSubmit();
+              }}
+            >
+              <form.Field
+                name="email"
+                children={(field) => (
+                  <div className="grid gap-2">
+                    <Label htmlFor="login-email">Email</Label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      placeholder="hello@example.com"
+                      autoComplete="email"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      aria-invalid={field.state.meta.errors.length > 0}
+                    />
+                    {field.state.meta.errors.length > 0 && (
+                      <p className="text-sm text-red-500">
+                        {field.state.meta.errors[0]?.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+              />
+              <form.Field
+                name="password"
+                children={(field) => (
+                  <div className="grid gap-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="login-password">Password</Label>
+                      <button
+                        type="button"
+                        onClick={() => setForgotPasswordOpen(true)}
+                        className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+                      >
+                        Forgot your password?
+                      </button>
+                    </div>
+                    <Input
+                      id="login-password"
+                      type="password"
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      aria-invalid={field.state.meta.errors.length > 0}
+                    />
+                    {field.state.meta.errors.length > 0 && (
+                      <p className="text-sm text-red-500">
+                        {field.state.meta.errors[0]?.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+              />
+              <form.Subscribe
+                selector={(state) => [state.canSubmit, state.isSubmitting]}
+                children={([canSubmit, isSubmitting]) => (
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={!canSubmit}
                   >
-                    Forgot your password?
-                  </button>
-                </div>
-                <Input
-                  id="login-password"
-                  type="password"
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  value={state.password}
-                  onChange={(e) =>
-                    dispatch({
-                      type: "SET_FIELD",
-                      field: "password",
-                      value: e.target.value,
-                    })
-                  }
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={state.loading}>
-                {state.loading ? "Signing in…" : "Login"}
-              </Button>
+                    {isSubmitting ? "Signing in…" : "Login"}
+                  </Button>
+                )}
+              />
             </form>
             <p className="text-center text-sm text-muted-foreground">
               Don&apos;t have an account?{" "}
