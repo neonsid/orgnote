@@ -24,14 +24,19 @@ export default defineSchema({
       ),
     ),
     userProvidedId: v.string(),
-  }).index("by_user_provided_id", ["userProvidedId"]),
+  })
+    .index("by_user_provided_id", ["userProvidedId"])
+    .index("by_username", ["username"]),
   groups: defineTable({
     title: v.string(),
     color: v.string(),
     userProvidedId: v.string(), // Denormalized for convenience
+    isPublic: v.boolean(),
     createdAt: v.number(),
     updatedAt: v.optional(v.number()),
-  }).index("by_user_provided_id", ["userProvidedId"]),
+  })
+    .index("by_user_provided_id", ["userProvidedId"])
+    .index("by_user_public", ["userProvidedId", "isPublic"]),
   bookmarks: defineTable({
     title: v.string(),
     description: v.optional(v.string()),
