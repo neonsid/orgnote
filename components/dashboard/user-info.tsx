@@ -12,6 +12,9 @@ import { UserSettingsDialog } from "@/components/dashboard/settings";
 import { useIsSmallMobile } from "@/hooks/use-mobile";
 import Image from "next/image";
 import { AnimatedThemeToggler } from "../ui/animated-theme-toggler";
+import { UserIcon } from "lucide-react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 interface UserInfoProps {
   user: {
@@ -29,6 +32,10 @@ export function UserInfo({ user }: UserInfoProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const isSmallMobile = useIsSmallMobile();
+
+  // Fetch user profile to check if public profile is enabled
+  const profile = useQuery(api.profile.getProfile, { userId: user.id });
+  const hasPublicProfile = profile?.isPublic && profile?.username;
 
   const initial = user.name?.charAt(0)?.toUpperCase() ?? "U";
 
@@ -57,6 +64,13 @@ export function UserInfo({ user }: UserInfoProps) {
     router.push("/");
   };
   const themeToggleRef = useRef<{ toggle: () => void }>(null);
+
+  const handlePublicProfileClick = () => {
+    setOpen(false);
+    if (profile?.username) {
+      router.push(`/u/${profile.username}`);
+    }
+  };
 
   return (
     <>
@@ -114,6 +128,16 @@ export function UserInfo({ user }: UserInfoProps) {
                 Settings
                 <Settings className="size-4 text-muted-foreground" />
               </button>
+              {hasPublicProfile && (
+                <button
+                  id="public-profile"
+                  onClick={handlePublicProfileClick}
+                  className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                >
+                  Public Profile
+                  <UserIcon className="size-4 text-muted-foreground" />
+                </button>
+              )}
               <button
                 id="user-keyboard-shortcuts-button"
                 onClick={() => {
