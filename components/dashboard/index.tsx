@@ -1,35 +1,33 @@
-"use client";
+'use client'
 
-import { useState, useMemo, useCallback } from "react";
-import { motion } from "motion/react";
-import Loader2 from "lucide-react/dist/esm/icons/loader-2";
-import Link from "next/link";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { authClient } from "@/lib/auth-client";
-import { toast } from "sonner";
-import { DashboardHeader } from "./dashboard-header";
-import { FilterDropdown, type FilterType } from "./filter-dropdown";
-import { GroupSelector } from "./group-selector";
-import { BookmarkSearch } from "./bookmark-search";
-import { BookmarkList, type Bookmark } from "./bookmark-list";
-import { RenameBookmarkDialog } from "./rename-bookmark-dialog";
-import { DeleteBookmarkDialog } from "./delete-bookmark-dialog";
-import { type Doc, type Id } from "@/convex/_generated/dataModel";
-import { extractDomain, COLORS } from "@/lib/domain-utils";
-import { useDialogStore } from "@/stores/dialog-store";
+import { useState, useMemo, useCallback } from 'react'
+import { motion } from 'motion/react'
+import Loader2 from 'lucide-react/dist/esm/icons/loader-2'
+import Link from 'next/link'
+import { useQuery, useMutation } from 'convex/react'
+import { api } from '@/convex/_generated/api'
+import { authClient } from '@/lib/auth-client'
+import { toast } from 'sonner'
+import { DashboardHeader } from './dashboard-header'
+import { FilterDropdown, type FilterType } from './filter-dropdown'
+import { BookmarkSearch } from './bookmark-search'
+import { BookmarkList, type Bookmark } from './bookmark-list'
+import { RenameBookmarkDialog } from './rename-bookmark-dialog'
+import { DeleteBookmarkDialog } from './delete-bookmark-dialog'
+import { type Doc, type Id } from '@/convex/_generated/dataModel'
+import { extractDomain, COLORS } from '@/lib/domain-utils'
+import { useDialogStore } from '@/stores/dialog-store'
 
 export default function DashboardPage() {
-  const { data: session, isPending: isSessionLoading } =
-    authClient.useSession();
-  const userId = session?.user?.id ?? "";
+  const { data: session, isPending: isSessionLoading } = authClient.useSession()
+  const userId = session?.user?.id ?? ''
 
   // Fetch groups from Convex (skip query while session is loading)
-  const groups = useQuery(api.groups.list, userId ? { userId } : "skip");
+  const groups = useQuery(api.groups.list, userId ? { userId } : 'skip')
 
-  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [filter, setFilter] = useState<FilterType>("all");
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
+  const [filter, setFilter] = useState<FilterType>('all')
 
   // Dialog state from Zustand store
   const {
@@ -39,136 +37,136 @@ export default function DashboardPage() {
     closeRenameDialog,
     openDeleteBookmarkDialog,
     closeDeleteBookmarkDialog,
-  } = useDialogStore();
+  } = useDialogStore()
 
   // Auto-select the first group when groups load
   const effectiveGroupId = useMemo(() => {
     if (selectedGroupId && groups?.some((g) => g._id === selectedGroupId)) {
-      return selectedGroupId;
+      return selectedGroupId
     }
-    return groups?.[0]?._id ?? "";
-  }, [selectedGroupId, groups]);
+    return groups?.[0]?._id ?? ''
+  }, [selectedGroupId, groups])
 
   // Fetch bookmarks from Convex
   const convexBookmarks = useQuery(
     api.bookmarks.listBookMarks,
-    effectiveGroupId ? { groupId: effectiveGroupId as Id<"groups"> } : "skip",
-  );
+    effectiveGroupId ? { groupId: effectiveGroupId as Id<'groups'> } : 'skip'
+  )
 
   const loadingBookMarks = effectiveGroupId
     ? convexBookmarks === undefined
-    : false;
+    : false
 
-  const createBookmark = useMutation(api.bookmarks.createBookMark);
-  const moveBookmark = useMutation(api.bookmarks.moveBookMark);
-  const toggleReadStatus = useMutation(api.bookmarks.toggleReadStatus);
+  const createBookmark = useMutation(api.bookmarks.createBookMark)
+  const moveBookmark = useMutation(api.bookmarks.moveBookMark)
+  const toggleReadStatus = useMutation(api.bookmarks.toggleReadStatus)
 
   const handleSubmit = useCallback(
     async (value: string) => {
-      const domain = extractDomain(value);
-      const isUrl = domain.includes(".");
-      const domainName = isUrl ? domain.split(".")[0] : "";
+      const domain = extractDomain(value)
+      const isUrl = domain.includes('.')
+      const domainName = isUrl ? domain.split('.')[0] : ''
       const title = isUrl
         ? domainName.charAt(0).toUpperCase() + domainName.slice(1)
-        : value;
+        : value
 
       const url = isUrl
-        ? value.startsWith("http")
+        ? value.startsWith('http')
           ? value
           : `https://${value}`
-        : "#";
+        : '#'
 
-      if (!effectiveGroupId) return;
+      if (!effectiveGroupId) return
 
       await createBookmark({
         title,
         url,
-        groupId: effectiveGroupId as Id<"groups">,
+        groupId: effectiveGroupId as Id<'groups'>,
         imageUrl: isUrl
           ? `https://www.google.com/s2/favicons?domain=${domain}&sz=256`
-          : "",
-      });
-      setDebouncedQuery("");
+          : '',
+      })
+      setDebouncedQuery('')
     },
-    [effectiveGroupId, createBookmark],
-  );
+    [effectiveGroupId, createBookmark]
+  )
 
   const allBookmarks = useMemo(() => {
-    if (!convexBookmarks) return [];
-    return convexBookmarks.map((b: Doc<"bookmarks">) => ({
+    if (!convexBookmarks) return []
+    return convexBookmarks.map((b: Doc<'bookmarks'>) => ({
       id: b._id,
       title: b.title,
       domain: extractDomain(b.url),
       url: b.url,
       favicon: b.imageUrl || null,
       fallbackColor: COLORS[b.title.charCodeAt(0) % COLORS.length],
-      createdAt: new Date(b.createdAt).toISOString().split("T")[0],
+      createdAt: new Date(b.createdAt).toISOString().split('T')[0],
       groupId: b.groupId,
       doneReading: b.doneReading,
-    }));
-  }, [convexBookmarks]);
+    }))
+  }, [convexBookmarks])
 
   const filteredBookmarks: Bookmark[] = useMemo(() => {
-    let result = allBookmarks;
+    let result = allBookmarks
 
     if (debouncedQuery.trim()) {
-      const q = debouncedQuery.toLowerCase();
+      const q = debouncedQuery.toLowerCase()
       result = result.filter(
         (b) =>
           b.title.toLowerCase().includes(q) ||
-          b.domain.toLowerCase().includes(q),
-      );
+          b.domain.toLowerCase().includes(q)
+      )
     }
 
-    if (filter === "read") {
-      result = result.filter((b) => b.doneReading);
-    } else if (filter === "unread") {
-      result = result.filter((b) => !b.doneReading);
+    if (filter === 'read') {
+      result = result.filter((b) => b.doneReading)
+    } else if (filter === 'unread') {
+      result = result.filter((b) => !b.doneReading)
     }
 
-    return result;
-  }, [allBookmarks, debouncedQuery, filter]);
+    return result
+  }, [allBookmarks, debouncedQuery, filter])
 
   // Get selected bookmark from store bookmarkId
   const selectedBookmark = useMemo(() => {
-    const bookmarkId = renameBookmark.bookmarkId || deleteBookmark.bookmarkId;
-    if (!bookmarkId) return null;
-    return allBookmarks.find((b) => b.id === bookmarkId) || null;
-  }, [allBookmarks, renameBookmark.bookmarkId, deleteBookmark.bookmarkId]);
+    const bookmarkId = renameBookmark.bookmarkId || deleteBookmark.bookmarkId
+    if (!bookmarkId) return null
+    return allBookmarks.find((b) => b.id === bookmarkId) || null
+  }, [allBookmarks, renameBookmark.bookmarkId, deleteBookmark.bookmarkId])
 
   // Context menu handlers
   const handleCopy = useCallback((bookmark: Bookmark) => {
-    navigator.clipboard.writeText(bookmark.url);
-    toast.success("URL copied successfully");
-  }, []);
+    navigator.clipboard.writeText(bookmark.url)
+    toast.success('URL copied successfully')
+  }, [])
 
   const handleRename = useCallback(
     (bookmark: Bookmark) => {
-      openRenameDialog(bookmark.id);
+      openRenameDialog(bookmark.id)
     },
-    [openRenameDialog],
-  );
+    [openRenameDialog]
+  )
 
   const handleMove = useCallback(
-    (bookmarkId: Id<"bookmarks">, newGroupId: Id<"groups">) => {
-      moveBookmark({ bookmarkId: bookmarkId, groupId: newGroupId });
+    (bookmarkId: Id<'bookmarks'>, newGroupId: Id<'groups'>) => {
+      moveBookmark({ bookmarkId: bookmarkId, groupId: newGroupId })
     },
-    [moveBookmark],
-  );
+    [moveBookmark]
+  )
 
   const handleDelete = useCallback(
     (bookmark: Bookmark) => {
-      openDeleteBookmarkDialog(bookmark.id);
+      openDeleteBookmarkDialog(bookmark.id)
     },
-    [openDeleteBookmarkDialog],
-  );
+    [openDeleteBookmarkDialog]
+  )
 
   const handleToggleRead = useCallback(
-    (bookmarkId: Id<"bookmarks">) => {
-      toggleReadStatus({ bookmarkId });
+    (bookmarkId: Id<'bookmarks'>) => {
+      toggleReadStatus({ bookmarkId })
     },
-    [toggleReadStatus],
-  );
+    [toggleReadStatus]
+  )
 
   // Loading state
   if (isSessionLoading || groups === undefined) {
@@ -176,7 +174,7 @@ export default function DashboardPage() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="size-6 text-muted-foreground animate-spin" />
       </div>
-    );
+    )
   }
 
   // Not logged in
@@ -195,7 +193,7 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -275,5 +273,5 @@ export default function DashboardPage() {
         onOpenChange={closeDeleteBookmarkDialog}
       />
     </div>
-  );
+  )
 }

@@ -9,6 +9,7 @@ import GitHub from 'lucide-react/dist/esm/icons/github'
 import Twitter from 'lucide-react/dist/esm/icons/twitter'
 import Globe from 'lucide-react/dist/esm/icons/globe'
 import { extractDomain } from '@/lib/domain-utils'
+import { PublicProfileHeader } from '@/components/public-profile-header'
 
 interface PublicProfileContentProps {
   username: string
@@ -94,23 +95,7 @@ export default function PublicProfileContent({
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header with logo */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-14 items-center">
-            <Link href="/" className="flex items-center gap-2 font-semibold">
-              <Image
-                src="/logo.svg"
-                alt="Logo"
-                width={24}
-                height={24}
-                className="size-6"
-              />
-              <span>OrgNote</span>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <PublicProfileHeader />
 
       <main className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-8 lg:gap-12">
