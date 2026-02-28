@@ -1,6 +1,6 @@
 import { memo } from "react";
 import Link from "next/link";
-import Fish from "lucide-react/dist/esm/icons/fish";
+import Image from "next/image";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { GroupSelector } from "./group-selector";
 import { UserInfo } from "./user-info";
@@ -29,10 +29,13 @@ export const DashboardHeader = memo(function DashboardHeader({
             href="/dashboard"
             className="flex items-center gap-2 text-foreground hover:opacity-80 transition-opacity"
           >
-            <div className="size-8 rounded-lg bg-linear-to-br from-blue-50 to-cyan-50 dark:from-blue-950/40 dark:to-cyan-950/30 border border-border flex items-center justify-center">
-              <Fish
-                className="size-5 text-blue-600 dark:text-blue-400"
-                strokeWidth={1.5}
+            <div className="size-8 rounded-lg bg-linear-to-br from-blue-50 to-cyan-50 dark:from-blue-950/40 dark:to-cyan-950/30 border border-border flex items-center justify-center p-1">
+              <Image
+                src="/logo.svg"
+                alt="Logo"
+                width={24}
+                height={24}
+                className="size-5"
               />
             </div>
           </Link>
