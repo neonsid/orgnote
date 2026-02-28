@@ -13,6 +13,30 @@ interface PublicProfilePageProps {
   }>;
 }
 
+function formatDate(timestamp: number): string {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffDays = Math.floor(
+    (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+  );
+
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`;
+  return `${Math.floor(diffDays / 365)}y ago`;
+}
+
+function extractDomain(url: string): string {
+  try {
+    const urlObj = new URL(url.startsWith("http") ? url : `https://${url}`);
+    return urlObj.hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
 export default async function PublicProfilePage({
   params,
 }: PublicProfilePageProps) {
@@ -32,8 +56,13 @@ export default async function PublicProfilePage({
     username,
   });
 
-  // Get user info (we need to fetch the user separately since profile only has userProvidedId)
-  // For now, we'll use the profile data directly
+  // Fetch bookmarks from public groups
+  const bookmarks = await fetchQuery(
+    api.bookmarks.getPublicBookmarksByUsername,
+    {
+      username,
+    },
+  );
 
   const initial = username.charAt(0).toUpperCase();
 
@@ -162,52 +191,50 @@ export default async function PublicProfilePage({
 
             {/* Bookmark List */}
             <div className="space-y-1">
-              {/* Placeholder for bookmarks - in a real implementation, you'd fetch bookmarks from public groups */}
-              <div className="flex items-center justify-between py-3 group">
-                <div className="flex items-center gap-3">
-                  <div className="size-5 rounded bg-muted flex items-center justify-center text-xs">
-                    B
+              {bookmarks.map((bookmark) => (
+                <a
+                  key={bookmark._id}
+                  href={bookmark.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between py-3 group hover:bg-muted/50 rounded-lg px-2 -mx-2 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {bookmark.imageUrl ? (
+                      <img
+                        src={bookmark.imageUrl}
+                        alt=""
+                        className="size-5 rounded"
+                      />
+                    ) : (
+                      <div
+                        className="size-5 rounded flex items-center justify-center text-xs text-white font-medium"
+                        style={{ backgroundColor: bookmark.groupColor }}
+                      >
+                        {bookmark.title.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <span className="text-foreground font-medium truncate">
+                      {bookmark.title}
+                    </span>
+                    <span className="text-muted-foreground text-sm hidden sm:inline">
+                      {extractDomain(bookmark.url)}
+                    </span>
                   </div>
-                  <span className="text-foreground font-medium">
-                    The Copenhagen Book
+                  <span className="text-sm text-muted-foreground shrink-0 ml-4">
+                    {formatDate(bookmark.createdAt)}
                   </span>
-                  <span className="text-muted-foreground text-sm">
-                    thecopenhagenbook.com
-                  </span>
-                </div>
-                <span className="text-sm text-muted-foreground">Feb 28</span>
-              </div>
-
-              <div className="flex items-center justify-between py-3 group">
-                <div className="flex items-center gap-3">
-                  <div className="size-5 rounded bg-muted flex items-center justify-center text-xs">
-                    G
-                  </div>
-                  <span className="text-foreground font-medium">Google</span>
-                  <span className="text-muted-foreground text-sm">
-                    google.com
-                  </span>
-                </div>
-                <span className="text-sm text-muted-foreground">Feb 25</span>
-              </div>
-
-              <div className="flex items-center justify-between py-3 group">
-                <div className="flex items-center gap-3">
-                  <div className="size-5 rounded bg-muted flex items-center justify-center text-xs">
-                    X
-                  </div>
-                  <span className="text-foreground font-medium">x.com</span>
-                  <span className="text-muted-foreground text-sm">x.com</span>
-                </div>
-                <span className="text-sm text-muted-foreground">Feb 20</span>
-              </div>
+                </a>
+              ))}
             </div>
 
             {/* Empty state if no bookmarks */}
-            {groups.length === 0 && (
+            {bookmarks.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">
-                  No public groups available
+                  {groups.length === 0
+                    ? "No public groups available"
+                    : "No bookmarks in public groups"}
                 </p>
               </div>
             )}
