@@ -3,10 +3,12 @@ import type { Bookmark } from "./types";
 
 interface UseBookmarkShortcutsOptions {
   onRename: (bookmark: Bookmark) => void;
+  onDelete: (bookmark: Bookmark) => void;
 }
 
 export function useBookmarkShortcuts({
   onRename,
+  onDelete,
 }: UseBookmarkShortcutsOptions) {
   const hoveredBookmarkRef = useRef<Bookmark | null>(null);
 
@@ -32,11 +34,17 @@ export function useBookmarkShortcuts({
           onRename(hoveredBookmarkRef.current);
         }
       }
+      if ((e.metaKey || e.ctrlKey) && e.key === "Backspace") {
+        e.preventDefault();
+        if (hoveredBookmarkRef.current) {
+          onDelete(hoveredBookmarkRef.current);
+        }
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onRename]);
+  }, [onRename, onDelete]);
 
   return { hoveredBookmarkRef, setHoveredBookmark };
 }
