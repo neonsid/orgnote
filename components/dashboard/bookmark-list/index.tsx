@@ -35,7 +35,7 @@ export const BookmarkList = memo(function BookmarkList({
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
-  const { setHoveredBookmark } = useBookmarkShortcuts({ onRename });
+  const { setHoveredBookmark } = useBookmarkShortcuts({ onRename, onDelete });
 
   const handleTouchStart = useCallback(
     (e: React.TouchEvent, id: string) => {
