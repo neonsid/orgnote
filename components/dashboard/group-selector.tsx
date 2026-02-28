@@ -5,11 +5,16 @@ import Check from "lucide-react/dist/esm/icons/check";
 import Plus from "lucide-react/dist/esm/icons/plus";
 import ChevronsUpDownIcon from "lucide-react/dist/esm/icons/chevrons-up-down";
 import Trash2Icon from "lucide-react/dist/esm/icons/trash-2";
+import Globe from "lucide-react/dist/esm/icons/globe";
+import Lock from "lucide-react/dist/esm/icons/lock";
 import { Popover as PopoverPrimitive } from "radix-ui";
 import { Id } from "@/convex/_generated/dataModel";
 import { CreateGroupDialog } from "@/components/dashboard/create-group-dialog";
 import { DeleteGroupDialog } from "@/components/dashboard/delete-group-dialog";
 import { useDialogStore } from "@/stores/dialog-store";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { toast } from "sonner";
 
 /**
  * Convex group shape (from the database).
@@ -18,6 +23,7 @@ export interface ConvexGroup {
   _id: Id<"groups">;
   title: string;
   color: string;
+  isPublic: boolean;
   _creationTime: number;
 }
 
@@ -57,7 +63,25 @@ export const GroupSelector = memo(function GroupSelector({
     closeDeleteGroupDialog,
   } = useDialogStore();
 
+  const toggleGroupPublic = useMutation(api.groups.toggleGroupPublic);
+
   const selectedGroup = groups.find((g) => g._id === selectedGroupId);
+
+  const handleTogglePublic = async () => {
+    if (!selectedGroup) return;
+
+    try {
+      const result = await toggleGroupPublic({
+        groupId: selectedGroup._id,
+        userId,
+      });
+      toast.success(
+        result.isPublic ? "Group is now public" : "Group is now private",
+      );
+    } catch {
+      toast.error("Failed to update group visibility");
+    }
+  };
 
   return (
     <>
@@ -142,19 +166,41 @@ export const GroupSelector = memo(function GroupSelector({
                 <span className="font-medium">Create Group</span>
               </button>
               {groups.length > 0 && selectedGroup && (
-                <button
-                  id="delete-group-button"
-                  onClick={() => {
-                    setOpen(false);
-                    openDeleteGroupDialog(selectedGroup._id);
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground transition-colors"
-                >
-                  <Trash2Icon className="size-4 text-destructive" />
-                  <span className="font-medium text-destructive">
-                    Delete Group
-                  </span>
-                </button>
+                <>
+                  <button
+                    id="toggle-group-public-button"
+                    onClick={() => {
+                      handleTogglePublic();
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground transition-colors"
+                  >
+                    {selectedGroup.isPublic ? (
+                      <>
+                        <Globe className="size-4 text-muted-foreground" />
+                        <span className="font-medium">Make Private</span>
+                        <Check className="size-4 text-foreground ml-auto" />
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="size-4 text-muted-foreground" />
+                        <span className="font-medium">Make Public</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    id="delete-group-button"
+                    onClick={() => {
+                      setOpen(false);
+                      openDeleteGroupDialog(selectedGroup._id);
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground transition-colors"
+                  >
+                    <Trash2Icon className="size-4 text-destructive" />
+                    <span className="font-medium text-destructive">
+                      Delete Group
+                    </span>
+                  </button>
+                </>
               )}
             </div>
           </PopoverPrimitive.Content>
