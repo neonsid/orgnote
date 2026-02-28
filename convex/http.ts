@@ -1,10 +1,11 @@
-import { httpRouter } from 'convex/server'
-import { httpAction, internalAction } from './_generated/server'
-import { api, internal } from './_generated/api'
-import { rateLimiter } from './rate_limit'
-import { v } from 'convex/values'
+import { httpRouter } from "convex/server";
+import { httpAction, internalAction } from "./_generated/server";
+import { api, internal } from "./_generated/api";
+import { rateLimiter } from "./rate_limit";
+import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
 
-const http = httpRouter()
+const http = httpRouter();
 
 // Internal action with rate limiting for user sync
 export const syncUserWithRateLimit = internalAction({
@@ -13,14 +14,14 @@ export const syncUserWithRateLimit = internalAction({
     name: v.string(),
     email: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<Id<"users">> => {
     // Check rate limit for sync operations
-    const { ok, retryAfter } = await rateLimiter.limit(ctx, 'syncUser', {
+    const { ok, retryAfter } = await rateLimiter.limit(ctx, "syncUser", {
       key: args.userProvidedId,
-    })
+    });
 
     if (!ok) {
-      throw new Error(`Rate limit exceeded. Try again after ${retryAfter}ms`)
+      throw new Error(`Rate limit exceeded. Try again after ${retryAfter}ms`);
     }
 
     // Call the mutation to create or update user
@@ -28,42 +29,46 @@ export const syncUserWithRateLimit = internalAction({
       userProvidedId: args.userProvidedId,
       name: args.name,
       email: args.email,
-    })
+    });
 
-    return result
+    if (!result) {
+      throw new Error("Failed to create or update user");
+    }
+
+    return result;
   },
-})
+});
 
 http.route({
-  path: '/sync-user',
-  method: 'POST',
+  path: "/sync-user",
+  method: "POST",
   handler: httpAction(async (ctx, request) => {
     try {
-      const body = await request.json()
-      const { userProvidedId, name, email } = body
+      const body = await request.json();
+      const { userProvidedId, name, email } = body;
 
       if (!userProvidedId || !name || !email) {
         return new Response(
-          JSON.stringify({ error: 'Missing required fields' }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
-        )
+          JSON.stringify({ error: "Missing required fields" }),
+          { status: 400, headers: { "Content-Type": "application/json" } },
+        );
       }
 
       // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        return new Response(JSON.stringify({ error: 'Invalid email format' }), {
+        return new Response(JSON.stringify({ error: "Invalid email format" }), {
           status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        })
+          headers: { "Content-Type": "application/json" },
+        });
       }
 
       // Validate userProvidedId format (should be a non-empty string)
-      if (typeof userProvidedId !== 'string' || userProvidedId.length < 1) {
-        return new Response(JSON.stringify({ error: 'Invalid user ID' }), {
+      if (typeof userProvidedId !== "string" || userProvidedId.length < 1) {
+        return new Response(JSON.stringify({ error: "Invalid user ID" }), {
           status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        })
+          headers: { "Content-Type": "application/json" },
+        });
       }
 
       // Call the rate-limited action
@@ -71,31 +76,31 @@ http.route({
         userProvidedId,
         name,
         email,
-      })
+      });
 
       return new Response(JSON.stringify({ success: true, userId: result }), {
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      })
+        headers: { "Content-Type": "application/json" },
+      });
     } catch (error) {
-      console.error('Error syncing user:', error)
+      console.error("Error syncing user:", error);
 
       // Check if it's a rate limit error
-      if (error instanceof Error && error.message.includes('Rate limit')) {
+      if (error instanceof Error && error.message.includes("Rate limit")) {
         return new Response(
           JSON.stringify({
-            error: 'Too many requests. Please try again later.',
+            error: "Too many requests. Please try again later.",
           }),
-          { status: 429, headers: { 'Content-Type': 'application/json' } }
-        )
+          { status: 429, headers: { "Content-Type": "application/json" } },
+        );
       }
 
-      return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      return new Response(JSON.stringify({ error: "Internal server error" }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      })
+        headers: { "Content-Type": "application/json" },
+      });
     }
   }),
-})
+});
 
-export default http
+export default http;
