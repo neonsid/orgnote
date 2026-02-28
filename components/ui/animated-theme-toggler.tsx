@@ -21,6 +21,7 @@ export const AnimatedThemeToggler = ({
   ...props
 }: AnimatedThemeTogglerProps) => {
   const [isDark, setIsDark] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -41,40 +42,74 @@ export const AnimatedThemeToggler = ({
   }, []);
 
   const toggleTheme = useCallback(async () => {
+    if (isTransitioning) return;
+
     const element = iconOnly ? containerRef.current : buttonRef.current;
     if (!element) return;
 
-    await document.startViewTransition(() => {
-      flushSync(() => {
-        const newTheme = !isDark;
+    setIsTransitioning(true);
+
+    try {
+      const newTheme = !isDark;
+
+      // Check if startViewTransition is supported
+      if (
+        !(
+          document as Document & {
+            startViewTransition?: (callback: () => void) => {
+              ready: Promise<void>;
+            };
+          }
+        ).startViewTransition
+      ) {
+        // Fallback for browsers without startViewTransition
         setIsDark(newTheme);
         document.documentElement.classList.toggle("dark");
         localStorage.setItem("theme", newTheme ? "dark" : "light");
-      });
-    }).ready;
+        setIsTransitioning(false);
+        return;
+      }
 
-    const { top, left, width, height } = element.getBoundingClientRect();
-    const x = left + width / 2;
-    const y = top + height / 2;
-    const maxRadius = Math.hypot(
-      Math.max(left, window.innerWidth - left),
-      Math.max(top, window.innerHeight - top),
-    );
+      await (
+        document as Document & {
+          startViewTransition: (callback: () => void) => {
+            ready: Promise<void>;
+          };
+        }
+      ).startViewTransition(() => {
+        flushSync(() => {
+          setIsDark(newTheme);
+          document.documentElement.classList.toggle("dark");
+          localStorage.setItem("theme", newTheme ? "dark" : "light");
+        });
+      }).ready;
 
-    document.documentElement.animate(
-      {
-        clipPath: [
-          `circle(0px at ${x}px ${y}px)`,
-          `circle(${maxRadius}px at ${x}px ${y}px)`,
-        ],
-      },
-      {
-        duration,
-        easing: "ease-in-out",
-        pseudoElement: "::view-transition-new(root)",
-      },
-    );
-  }, [isDark, duration, iconOnly]);
+      const { top, left, width, height } = element.getBoundingClientRect();
+      const x = left + width / 2;
+      const y = top + height / 2;
+      const maxRadius = Math.hypot(
+        Math.max(left, window.innerWidth - left),
+        Math.max(top, window.innerHeight - top),
+      );
+
+      document.documentElement.animate(
+        {
+          clipPath: [
+            `circle(0px at ${x}px ${y}px)`,
+            `circle(${maxRadius}px at ${x}px ${y}px)`,
+          ],
+        },
+        {
+          duration,
+          easing: "ease-in-out",
+          pseudoElement: "::view-transition-new(root)",
+        },
+      );
+    } finally {
+      // Reset after animation completes
+      setTimeout(() => setIsTransitioning(false), duration);
+    }
+  }, [isDark, duration, iconOnly, isTransitioning]);
 
   useEffect(() => {
     if (triggerRef) {
@@ -105,7 +140,11 @@ export const AnimatedThemeToggler = ({
     <button
       ref={buttonRef}
       onClick={toggleTheme}
-      className={cn(className)}
+      disabled={isTransitioning}
+      className={cn(
+        "disabled:opacity-50 disabled:cursor-not-allowed",
+        className,
+      )}
       {...props}
     >
       {icon}
