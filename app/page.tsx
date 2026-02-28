@@ -1,13 +1,13 @@
-'use client'
+"use client";
 
-import { motion } from 'motion/react'
-import Fish from 'lucide-react/dist/esm/icons/fish'
-import Sparkles from 'lucide-react/dist/esm/icons/sparkles'
-import BrainCog from 'lucide-react/dist/esm/icons/brain-cog'
-import { Header } from '@/components/header'
-import { Footer } from '@/components/footer'
-import { DashboardDemo } from '@/components/landing/dashboard-demo'
-import { FeaturesSection } from '@/components/features-section'
+import { motion } from "motion/react";
+import Image from "next/image";
+import Sparkles from "lucide-react/dist/esm/icons/sparkles";
+import BrainCog from "lucide-react/dist/esm/icons/brain-cog";
+import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
+import { DashboardDemo } from "@/components/landing/dashboard-demo";
+import { FeaturesSection } from "@/components/features-section";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -18,7 +18,7 @@ const containerVariants = {
       delayChildren: 0.1,
     },
   },
-}
+};
 
 const itemVariants = {
   hidden: { opacity: 0, y: 30, scale: 0.95 },
@@ -31,7 +31,7 @@ const itemVariants = {
       ease: [0.25, 0.1, 0.25, 1] as const,
     },
   },
-}
+};
 
 const badgeVariants = {
   hidden: { opacity: 0, scale: 0.8 },
@@ -43,7 +43,7 @@ const badgeVariants = {
       ease: [0.25, 0.1, 0.25, 1] as const,
     },
   },
-}
+};
 
 const demoVariants = {
   hidden: { opacity: 0, y: 60 },
@@ -56,7 +56,7 @@ const demoVariants = {
       delay: 0.3,
     },
   },
-}
+};
 
 const featuresVariants = {
   hidden: { opacity: 0 },
@@ -68,7 +68,7 @@ const featuresVariants = {
       delay: 0.5,
     },
   },
-}
+};
 
 export default function Home() {
   return (
@@ -90,11 +90,14 @@ export default function Home() {
               <motion.div
                 whileHover={{ scale: 1.05, rotate: 5 }}
                 whileTap={{ scale: 0.95 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <Fish
-                  className="size-10 sm:size-14 text-blue-600 dark:text-blue-400"
-                  strokeWidth={1.5}
+                <Image
+                  src="/logo.svg"
+                  alt="Logo"
+                  width={56}
+                  height={56}
+                  className="size-10 sm:size-14"
                   aria-hidden
                 />
               </motion.div>
@@ -157,5 +160,5 @@ export default function Home() {
       </main>
       <Footer />
     </div>
-  )
+  );
 }
