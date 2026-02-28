@@ -9,6 +9,7 @@ import { Popover as PopoverPrimitive } from "radix-ui";
 import { Id } from "@/convex/_generated/dataModel";
 import { CreateGroupDialog } from "@/components/dashboard/create-group-dialog";
 import { DeleteGroupDialog } from "@/components/dashboard/delete-group-dialog";
+import { useDialogStore } from "@/stores/dialog-store";
 
 /**
  * Convex group shape (from the database).
@@ -45,8 +46,16 @@ export const GroupSelector = memo(function GroupSelector({
   userId,
 }: GroupSelectorProps) {
   const [open, setOpen] = useState(false);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  // Dialog state from Zustand store
+  const {
+    createGroup,
+    deleteGroup,
+    openCreateGroup,
+    closeCreateGroup,
+    openDeleteGroupDialog,
+    closeDeleteGroupDialog,
+  } = useDialogStore();
 
   const selectedGroup = groups.find((g) => g._id === selectedGroupId);
 
@@ -125,21 +134,19 @@ export const GroupSelector = memo(function GroupSelector({
                 id="create-group-button"
                 onClick={() => {
                   setOpen(false);
-                  setCreateDialogOpen(true);
+                  openCreateGroup();
                 }}
                 className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground transition-colors"
               >
                 <Plus className="size-4" />
                 <span className="font-medium">Create Group</span>
               </button>
-              {groups.length > 0 && (
+              {groups.length > 0 && selectedGroup && (
                 <button
                   id="delete-group-button"
                   onClick={() => {
                     setOpen(false);
-                    if (selectedGroup) {
-                      setDeleteDialogOpen(true);
-                    }
+                    openDeleteGroupDialog(selectedGroup._id);
                   }}
                   className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground transition-colors"
                 >
@@ -156,22 +163,31 @@ export const GroupSelector = memo(function GroupSelector({
 
       {/* Create group dialog */}
       <CreateGroupDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
+        open={createGroup.open}
+        onOpenChange={closeCreateGroup}
         userId={userId}
-        onCreated={(newGroupId) => onSelect(newGroupId)}
+        onCreated={(newGroupId) => {
+          onSelect(newGroupId);
+          closeCreateGroup();
+        }}
       />
 
       {/* Delete group confirmation dialog */}
-      {selectedGroup && (
+      {deleteGroup.groupId && (
         <DeleteGroupDialog
-          open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
+          open={deleteGroup.open}
+          onOpenChange={closeDeleteGroupDialog}
           userId={userId}
-          groupId={selectedGroup._id}
-          groupTitle={selectedGroup.title}
-          groupColor={selectedGroup.color || FALLBACK_COLORS[0]}
+          groupId={deleteGroup.groupId as Id<"groups">}
+          groupTitle={
+            groups.find((g) => g._id === deleteGroup.groupId)?.title || ""
+          }
+          groupColor={
+            groups.find((g) => g._id === deleteGroup.groupId)?.color ||
+            FALLBACK_COLORS[0]
+          }
           onDeleted={(deletedId) => {
+            closeDeleteGroupDialog();
             if (deletedId === selectedGroupId && groups.length > 1) {
               const nextGroup = groups.find((g) => g._id !== deletedId);
               if (nextGroup) onSelect(nextGroup._id);
