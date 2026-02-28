@@ -21,6 +21,29 @@ export const getProfile = query({
   },
 });
 
+export const getProfileByUsername = query({
+  args: {
+    username: v.string(),
+  },
+  handler: async (ctx, args) => {
+    if (!args.username) {
+      return null;
+    }
+
+    const profile = await ctx.db
+      .query("userProfile")
+      .withIndex("by_username", (q) => q.eq("username", args.username))
+      .first();
+
+    // Only return public profiles
+    if (!profile || !profile.isPublic) {
+      return null;
+    }
+
+    return profile;
+  },
+});
+
 export const upsertProfile = mutation({
   args: {
     userId: v.string(),
@@ -43,6 +66,21 @@ export const upsertProfile = mutation({
   handler: async (ctx, args) => {
     if (!args.userId) {
       throw new Error("UserId not found");
+    }
+
+    // Check for duplicate username if username is being set
+    if (args.username) {
+      const existingUserWithUsername = await ctx.db
+        .query("userProfile")
+        .withIndex("by_username", (q) => q.eq("username", args.username))
+        .first();
+
+      if (
+        existingUserWithUsername &&
+        existingUserWithUsername.userProvidedId !== args.userId
+      ) {
+        throw new Error("Username is already taken");
+      }
     }
 
     const existingProfile = await ctx.db
@@ -82,6 +120,19 @@ export const updateUsername = mutation({
   handler: async (ctx, args) => {
     if (!args.userId) {
       throw new Error("UserId not found");
+    }
+
+    // Check for duplicate username
+    const existingUserWithUsername = await ctx.db
+      .query("userProfile")
+      .withIndex("by_username", (q) => q.eq("username", args.username))
+      .first();
+
+    if (
+      existingUserWithUsername &&
+      existingUserWithUsername.userProvidedId !== args.userId
+    ) {
+      throw new Error("Username is already taken");
     }
 
     const existingProfile = await ctx.db
