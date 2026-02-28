@@ -199,3 +199,70 @@ export const getAllUserBookmarks = query({
     return bookmarks;
   },
 });
+
+export const getPublicBookmarksByUsername = query({
+  args: { username: v.string() },
+  handler: async (ctx, args) => {
+    if (!args.username) {
+      return [];
+    }
+
+    // First get the user profile
+    const profile = await ctx.db
+      .query("userProfile")
+      .withIndex("by_username", (q) => q.eq("username", args.username))
+      .first();
+
+    if (!profile || !profile.isPublic) {
+      return [];
+    }
+
+    // Get all public groups for this user
+    const groups = await ctx.db
+      .query("groups")
+      .withIndex("by_user_public", (q) =>
+        q.eq("userProvidedId", profile.userProvidedId).eq("isPublic", true),
+      )
+      .collect();
+
+    const bookmarks: {
+      _id: string;
+      title: string;
+      url: string;
+      description?: string;
+      imageUrl: string;
+      doneReading: boolean;
+      createdAt: number;
+      groupId: string;
+      groupTitle: string;
+      groupColor: string;
+    }[] = [];
+
+    for (const group of groups) {
+      const groupBookmarks = await ctx.db
+        .query("bookmarks")
+        .withIndex("groupId", (q) => q.eq("groupId", group._id))
+        .collect();
+
+      for (const bookmark of groupBookmarks) {
+        bookmarks.push({
+          _id: bookmark._id,
+          title: bookmark.title,
+          url: bookmark.url,
+          description: bookmark.description,
+          imageUrl: bookmark.imageUrl,
+          doneReading: bookmark.doneReading,
+          createdAt: bookmark.createdAt,
+          groupId: group._id,
+          groupTitle: group.title,
+          groupColor: group.color,
+        });
+      }
+    }
+
+    // Sort by createdAt descending
+    bookmarks.sort((a, b) => b.createdAt - a.createdAt);
+
+    return bookmarks;
+  },
+});
