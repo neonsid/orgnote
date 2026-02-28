@@ -439,21 +439,124 @@ This document maps all components to their respective code locations after the r
 
 ---
 
+## Public Profile Components
+
+### Public Profile Page
+
+**Location:** `app/u/[username]/page.tsx`
+**Lines:** ~45
+**Contains:**
+
+- Dynamic metadata generation (tab title: "{name} (@{username}) — Orgnote")
+- Profile data fetching for SEO
+- Error handling for non-existent profiles
+
+### Public Profile Content
+
+**Location:** `app/u/[username]/public-profile-content.tsx`
+**Lines:** ~265
+**Contains:**
+
+- Public profile display (avatar, name, bio, social links)
+- Group filtering tabs
+- Bookmark list with hover arrow animation
+- Responsive grid layout
+
+### Public Profile Header
+
+**Location:** `components/public-profile-header.tsx`
+**Lines:** ~185
+**Contains:**
+
+- Logo and navigation
+- Theme toggler
+- Conditional auth buttons:
+  - Not logged in: Login / Sign up buttons
+  - Logged in: Dashboard link
+- Mobile hamburger menu
+- Login/Signup dialog integration
+
+---
+
+## Convex Functions
+
+### Users
+
+**Location:** `convex/users.ts`
+**Lines:** ~34
+**Contains:**
+
+- `createOrUpdateUser` mutation
+- Syncs user data from BetterAuth to Convex
+- Used by HTTP action for user creation/updates
+
+### HTTP Actions
+
+**Location:** `convex/http.ts`
+**Lines:** ~43
+**Contains:**
+
+- `/sync-user` HTTP endpoint
+- Receives user data from BetterAuth hooks
+- Calls `createOrUpdateUser` mutation
+- Error handling and validation
+
+### Profile
+
+**Location:** `convex/profile.ts`
+**Lines:** ~265
+**Contains:**
+
+- `getProfile`: Get current user's profile
+- `getProfileByUsername`: Get public profile by username (joins with users table)
+- `upsertProfile`: Create/update profile
+- `updateUsername`: Update username only
+- `updateBio`: Update bio only
+- `updateSocialLinks`: Update social links
+- `switchProfileStatus`: Toggle public/private
+
+---
+
+## Authentication
+
+### Auth Configuration
+
+**Location:** `lib/auth.ts`
+**Lines:** ~145
+**Contains:**
+
+- BetterAuth configuration with Prisma adapter
+- `databaseHooks` for auto-syncing users to Convex
+- Email/password and Google OAuth providers
+- Email verification and password reset handlers
+
+### Auth Client
+
+**Location:** `lib/auth-client.ts`
+**Contains:**
+
+- BetterAuth client instance
+- Used for session management and auth operations
+
+---
+
 ## File Count Summary
 
-| Category                 | Count   |
-| ------------------------ | ------- |
-| Dashboard Components     | 12      |
-| Settings Components      | 5       |
-| Bookmark List Components | 7       |
-| Dialog Components        | 6       |
-| Landing Components       | 3       |
-| Custom Hooks             | 5       |
-| UI Components            | 1 (new) |
-| State Management         | 1       |
-| Providers                | 1       |
-| Utilities                | 2       |
-| **Total**                | **43**  |
+| Category                  | Count  |
+| ------------------------- | ------ |
+| Dashboard Components      | 12     |
+| Settings Components       | 5      |
+| Bookmark List Components  | 7      |
+| Dialog Components         | 6      |
+| Landing Components        | 3      |
+| Public Profile Components | 3      |
+| Convex Functions          | 3      |
+| Custom Hooks              | 5      |
+| UI Components             | 1      |
+| State Management          | 1      |
+| Providers                 | 1      |
+| Utilities                 | 2      |
+| **Total**                 | **49** |
 
 ---
 
