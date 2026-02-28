@@ -201,10 +201,13 @@ export default async function PublicProfilePage({
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     {bookmark.imageUrl ? (
-                      <img
+                      <Image
                         src={bookmark.imageUrl}
                         alt=""
+                        width={20}
+                        height={20}
                         className="size-5 rounded"
+                        unoptimized
                       />
                     ) : (
                       <div
