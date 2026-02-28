@@ -114,27 +114,16 @@ export default function Home() {
                 instant AI summaries so every bookmark makes sense at a glance.
               </p>
             </motion.div>
-            <motion.div
-              className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3"
-              variants={containerVariants}
-            >
-              <motion.span
-                variants={badgeVariants}
-                whileHover={{ scale: 1.05, y: -1 }}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 sm:px-3.5 py-1.5 text-xs sm:text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted cursor-default"
-              >
+            <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 sm:px-3.5 py-1.5 text-xs sm:text-sm font-medium text-foreground shadow-sm transition-all duration-200 hover:bg-muted hover:scale-105 hover:-translate-y-0.5 cursor-default">
                 <Sparkles className="size-3.5 text-amber-500" aria-hidden />
                 AI-powered summaries
-              </motion.span>
-              <motion.span
-                variants={badgeVariants}
-                whileHover={{ scale: 1.05, y: -2 }}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 sm:px-3.5 py-1.5 text-xs sm:text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted cursor-default"
-              >
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 sm:px-3.5 py-1.5 text-xs sm:text-sm font-medium text-foreground shadow-sm transition-all duration-200 hover:bg-muted hover:scale-105 hover:-translate-y-0.5 cursor-default">
                 <BrainCog className="size-3.5 text-blue-500" aria-hidden />
                 Never lose a link
-              </motion.span>
-            </motion.div>
+              </span>
+            </div>
           </motion.div>
         </section>
 
