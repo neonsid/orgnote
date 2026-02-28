@@ -15,6 +15,7 @@ import {
   ContextMenuSubContent,
 } from "@/components/ui/context-menu";
 import Copy from "lucide-react/dist/esm/icons/copy";
+import { formatDate } from "@/components/dashboard/bookmark-list/constants";
 import Pencil from "lucide-react/dist/esm/icons/pencil";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2";
 import ChevronsRightIcon from "lucide-react/dist/esm/icons/chevrons-right";
@@ -64,19 +65,6 @@ const FALLBACK_COLORS = [
   "#06b6d4",
   "#f97316",
 ];
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-  if (days === 0) return "Today";
-  if (days === 1) return "Yesterday";
-  if (days < 7) return `${days} days ago`;
-  if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
 
 function FaviconIcon({ bookmark }: { bookmark: LandingBookmark }) {
   const [imgError, setImgError] = useState(false);
