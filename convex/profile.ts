@@ -40,7 +40,18 @@ export const getProfileByUsername = query({
       return null;
     }
 
-    return profile;
+    // Fetch user data to get the full name
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_user_provided_id", (q) =>
+        q.eq("userProvidedId", profile.userProvidedId),
+      )
+      .first();
+
+    return {
+      ...profile,
+      name: user?.name || profile.username,
+    };
   },
 });
 
