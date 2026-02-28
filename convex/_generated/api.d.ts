@@ -10,7 +10,9 @@
 
 import type * as bookmarks from "../bookmarks.js";
 import type * as groups from "../groups.js";
+import type * as http from "../http.js";
 import type * as profile from "../profile.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -21,7 +23,9 @@ import type {
 declare const fullApi: ApiFromModules<{
   bookmarks: typeof bookmarks;
   groups: typeof groups;
+  http: typeof http;
   profile: typeof profile;
+  users: typeof users;
 }>;
 
 /**
