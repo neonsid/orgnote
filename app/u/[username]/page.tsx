@@ -1,16 +1,20 @@
-import { notFound } from "next/navigation";
-import { fetchQuery } from "convex/nextjs";
+"use client";
+
+import { useState, useMemo } from "react";
+import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import GitHub from "lucide-react/dist/esm/icons/github";
 import Twitter from "lucide-react/dist/esm/icons/twitter";
 import Globe from "lucide-react/dist/esm/icons/globe";
+import { Id } from "@/convex/_generated/dataModel";
 
 interface PublicProfilePageProps {
-  params: Promise<{
+  params: {
     username: string;
-  }>;
+  };
 }
 
 function formatDate(timestamp: number): string {
@@ -37,32 +41,43 @@ function extractDomain(url: string): string {
   }
 }
 
-export default async function PublicProfilePage({
-  params,
-}: PublicProfilePageProps) {
-  const { username } = await params;
+export default function PublicProfilePage({ params }: PublicProfilePageProps) {
+  const { username } = params;
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
   // Fetch the public profile
-  const profile = await fetchQuery(api.profile.getProfileByUsername, {
+  const profile = useQuery(api.profile.getProfileByUsername, { username });
+
+  // Fetch the user's public groups
+  const groups = useQuery(api.groups.getPublicGroupsByUsername, { username });
+
+  // Fetch bookmarks from public groups
+  const bookmarks = useQuery(api.bookmarks.getPublicBookmarksByUsername, {
     username,
   });
+
+  // Filter bookmarks by selected group
+  const filteredBookmarks = useMemo(() => {
+    if (!bookmarks) return [];
+    if (!selectedGroupId) return bookmarks;
+    return bookmarks.filter((b) => b.groupId === selectedGroupId);
+  }, [bookmarks, selectedGroupId]);
+
+  if (
+    profile === undefined ||
+    groups === undefined ||
+    bookmarks === undefined
+  ) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="size-6 border-2 border-foreground/20 border-t-foreground rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!profile) {
     notFound();
   }
-
-  // Fetch the user's public groups
-  const groups = await fetchQuery(api.groups.getPublicGroupsByUsername, {
-    username,
-  });
-
-  // Fetch bookmarks from public groups
-  const bookmarks = await fetchQuery(
-    api.bookmarks.getPublicBookmarksByUsername,
-    {
-      username,
-    },
-  );
 
   const initial = username.charAt(0).toUpperCase();
 
@@ -107,7 +122,7 @@ export default async function PublicProfilePage({
             {/* Name and Username */}
             <div className="text-center md:text-left">
               <h1 className="text-xl font-semibold text-foreground">
-                {profile.username}
+                {profile.name || profile.username}
               </h1>
               <p className="text-muted-foreground">@{username}</p>
             </div>
@@ -162,13 +177,25 @@ export default async function PublicProfilePage({
           <div className="space-y-6">
             {/* Group Tabs */}
             <div className="flex flex-wrap items-center gap-2">
-              <button className="inline-flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5 text-sm font-medium text-foreground">
+              <button
+                onClick={() => setSelectedGroupId(null)}
+                className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  selectedGroupId === null
+                    ? "bg-foreground text-background"
+                    : "bg-muted text-foreground hover:bg-muted/80"
+                }`}
+              >
                 All
               </button>
-              {groups.map((group) => (
+              {groups?.map((group) => (
                 <button
                   key={group._id}
-                  className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
+                  onClick={() => setSelectedGroupId(group._id as string)}
+                  className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                    selectedGroupId === group._id
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:bg-muted"
+                  }`}
                 >
                   <span
                     className="size-2 rounded-full"
@@ -191,7 +218,7 @@ export default async function PublicProfilePage({
 
             {/* Bookmark List */}
             <div className="space-y-1">
-              {bookmarks.map((bookmark) => (
+              {filteredBookmarks.map((bookmark) => (
                 <a
                   key={bookmark._id}
                   href={bookmark.url}
@@ -232,12 +259,14 @@ export default async function PublicProfilePage({
             </div>
 
             {/* Empty state if no bookmarks */}
-            {bookmarks.length === 0 && (
+            {filteredBookmarks.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">
-                  {groups.length === 0
+                  {groups?.length === 0
                     ? "No public groups available"
-                    : "No bookmarks in public groups"}
+                    : selectedGroupId
+                      ? "No bookmarks in this group"
+                      : "No bookmarks in public groups"}
                 </p>
               </div>
             )}
