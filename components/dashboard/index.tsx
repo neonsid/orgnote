@@ -17,6 +17,7 @@ import { RenameBookmarkDialog } from "./rename-bookmark-dialog";
 import { DeleteBookmarkDialog } from "./delete-bookmark-dialog";
 import { type Doc, type Id } from "@/convex/_generated/dataModel";
 import { extractDomain, COLORS } from "@/lib/domain-utils";
+import { useDialogStore } from "@/stores/dialog-store";
 
 export default function DashboardPage() {
   const { data: session, isPending: isSessionLoading } =
@@ -30,12 +31,15 @@ export default function DashboardPage() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
 
-  // Dialog coordination
-  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(
-    null,
-  );
+  // Dialog state from Zustand store
+  const {
+    renameBookmark,
+    deleteBookmark,
+    openRenameDialog,
+    closeRenameDialog,
+    openDeleteBookmarkDialog,
+    closeDeleteBookmarkDialog,
+  } = useDialogStore();
 
   // Auto-select the first group when groups load
   const effectiveGroupId = useMemo(() => {
@@ -125,16 +129,25 @@ export default function DashboardPage() {
     return result;
   }, [allBookmarks, debouncedQuery, filter]);
 
+  // Get selected bookmark from store bookmarkId
+  const selectedBookmark = useMemo(() => {
+    const bookmarkId = renameBookmark.bookmarkId || deleteBookmark.bookmarkId;
+    if (!bookmarkId) return null;
+    return allBookmarks.find((b) => b.id === bookmarkId) || null;
+  }, [allBookmarks, renameBookmark.bookmarkId, deleteBookmark.bookmarkId]);
+
   // Context menu handlers
   const handleCopy = useCallback((bookmark: Bookmark) => {
     navigator.clipboard.writeText(bookmark.url);
     toast.success("URL copied successfully");
   }, []);
 
-  const handleRename = useCallback((bookmark: Bookmark) => {
-    setSelectedBookmark(bookmark);
-    setRenameDialogOpen(true);
-  }, []);
+  const handleRename = useCallback(
+    (bookmark: Bookmark) => {
+      openRenameDialog(bookmark.id);
+    },
+    [openRenameDialog],
+  );
 
   const handleMove = useCallback(
     (bookmarkId: Id<"bookmarks">, newGroupId: Id<"groups">) => {
@@ -143,10 +156,12 @@ export default function DashboardPage() {
     [moveBookmark],
   );
 
-  const handleDelete = useCallback((bookmark: Bookmark) => {
-    setSelectedBookmark(bookmark);
-    setDeleteDialogOpen(true);
-  }, []);
+  const handleDelete = useCallback(
+    (bookmark: Bookmark) => {
+      openDeleteBookmarkDialog(bookmark.id);
+    },
+    [openDeleteBookmarkDialog],
+  );
 
   const handleToggleRead = useCallback(
     (bookmarkId: Id<"bookmarks">) => {
@@ -250,14 +265,14 @@ export default function DashboardPage() {
 
       <RenameBookmarkDialog
         bookmark={selectedBookmark}
-        open={renameDialogOpen}
-        onOpenChange={setRenameDialogOpen}
+        open={renameBookmark.open}
+        onOpenChange={closeRenameDialog}
       />
 
       <DeleteBookmarkDialog
         bookmark={selectedBookmark}
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
+        open={deleteBookmark.open}
+        onOpenChange={closeDeleteBookmarkDialog}
       />
     </div>
   );
