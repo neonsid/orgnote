@@ -1,27 +1,27 @@
-'use client'
+"use client";
 
-import { useCallback } from 'react'
-import { useMutation } from 'convex/react'
-import { api } from '@/convex/_generated/api'
-import { type Id } from '@/convex/_generated/dataModel'
+import { useCallback } from "react";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { type Id } from "@/convex/_generated/dataModel";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface Bookmark {
-  id: Id<'bookmarks'>
-  title: string
+  id: Id<"bookmarks">;
+  title: string;
 }
 
 interface DeleteBookmarkDialogProps {
-  bookmark: Bookmark | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  bookmark: Bookmark | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export function DeleteBookmarkDialog({
@@ -29,27 +29,27 @@ export function DeleteBookmarkDialog({
   open,
   onOpenChange,
 }: DeleteBookmarkDialogProps) {
-  const deleteBookmark = useMutation(api.bookmarks.deleteBookMark)
+  const deleteBookmark = useMutation(api.bookmarks.deleteBookMark);
 
   const handleConfirm = useCallback(async () => {
-    if (!bookmark) return
-    await deleteBookmark({ bookmarkId: bookmark.id })
-    onOpenChange(false)
-  }, [bookmark, deleteBookmark, onOpenChange])
+    if (!bookmark) return;
+    await deleteBookmark({ bookmarkId: bookmark.id });
+    onOpenChange(false);
+  }, [bookmark, deleteBookmark, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md gap-4">
+        <DialogHeader className="space-y-2">
           <DialogTitle>Delete Bookmark</DialogTitle>
         </DialogHeader>
-        <div className="py-4">
-          <p className="text-sm text-muted-foreground">
+        <div className="px-1">
+          <p className="text-sm text-muted-foreground leading-relaxed">
             Are you sure you want to delete &quot;{bookmark?.title}&quot;? This
             action cannot be undone.
           </p>
         </div>
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
@@ -59,5 +59,5 @@ export function DeleteBookmarkDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
