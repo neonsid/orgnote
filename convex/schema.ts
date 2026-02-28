@@ -12,14 +12,16 @@ export default defineSchema({
     username: v.optional(v.string()),
     bio: v.optional(v.string()),
     links: v.optional(
-      v.object({
-        label: v.union(
-          v.literal("GitHub"),
-          v.literal("Twitter"),
-          v.literal("Portfolio"),
-        ),
-        url: v.string(),
-      }),
+      v.array(
+        v.object({
+          label: v.union(
+            v.literal("GitHub"),
+            v.literal("Twitter"),
+            v.literal("Portfolio"),
+          ),
+          url: v.string(),
+        }),
+      ),
     ),
     userProvidedId: v.string(),
   }).index("by_user_provided_id", ["userProvidedId"]),
