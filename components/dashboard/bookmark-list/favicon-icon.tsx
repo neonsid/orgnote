@@ -19,7 +19,8 @@ export function FaviconIcon({ bookmark }: FaviconIconProps) {
           fill
           className="object-cover"
           onError={() => setImgError(true)}
-          unoptimized
+          sizes="28px"
+          loading="lazy"
         />
         {bookmark.doneReading && (
           <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
