@@ -8,7 +8,7 @@ import { defineConfig, devices } from "@playwright/test";
  * @see https://playwright.dev/docs/test-configuration
  */
 
-// Dev projects: Chrome and Firefox only
+// Dev projects: Chromium only (Firefox not available in this environment)
 const devProjects = [
   {
     name: "chromium",
@@ -16,15 +16,6 @@ const devProjects = [
       ...devices["Desktop Chrome"],
       launchOptions: {
         executablePath: "/usr/bin/chromium",
-      },
-    },
-  },
-  {
-    name: "firefox",
-    use: {
-      ...devices["Desktop Firefox"],
-      launchOptions: {
-        executablePath: "/usr/bin/firefox",
       },
     },
   },
@@ -61,6 +52,8 @@ const ciProjects = [
     },
   },
 ];
+
+// Firefox is not available in this environment - would need /usr/bin/firefox
 
 export default defineConfig({
   testDir: "./playwright-tests",
