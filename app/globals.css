@@ -132,3 +132,15 @@
     @apply bg-background text-foreground font-sans;
   }
 }
+
+@theme {
+  --animate-text-shimmer: text-shimmer 2s linear infinite;
+  --keyframes-text-shimmer: {
+    0% {
+      background-position: 100% center;
+    }
+    100% {
+      background-position: 0% center;
+    }
+  };
+}

@@ -1,9 +1,8 @@
-"use client";
+'use client'
 
-import { useState, memo, useRef, useCallback, useMemo } from "react";
-import Image from "next/image";
-import { motion, AnimatePresence } from "motion/react";
-import { Shimmer } from "@/components/ai-elements/shimmer";
+import { useState, memo, useRef, useCallback, useMemo, useEffect } from 'react'
+import Image from 'next/image'
+import { motion, AnimatePresence } from 'motion/react'
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -13,61 +12,60 @@ import {
   ContextMenuSub,
   ContextMenuSubTrigger,
   ContextMenuSubContent,
-} from "@/components/ui/context-menu";
-import Copy from "lucide-react/dist/esm/icons/copy";
-import { formatDate } from "@/components/dashboard/bookmark-list/constants";
-import Pencil from "lucide-react/dist/esm/icons/pencil";
-import Trash2 from "lucide-react/dist/esm/icons/trash-2";
-import ChevronsRightIcon from "lucide-react/dist/esm/icons/chevrons-right";
-import Check from "lucide-react/dist/esm/icons/check";
-import { useIsSmallMobile } from "@/hooks/use-mobile";
+} from '@/components/ui/context-menu'
+import Copy from 'lucide-react/dist/esm/icons/copy'
+import { formatDate } from '@/components/dashboard/bookmark-list/constants'
+import Pencil from 'lucide-react/dist/esm/icons/pencil'
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2'
+import ChevronsRightIcon from 'lucide-react/dist/esm/icons/chevrons-right'
+import { useIsSmallMobile } from '@/hooks/use-mobile'
 
 export interface LandingBookmark {
-  id: string;
-  title: string;
-  domain: string;
-  url: string;
-  favicon: string | null;
-  fallbackColor: string;
-  createdAt: string;
-  groupId: string;
+  id: string
+  title: string
+  domain: string
+  url: string
+  favicon: string | null
+  fallbackColor: string
+  createdAt: string
+  groupId: string
 }
 
 export interface LandingGroup {
-  id: string;
-  name: string;
-  color: string;
+  id: string
+  name: string
+  color: string
 }
 
 interface LandingBookmarkListProps {
-  bookmarks: LandingBookmark[];
-  groups: LandingGroup[];
-  onCopy: (bookmark: LandingBookmark) => void;
-  onRename: (bookmark: LandingBookmark) => void;
-  onDelete: (bookmark: LandingBookmark) => void;
-  onMove: (bookmarkId: string, newGroupId: string) => void;
+  bookmarks: LandingBookmark[]
+  groups: LandingGroup[]
+  onCopy: (bookmark: LandingBookmark) => void
+  onRename: (bookmark: LandingBookmark) => void
+  onDelete: (bookmark: LandingBookmark) => void
+  onMove: (bookmarkId: string, newGroupId: string) => void
 }
 
 const KEYBOARD_SHORTCUTS = {
-  open: ["⌘", "Enter"],
-  copy: ["⌘", "C"],
-  rename: ["⌘", "E"],
-  delete: ["⌘", "⌫"],
-};
+  open: ['⌘', 'Enter'],
+  copy: ['⌘', 'C'],
+  rename: ['⌘', 'E'],
+  delete: ['⌘', '⌫'],
+}
 
 const FALLBACK_COLORS = [
-  "#f59e0b",
-  "#3b82f6",
-  "#10b981",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-  "#06b6d4",
-  "#f97316",
-];
+  '#f59e0b',
+  '#3b82f6',
+  '#10b981',
+  '#ef4444',
+  '#8b5cf6',
+  '#ec4899',
+  '#06b6d4',
+  '#f97316',
+]
 
 function FaviconIcon({ bookmark }: { bookmark: LandingBookmark }) {
-  const [imgError, setImgError] = useState(false);
+  const [imgError, setImgError] = useState(false)
 
   if (bookmark.favicon && !imgError) {
     return (
@@ -81,7 +79,7 @@ function FaviconIcon({ bookmark }: { bookmark: LandingBookmark }) {
           unoptimized
         />
       </div>
-    );
+    )
   }
 
   return (
@@ -91,7 +89,7 @@ function FaviconIcon({ bookmark }: { bookmark: LandingBookmark }) {
     >
       {bookmark.title.charAt(0).toUpperCase()}
     </div>
-  );
+  )
 }
 
 function KeyboardShortcut({ keys }: { keys: string[] }) {
@@ -106,16 +104,16 @@ function KeyboardShortcut({ keys }: { keys: string[] }) {
         </kbd>
       ))}
     </ContextMenuShortcut>
-  );
+  )
 }
 
 interface MenuContentProps {
-  bookmark: LandingBookmark;
-  groups: LandingGroup[];
-  onCopy: () => void;
-  onRename: () => void;
-  onDelete: () => void;
-  onMove: (groupId: string) => void;
+  bookmark: LandingBookmark
+  groups: LandingGroup[]
+  onCopy: () => void
+  onRename: () => void
+  onDelete: () => void
+  onMove: (groupId: string) => void
 }
 
 function MenuContent({
@@ -135,8 +133,8 @@ function MenuContent({
           group,
           fallbackColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length],
         })),
-    [groups, bookmark.groupId],
-  );
+    [groups, bookmark.groupId]
+  )
 
   return (
     <ContextMenuContent className="w-56">
@@ -184,7 +182,7 @@ function MenuContent({
         <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.delete} />
       </ContextMenuItem>
     </ContextMenuContent>
-  );
+  )
 }
 
 export const LandingBookmarkList = memo(function LandingBookmarkList({
@@ -195,38 +193,38 @@ export const LandingBookmarkList = memo(function LandingBookmarkList({
   onDelete,
   onMove,
 }: LandingBookmarkListProps) {
-  const isSmallMobile = useIsSmallMobile();
-  const hoveredBookmarkRef = useRef<LandingBookmark | null>(null);
+  const isSmallMobile = useIsSmallMobile()
+  const hoveredBookmarkRef = useRef<LandingBookmark | null>(null)
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-        e.preventDefault();
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault()
         if (hoveredBookmarkRef.current) {
           window.open(
             hoveredBookmarkRef.current.url,
-            "_blank",
-            "noopener,noreferrer",
-          );
+            '_blank',
+            'noopener,noreferrer'
+          )
         }
       }
-      if ((e.metaKey || e.ctrlKey) && (e.key === "e" || e.key === "E")) {
-        e.preventDefault();
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'e' || e.key === 'E')) {
+        e.preventDefault()
         if (hoveredBookmarkRef.current) {
-          onRename(hoveredBookmarkRef.current);
+          onRename(hoveredBookmarkRef.current)
         }
       }
     },
-    [onRename],
-  );
+    [onRename]
+  )
 
   // Add keyboard listener
-  useMemo(() => {
-    if (typeof window !== "undefined") {
-      window.addEventListener("keydown", handleKeyDown, { passive: false });
-      return () => window.removeEventListener("keydown", handleKeyDown);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('keydown', handleKeyDown, { passive: false })
+      return () => window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [handleKeyDown]);
+  }, [handleKeyDown])
 
   if (bookmarks.length === 0) {
     return (
@@ -241,7 +239,7 @@ export const LandingBookmarkList = memo(function LandingBookmarkList({
           Try a different search or press Enter to add
         </p>
       </motion.div>
-    );
+    )
   }
 
   return (
@@ -319,7 +317,7 @@ export const LandingBookmarkList = memo(function LandingBookmarkList({
                           >
                             {key}
                           </kbd>
-                        ),
+                        )
                       )}
                     </span>
                   </a>
@@ -334,9 +332,9 @@ export const LandingBookmarkList = memo(function LandingBookmarkList({
                 />
               </ContextMenu>
             </motion.div>
-          ),
+          )
         )}
       </AnimatePresence>
     </div>
-  );
-});
+  )
+})
