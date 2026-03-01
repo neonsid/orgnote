@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Loader2, Trash2 } from 'lucide-react'
+import Loader2 from 'lucide-react/dist/esm/icons/loader-2'
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2'
 import { useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { Id } from '@/convex/_generated/dataModel'

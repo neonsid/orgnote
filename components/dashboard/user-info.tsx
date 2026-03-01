@@ -1,20 +1,29 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, memo } from "react";
 import ChevronsUpDown from "lucide-react/dist/esm/icons/chevrons-up-down";
 import LogOut from "lucide-react/dist/esm/icons/log-out";
 import Settings from "lucide-react/dist/esm/icons/settings";
 import Keyboard from "lucide-react/dist/esm/icons/keyboard";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import { KeyboardShortcutsDialog } from "@/components/dashboard/keyboard-shortcuts-dialog";
-import { UserSettingsDialog } from "@/components/dashboard/settings";
+import dynamic from "next/dynamic";
 import { useIsSmallMobile } from "@/hooks/use-mobile";
 import Image from "next/image";
 import { AnimatedThemeToggler } from "../ui/animated-theme-toggler";
-import { UserIcon } from "lucide-react";
+import UserIcon from "lucide-react/dist/esm/icons/user";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+
+const KeyboardShortcutsDialog = dynamic(
+  () => import("@/components/dashboard/keyboard-shortcuts-dialog").then((m) => m.KeyboardShortcutsDialog),
+  { ssr: false },
+);
+
+const UserSettingsDialog = dynamic(
+  () => import("@/components/dashboard/settings").then((m) => m.UserSettingsDialog),
+  { ssr: false },
+);
 
 interface UserInfoProps {
   user: {
@@ -25,7 +34,7 @@ interface UserInfoProps {
   };
 }
 
-export function UserInfo({ user }: UserInfoProps) {
+export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
   const [open, setOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -163,15 +172,19 @@ export function UserInfo({ user }: UserInfoProps) {
         )}
       </div>
 
-      <KeyboardShortcutsDialog
-        open={shortcutsOpen}
-        onOpenChange={setShortcutsOpen}
-      />
-      <UserSettingsDialog
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-        user={user}
-      />
+      {shortcutsOpen && (
+        <KeyboardShortcutsDialog
+          open={shortcutsOpen}
+          onOpenChange={setShortcutsOpen}
+        />
+      )}
+      {settingsOpen && (
+        <UserSettingsDialog
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+          user={user}
+        />
+      )}
     </>
   );
-}
+});

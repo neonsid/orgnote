@@ -9,12 +9,21 @@ import Globe from "lucide-react/dist/esm/icons/globe";
 import Lock from "lucide-react/dist/esm/icons/lock";
 import { Popover as PopoverPrimitive } from "radix-ui";
 import { Id } from "@/convex/_generated/dataModel";
-import { CreateGroupDialog } from "@/components/dashboard/create-group-dialog";
-import { DeleteGroupDialog } from "@/components/dashboard/delete-group-dialog";
+import dynamic from "next/dynamic";
 import { useDialogStore } from "@/stores/dialog-store";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
+
+const CreateGroupDialog = dynamic(
+  () => import("@/components/dashboard/create-group-dialog").then((m) => m.CreateGroupDialog),
+  { ssr: false },
+);
+
+const DeleteGroupDialog = dynamic(
+  () => import("@/components/dashboard/delete-group-dialog").then((m) => m.DeleteGroupDialog),
+  { ssr: false },
+);
 
 /**
  * Convex group shape (from the database).
@@ -207,19 +216,21 @@ export const GroupSelector = memo(function GroupSelector({
         </PopoverPrimitive.Portal>
       </PopoverPrimitive.Root>
 
-      {/* Create group dialog */}
-      <CreateGroupDialog
-        open={createGroup.open}
-        onOpenChange={closeCreateGroup}
-        userId={userId}
-        onCreated={(newGroupId) => {
-          onSelect(newGroupId);
-          closeCreateGroup();
-        }}
-      />
+      {/* Create group dialog — only mount when open */}
+      {createGroup.open && (
+        <CreateGroupDialog
+          open={createGroup.open}
+          onOpenChange={closeCreateGroup}
+          userId={userId}
+          onCreated={(newGroupId) => {
+            onSelect(newGroupId);
+            closeCreateGroup();
+          }}
+        />
+      )}
 
-      {/* Delete group confirmation dialog */}
-      {deleteGroup.groupId && (
+      {/* Delete group confirmation dialog — only mount when open */}
+      {deleteGroup.open && deleteGroup.groupId && (
         <DeleteGroupDialog
           open={deleteGroup.open}
           onOpenChange={closeDeleteGroupDialog}
