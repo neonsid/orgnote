@@ -1,65 +1,64 @@
-"use client";
+'use client'
 
-import { useState, useMemo } from "react";
-import { motion } from "motion/react";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import Image from "next/image";
-import Link from "next/link";
-import GitHub from "lucide-react/dist/esm/icons/github";
-import Twitter from "lucide-react/dist/esm/icons/twitter";
-import Globe from "lucide-react/dist/esm/icons/globe";
-import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right";
-import { extractDomain } from "@/lib/domain-utils";
-import { PublicProfileHeader } from "@/components/public-profile-header";
+import { useState, useMemo } from 'react'
+import { motion } from 'motion/react'
+import { useQuery } from 'convex/react'
+import { api } from '@/convex/_generated/api'
+import Image from 'next/image'
+import GitHub from 'lucide-react/dist/esm/icons/github'
+import Twitter from 'lucide-react/dist/esm/icons/twitter'
+import Globe from 'lucide-react/dist/esm/icons/globe'
+import ArrowUpRight from 'lucide-react/dist/esm/icons/arrow-up-right'
+import { extractDomain } from '@/lib/domain-utils'
+import { PublicProfileHeader } from '@/components/public-profile-header'
 
 // Animation variants matching dashboard
 const itemVariants = {
   hidden: { opacity: 0, y: 8 },
   show: { opacity: 1, y: 0 },
-};
+}
 
 interface PublicProfileContentProps {
-  username: string;
+  username: string
 }
 
 function formatDate(timestamp: number): string {
-  const date = new Date(timestamp);
-  const now = new Date();
+  const date = new Date(timestamp)
+  const now = new Date()
   const diffDays = Math.floor(
-    (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
-  );
+    (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+  )
 
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays}d ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
-  if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`;
-  return `${Math.floor(diffDays / 365)}y ago`;
+  if (diffDays === 0) return 'Today'
+  if (diffDays === 1) return 'Yesterday'
+  if (diffDays < 7) return `${diffDays}d ago`
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`
+  return `${Math.floor(diffDays / 365)}y ago`
 }
 
 export default function PublicProfileContent({
   username,
 }: PublicProfileContentProps) {
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
 
   // Fetch the public profile
-  const profile = useQuery(api.profile.getProfileByUsername, { username });
+  const profile = useQuery(api.profile.getProfileByUsername, { username })
 
   // Fetch the user's public groups
-  const groups = useQuery(api.groups.getPublicGroupsByUsername, { username });
+  const groups = useQuery(api.groups.getPublicGroupsByUsername, { username })
 
   // Fetch bookmarks from public groups
   const bookmarks = useQuery(api.bookmarks.getPublicBookmarksByUsername, {
     username,
-  });
+  })
 
   // Filter bookmarks by selected group
   const filteredBookmarks = useMemo(() => {
-    if (!bookmarks) return [];
-    if (!selectedGroupId) return bookmarks;
-    return bookmarks.filter((b) => b.groupId === selectedGroupId);
-  }, [bookmarks, selectedGroupId]);
+    if (!bookmarks) return []
+    if (!selectedGroupId) return bookmarks
+    return bookmarks.filter((b) => b.groupId === selectedGroupId)
+  }, [bookmarks, selectedGroupId])
 
   if (
     profile === undefined ||
@@ -70,7 +69,7 @@ export default function PublicProfileContent({
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="size-6 border-2 border-foreground/20 border-t-foreground rounded-full animate-spin" />
       </div>
-    );
+    )
   }
 
   if (!profile) {
@@ -85,27 +84,27 @@ export default function PublicProfileContent({
           </p>
         </div>
       </div>
-    );
+    )
   }
 
-  const initial = username.charAt(0).toUpperCase();
+  const initial = username.charAt(0).toUpperCase()
 
   // Get social links
   const githubLink = profile.links?.find(
-    (link: { label: string; url: string }) => link.label === "GitHub",
-  );
+    (link: { label: string; url: string }) => link.label === 'GitHub'
+  )
   const twitterLink = profile.links?.find(
-    (link: { label: string; url: string }) => link.label === "Twitter",
-  );
+    (link: { label: string; url: string }) => link.label === 'Twitter'
+  )
   const portfolioLink = profile.links?.find(
-    (link: { label: string; url: string }) => link.label === "Portfolio",
-  );
+    (link: { label: string; url: string }) => link.label === 'Portfolio'
+  )
 
   return (
     <div className="min-h-screen bg-background">
       <PublicProfileHeader />
 
-      <main className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
+      <main className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-6 py-8">
         <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-8 lg:gap-12">
           {/* Left Sidebar */}
           <aside className="space-y-6">
@@ -146,7 +145,7 @@ export default function PublicProfileContent({
               {twitterLink && (
                 <a
                   href={
-                    twitterLink.url.startsWith("http")
+                    twitterLink.url.startsWith('http')
                       ? twitterLink.url
                       : `https://twitter.com/${twitterLink.url}`
                   }
@@ -178,8 +177,8 @@ export default function PublicProfileContent({
                 onClick={() => setSelectedGroupId(null)}
                 className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                   selectedGroupId === null
-                    ? "bg-foreground text-background"
-                    : "bg-muted text-foreground hover:bg-muted/80"
+                    ? 'bg-foreground text-background'
+                    : 'bg-muted text-foreground hover:bg-muted/80'
                 }`}
               >
                 All
@@ -190,8 +189,8 @@ export default function PublicProfileContent({
                   onClick={() => setSelectedGroupId(group._id as string)}
                   className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                     selectedGroupId === group._id
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:bg-muted"
+                      ? 'bg-foreground text-background'
+                      : 'text-muted-foreground hover:bg-muted'
                   }`}
                 >
                   <span
@@ -204,7 +203,7 @@ export default function PublicProfileContent({
             </div>
 
             {/* Bookmark List Header */}
-            <div className="flex items-center justify-between border-b border-border pb-2">
+            <div className="flex items-center justify-between border-b border-border py-2">
               <span className="text-sm font-medium text-muted-foreground">
                 Title
               </span>
@@ -214,7 +213,7 @@ export default function PublicProfileContent({
             </div>
 
             {/* Bookmark List */}
-            <div className="space-y-1">
+            <div className="space-y-2 -mt-2">
               {filteredBookmarks.map((bookmark, index) => (
                 <motion.div
                   key={bookmark._id}
@@ -260,11 +259,11 @@ export default function PublicProfileContent({
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0 ml-4">
-                      <span className="text-xs text-muted-foreground tabular-nums group-hover:hidden">
+                    <div className="flex items-center gap-1 shrink-0 ml-4">
+                      <span className="text-xs text-muted-foreground tabular-nums transition-transform duration-200 group-hover:-translate-x-1">
                         {formatDate(bookmark.createdAt)}
                       </span>
-                      <ArrowUpRight className="size-4 text-muted-foreground opacity-0 -translate-y-1 translate-x-1 group-hover:opacity-100 group-hover:translate-y-0 group-hover:translate-x-0 transition-all duration-200" />
+                      <ArrowUpRight className="hidden size-4 text-muted-foreground group-hover:inline transition-all ease-in duration-400" />
                     </div>
                   </a>
                 </motion.div>
@@ -276,10 +275,10 @@ export default function PublicProfileContent({
               <div className="text-center py-12">
                 <p className="text-muted-foreground">
                   {groups?.length === 0
-                    ? "No public groups available"
+                    ? 'No public groups available'
                     : selectedGroupId
-                      ? "No bookmarks in this group"
-                      : "No bookmarks in public groups"}
+                      ? 'No bookmarks in this group'
+                      : 'No bookmarks in public groups'}
                 </p>
               </div>
             )}
@@ -287,5 +286,5 @@ export default function PublicProfileContent({
         </div>
       </main>
     </div>
-  );
+  )
 }

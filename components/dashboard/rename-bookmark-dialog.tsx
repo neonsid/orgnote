@@ -28,12 +28,14 @@ interface RenameBookmarkDialogProps {
   bookmark: Bookmark | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  userId: string;
 }
 
 export function RenameBookmarkDialog({
   bookmark,
   open,
   onOpenChange,
+  userId,
 }: RenameBookmarkDialogProps) {
   const renameBookmark = useMutation(api.bookmarks.renameBookMark);
 
@@ -46,10 +48,11 @@ export function RenameBookmarkDialog({
       onSubmit: renameBookmarkSchema,
     },
     onSubmit: async ({ value }) => {
-      if (!bookmark) return;
+      if (!bookmark || !userId) return;
       await renameBookmark({
         bookmarkId: bookmark.id,
         title: value.title,
+        userId,
       });
       onOpenChange(false);
     },
