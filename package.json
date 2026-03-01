@@ -10,6 +10,8 @@
     "postinstall": "prisma generate",
     "build": "next build",
     "db:push": "prisma db push",
+    "db:migrate": "NODE_ENV=production prisma migrate deploy",
+    "db:migrate:create": "prisma migrate dev",
     "start": "next start",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
