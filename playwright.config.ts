@@ -3,8 +3,64 @@ import { defineConfig, devices } from "@playwright/test";
 /**
  * Playwright configuration for E2E testing
  * Uses system browsers instead of downloading
+ * WebKit tests only run in CI
  * @see https://playwright.dev/docs/test-configuration
  */
+
+const projects = [
+  {
+    name: "chromium",
+    use: {
+      ...devices["Desktop Chrome"],
+      launchOptions: {
+        executablePath: "/usr/bin/chromium",
+      },
+    },
+  },
+  {
+    name: "firefox",
+    use: {
+      ...devices["Desktop Firefox"],
+      launchOptions: {
+        executablePath: "/usr/bin/firefox",
+      },
+    },
+  },
+  {
+    name: "Mobile Chrome",
+    use: {
+      ...devices["Pixel 5"],
+      launchOptions: {
+        executablePath: "/usr/bin/chromium",
+      },
+    },
+  },
+];
+
+// Only add WebKit projects in CI
+if (process.env.CI) {
+  projects.push(
+    {
+      name: "webkit",
+      use: {
+        ...devices["Desktop Safari"],
+        launchOptions: {
+          executablePath: "/usr/bin/epiphany",
+        },
+      },
+    },
+    {
+      name: "Mobile Safari",
+      use: {
+        ...devices["iPhone 12"],
+        launchOptions: {
+          executablePath: "/usr/bin/epiphany",
+        },
+      },
+    },
+  );
+}
+
 export default defineConfig({
   testDir: "./playwright-tests",
   fullyParallel: true,
@@ -22,53 +78,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
     actionTimeout: 15000,
   },
-  projects: [
-    {
-      name: "chromium",
-      use: {
-        ...devices["Desktop Chrome"],
-        launchOptions: {
-          executablePath: "/usr/bin/chromium",
-        },
-      },
-    },
-    {
-      name: "firefox",
-      use: {
-        ...devices["Desktop Firefox"],
-        launchOptions: {
-          executablePath: "/usr/bin/firefox",
-        },
-      },
-    },
-    {
-      name: "webkit",
-      use: {
-        ...devices["Desktop Safari"],
-        launchOptions: {
-          executablePath: "/usr/bin/epiphany",
-        },
-      },
-    },
-    {
-      name: "Mobile Chrome",
-      use: {
-        ...devices["Pixel 5"],
-        launchOptions: {
-          executablePath: "/usr/bin/chromium",
-        },
-      },
-    },
-    {
-      name: "Mobile Safari",
-      use: {
-        ...devices["iPhone 12"],
-        launchOptions: {
-          executablePath: "/usr/bin/epiphany",
-        },
-      },
-    },
-  ],
+  projects,
   webServer: {
     command: "pnpm dev",
     url: "http://localhost:3000",
