@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 /**
  * Playwright configuration for E2E testing
+ * Uses system Chrome/Chromium instead of downloading browsers
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
@@ -20,6 +21,8 @@ export default defineConfig({
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     actionTimeout: 15000,
+    // Use system Chrome/Chromium
+    channel: "chrome",
   },
   projects: [
     {
@@ -27,20 +30,8 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
     {
-      name: "firefox",
-      use: { ...devices["Desktop Firefox"] },
-    },
-    {
-      name: "webkit",
-      use: { ...devices["Desktop Safari"] },
-    },
-    {
       name: "Mobile Chrome",
       use: { ...devices["Pixel 5"] },
-    },
-    {
-      name: "Mobile Safari",
-      use: { ...devices["iPhone 12"] },
     },
   ],
   webServer: {
