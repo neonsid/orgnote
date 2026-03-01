@@ -11,12 +11,12 @@ test.describe("Landing Page", () => {
   });
 
   test("should have a working navigation", async ({ page }) => {
-    const nav = page.locator("nav");
+    const nav = page.locator("nav").first();
     await expect(nav).toBeVisible({ timeout: 10000 });
   });
 
   test("should display the site title or logo", async ({ page }) => {
-    const title = page.getByText(/Orgnote/i);
+    const title = page.getByRole("link", { name: /Orgnote/i });
     await expect(title).toBeVisible({ timeout: 10000 });
   });
 
