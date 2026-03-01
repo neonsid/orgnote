@@ -22,6 +22,7 @@ model User {
   sessions Session[]
   accounts Account[]
 
+  @@index([email])
   @@map("user")
 }
 
@@ -37,6 +38,9 @@ model Session {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
   @@map("session")
 }
 
