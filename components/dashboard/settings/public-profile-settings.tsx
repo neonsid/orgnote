@@ -1,6 +1,8 @@
 "use client";
 
-import { Copy, ExternalLink, Check } from "lucide-react";
+import Copy from "lucide-react/dist/esm/icons/copy";
+import ExternalLink from "lucide-react/dist/esm/icons/external-link";
+import Check from "lucide-react/dist/esm/icons/check";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

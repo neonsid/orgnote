@@ -12,11 +12,22 @@ import { DashboardHeader } from "./dashboard-header";
 import { FilterDropdown, type FilterType } from "./filter-dropdown";
 import { BookmarkSearch } from "./bookmark-search";
 import { BookmarkList, type Bookmark } from "./bookmark-list";
-import { RenameBookmarkDialog } from "./rename-bookmark-dialog";
-import { DeleteBookmarkDialog } from "./delete-bookmark-dialog";
+import dynamic from "next/dynamic";
 import { type Doc, type Id } from "@/convex/_generated/dataModel";
+
+const RenameBookmarkDialog = dynamic(
+  () => import("./rename-bookmark-dialog").then((m) => m.RenameBookmarkDialog),
+  { ssr: false },
+);
+
+const DeleteBookmarkDialog = dynamic(
+  () => import("./delete-bookmark-dialog").then((m) => m.DeleteBookmarkDialog),
+  { ssr: false },
+);
 import { extractDomain, COLORS } from "@/lib/domain-utils";
 import { useDialogStore } from "@/stores/dialog-store";
+
+
 
 export default function DashboardPage() {
   const { data: session, isPending: isSessionLoading } =
@@ -86,7 +97,7 @@ export default function DashboardPage() {
         url,
         groupId: effectiveGroupId as Id<"groups">,
         imageUrl: isUrl
-          ? `https://www.google.com/s2/favicons?domain=${domain}&sz=256`
+          ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
           : "",
         userId,
       });

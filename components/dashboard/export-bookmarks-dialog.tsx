@@ -15,7 +15,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ChevronsUpDownIcon } from 'lucide-react'
+import ChevronsUpDownIcon from 'lucide-react/dist/esm/icons/chevrons-up-down'
 import { useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { toast } from 'sonner'
@@ -270,18 +270,16 @@ export function ExportBookmarksDialog({
             <div className="flex gap-3">
               <button
                 onClick={() => setFormat('json')}
-                className={`flex items-center gap-2.5 rounded-md border px-4 py-2.5 text-sm ${
-                  format === 'json'
+                className={`flex items-center gap-2.5 rounded-md border px-4 py-2.5 text-sm ${format === 'json'
                     ? 'border-primary bg-primary/10'
                     : 'border-input hover:bg-accent'
-                }`}
+                  }`}
               >
                 <div
-                  className={`size-4 rounded-full border flex items-center justify-center ${
-                    format === 'json'
+                  className={`size-4 rounded-full border flex items-center justify-center ${format === 'json'
                       ? 'border-primary bg-primary'
                       : 'border-muted-foreground'
-                  }`}
+                    }`}
                 >
                   {format === 'json' && (
                     <div className="size-2 rounded-full bg-background" />
@@ -291,18 +289,16 @@ export function ExportBookmarksDialog({
               </button>
               <button
                 onClick={() => setFormat('csv')}
-                className={`flex items-center gap-2.5 rounded-md border px-4 py-2.5 text-sm ${
-                  format === 'csv'
+                className={`flex items-center gap-2.5 rounded-md border px-4 py-2.5 text-sm ${format === 'csv'
                     ? 'border-primary bg-primary/10'
                     : 'border-input hover:bg-accent'
-                }`}
+                  }`}
               >
                 <div
-                  className={`size-4 rounded-full border flex items-center justify-center ${
-                    format === 'csv'
+                  className={`size-4 rounded-full border flex items-center justify-center ${format === 'csv'
                       ? 'border-primary bg-primary'
                       : 'border-muted-foreground'
-                  }`}
+                    }`}
                 >
                   {format === 'csv' && (
                     <div className="size-2 rounded-full bg-background" />

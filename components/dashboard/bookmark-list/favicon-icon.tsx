@@ -1,25 +1,26 @@
-import { useState } from "react";
-import Image from "next/image";
-import { Check } from "lucide-react";
+import { useState, memo } from "react";
+import Check from "lucide-react/dist/esm/icons/check";
 import type { Bookmark } from "./types";
 
 interface FaviconIconProps {
   bookmark: Bookmark;
 }
 
-export function FaviconIcon({ bookmark }: FaviconIconProps) {
+export const FaviconIcon = memo(function FaviconIcon({ bookmark }: FaviconIconProps) {
   const [imgError, setImgError] = useState(false);
 
   if (bookmark.favicon && !imgError) {
     return (
       <div className="relative size-7 rounded-lg overflow-hidden shrink-0 border border-border bg-background">
-        <Image
+        <img
           src={bookmark.favicon}
           alt=""
-          fill
-          className="object-cover"
+          width={28}
+          height={28}
+          className="size-full object-cover"
+          loading="lazy"
+          decoding="async"
           onError={() => setImgError(true)}
-          unoptimized
         />
         {bookmark.doneReading && (
           <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
@@ -43,4 +44,4 @@ export function FaviconIcon({ bookmark }: FaviconIconProps) {
       )}
     </div>
   );
-}
+});

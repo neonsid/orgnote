@@ -1,6 +1,6 @@
 "use client";
 
-import { Key } from "lucide-react";
+import Key from "lucide-react/dist/esm/icons/key";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
