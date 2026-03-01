@@ -1,45 +1,51 @@
-"use client";
+'use client'
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from 'react'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ChevronDown, ChevronsUpDownIcon } from "lucide-react";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { toast } from "sonner";
+} from '@/components/ui/dropdown-menu'
+import { ChevronsUpDownIcon } from 'lucide-react'
+import { useQuery } from 'convex/react'
+import { api } from '@/convex/_generated/api'
+import { toast } from 'sonner'
 
+interface ExportedBookmark {
+  title: string
+  url: string
+  type: 'link'
+  color: string | null
+  groupName: string
+  createdAt: string
+}
 interface ExportBookmarksDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  userId: string;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  userId: string
 }
 
-type ExportFormat = "json" | "csv";
+type ExportFormat = 'json' | 'csv'
 
 interface BookmarkWithGroup {
-  _id: string;
-  title: string;
-  url: string;
-  description?: string;
-  imageUrl: string;
-  doneReading: boolean;
-  createdAt: number;
-  groupId: string;
-  groupTitle: string;
+  _id: string
+  title: string
+  url: string
+  description?: string
+  imageUrl: string
+  doneReading: boolean
+  createdAt: number
+  groupId: string
+  groupTitle: string
 }
 
 export function ExportBookmarksDialog({
@@ -47,175 +53,157 @@ export function ExportBookmarksDialog({
   onOpenChange,
   userId,
 }: ExportBookmarksDialogProps) {
-  const groups = useQuery(api.groups.list, { userId });
-  const allBookmarks = useQuery(api.bookmarks.getAllUserBookmarks, { userId });
-  const bookmarkCounts = useMemo(() => {
-    if (!allBookmarks) return {} as Record<string, number>;
-    const counts: Record<string, number> = {};
-    for (const bookmark of allBookmarks) {
-      counts[bookmark.groupId] = (counts[bookmark.groupId] || 0) + 1;
-    }
-    return counts;
-  }, [allBookmarks]);
-
-  const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
-  const [format, setFormat] = useState<ExportFormat>("json");
-  const [isExporting, setIsExporting] = useState(false);
+  const groups = useQuery(api.groups.list, { userId })
+  const allBookmarks = useQuery(api.bookmarks.getAllUserBookmarks, { userId })
+  const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set())
+  const [format, setFormat] = useState<ExportFormat>('json')
+  const [isExporting, setIsExporting] = useState(false)
 
   const allGroupIds = useMemo(() => {
-    if (!groups) return new Set<string>();
-    return new Set(groups.map((g) => g._id));
-  }, [groups]);
+    if (!groups) return new Set<string>()
+    return new Set(groups.map((g) => g._id))
+  }, [groups])
 
   const isAllSelected =
-    selectedGroups.size === allGroupIds.size && allGroupIds.size > 0;
+    selectedGroups.size === allGroupIds.size && allGroupIds.size > 0
 
   useEffect(() => {
     if (groups && open) {
-      setSelectedGroups(new Set(groups.map((g) => g._id)));
+      setSelectedGroups(new Set(groups.map((g) => g._id)))
     }
-  }, [groups, open]);
+  }, [groups, open])
 
   const toggleGroup = (groupId: string) => {
-    const newSelected = new Set(selectedGroups);
+    const newSelected = new Set(selectedGroups)
     if (newSelected.has(groupId)) {
-      newSelected.delete(groupId);
+      newSelected.delete(groupId)
     } else {
-      newSelected.add(groupId);
+      newSelected.add(groupId)
     }
-    setSelectedGroups(newSelected);
-  };
+    setSelectedGroups(newSelected)
+  }
 
   const toggleAll = () => {
     if (isAllSelected) {
-      setSelectedGroups(new Set());
+      setSelectedGroups(new Set())
     } else {
-      setSelectedGroups(new Set(allGroupIds));
+      setSelectedGroups(new Set(allGroupIds))
     }
-  };
+  }
 
   const getTotalBookmarkCount = () => {
-    if (!allBookmarks) return 0;
-    return allBookmarks.filter((b) => selectedGroups.has(b.groupId)).length;
-  };
-
-  interface ExportedBookmark {
-    title: string;
-    url: string;
-    type: "link";
-    color: string | null;
-    groupName: string;
-    createdAt: string;
+    if (!allBookmarks) return 0
+    return allBookmarks.filter((b) => selectedGroups.has(b.groupId)).length
   }
 
   const formatBookmarkForExport = (
-    bookmark: BookmarkWithGroup,
+    bookmark: BookmarkWithGroup
   ): ExportedBookmark => ({
     title: bookmark.title,
     url: bookmark.url,
-    type: "link",
+    type: 'link',
     color: null,
     groupName: bookmark.groupTitle,
     createdAt: new Date(bookmark.createdAt).toISOString(),
-  });
+  })
 
   const generateCSVExport = (bookmarks: BookmarkWithGroup[]) => {
     const headers = [
-      "Title",
-      "URL",
-      "Type",
-      "Color",
-      "Group Name",
-      "Created At",
-    ];
+      'Title',
+      'URL',
+      'Type',
+      'Color',
+      'Group Name',
+      'Created At',
+    ]
     const rows = bookmarks.map((b) => {
-      const exported = formatBookmarkForExport(b);
+      const exported = formatBookmarkForExport(b)
       return [
         exported.title,
         exported.url,
         exported.type,
-        exported.color ?? "",
+        exported.color ?? '',
         exported.groupName,
         exported.createdAt,
-      ];
-    });
+      ]
+    })
     const csv = [headers, ...rows]
       .map((row) =>
-        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')
       )
-      .join("\n");
-    return csv;
-  };
+      .join('\n')
+    return csv
+  }
 
   const handleExport = async () => {
     if (selectedGroups.size === 0) {
-      toast.error("Please select at least one group");
-      return;
+      toast.error('Please select at least one group')
+      return
     }
 
     if (!allBookmarks) {
-      toast.error("No bookmarks found");
-      return;
+      toast.error('No bookmarks found')
+      return
     }
 
     const bookmarksToExport = allBookmarks.filter((b) =>
-      selectedGroups.has(b.groupId),
-    );
+      selectedGroups.has(b.groupId)
+    )
 
     if (bookmarksToExport.length === 0) {
-      toast.error("No bookmarks found in selected groups");
-      return;
+      toast.error('No bookmarks found in selected groups')
+      return
     }
 
-    setIsExporting(true);
+    setIsExporting(true)
     try {
-      const date = new Date().toISOString().split("T")[0];
-      let content: string;
-      let filename: string;
-      let mimeType: string;
+      const date = new Date().toISOString().split('T')[0]
+      let content: string
+      let filename: string
+      let mimeType: string
 
-      if (format === "csv") {
-        content = generateCSVExport(bookmarksToExport);
-        filename = `OrgNote-${date}.csv`;
-        mimeType = "text/csv";
+      if (format === 'csv') {
+        content = generateCSVExport(bookmarksToExport)
+        filename = `OrgNote-${date}.csv`
+        mimeType = 'text/csv'
       } else {
         const formattedBookmarks = bookmarksToExport.map(
-          formatBookmarkForExport,
-        );
-        content = JSON.stringify(formattedBookmarks, null, 2);
-        filename = `OrgNote-${date}.json`;
-        mimeType = "application/json";
+          formatBookmarkForExport
+        )
+        content = JSON.stringify(formattedBookmarks, null, 2)
+        filename = `OrgNote-${date}.json`
+        mimeType = 'application/json'
       }
 
-      const blob = new Blob([content], { type: mimeType });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const blob = new Blob([content], { type: mimeType })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
 
-      toast.success(`Exported ${bookmarksToExport.length} bookmarks`);
-      onOpenChange(false);
+      toast.success(`Exported ${bookmarksToExport.length} bookmarks`)
+      onOpenChange(false)
     } catch {
-      toast.error("Failed to export bookmarks");
+      toast.error('Failed to export bookmarks')
     } finally {
-      setIsExporting(false);
+      setIsExporting(false)
     }
-  };
+  }
 
-  const totalCount = getTotalBookmarkCount();
+  const totalCount = getTotalBookmarkCount()
 
   const getDropdownLabel = () => {
-    if (isAllSelected) return "All groups";
+    if (isAllSelected) return 'All groups'
     if (selectedGroups.size === 1 && groups) {
-      const selectedGroup = groups.find((g) => selectedGroups.has(g._id));
-      if (selectedGroup) return selectedGroup.title;
+      const selectedGroup = groups.find((g) => selectedGroups.has(g._id))
+      if (selectedGroup) return selectedGroup.title
     }
-    return `${selectedGroups.size} groups`;
-  };
+    return `${selectedGroups.size} groups`
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -243,7 +231,7 @@ export function ExportBookmarksDialog({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                style={{ width: "var(--radix-dropdown-menu-trigger-width)" }}
+                style={{ width: 'var(--radix-dropdown-menu-trigger-width)' }}
                 align="start"
               >
                 <DropdownMenuCheckboxItem
@@ -271,7 +259,7 @@ export function ExportBookmarksDialog({
                         <span>{group.title}</span>
                       </div>
                     </DropdownMenuCheckboxItem>
-                  );
+                  )
                 })}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -281,42 +269,42 @@ export function ExportBookmarksDialog({
             <Label>Format</Label>
             <div className="flex gap-3">
               <button
-                onClick={() => setFormat("json")}
+                onClick={() => setFormat('json')}
                 className={`flex items-center gap-2.5 rounded-md border px-4 py-2.5 text-sm ${
-                  format === "json"
-                    ? "border-primary bg-primary/10"
-                    : "border-input hover:bg-accent"
+                  format === 'json'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-input hover:bg-accent'
                 }`}
               >
                 <div
                   className={`size-4 rounded-full border flex items-center justify-center ${
-                    format === "json"
-                      ? "border-primary bg-primary"
-                      : "border-muted-foreground"
+                    format === 'json'
+                      ? 'border-primary bg-primary'
+                      : 'border-muted-foreground'
                   }`}
                 >
-                  {format === "json" && (
+                  {format === 'json' && (
                     <div className="size-2 rounded-full bg-background" />
                   )}
                 </div>
                 JSON
               </button>
               <button
-                onClick={() => setFormat("csv")}
+                onClick={() => setFormat('csv')}
                 className={`flex items-center gap-2.5 rounded-md border px-4 py-2.5 text-sm ${
-                  format === "csv"
-                    ? "border-primary bg-primary/10"
-                    : "border-input hover:bg-accent"
+                  format === 'csv'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-input hover:bg-accent'
                 }`}
               >
                 <div
                   className={`size-4 rounded-full border flex items-center justify-center ${
-                    format === "csv"
-                      ? "border-primary bg-primary"
-                      : "border-muted-foreground"
+                    format === 'csv'
+                      ? 'border-primary bg-primary'
+                      : 'border-muted-foreground'
                   }`}
                 >
-                  {format === "csv" && (
+                  {format === 'csv' && (
                     <div className="size-2 rounded-full bg-background" />
                   )}
                 </div>
@@ -326,7 +314,7 @@ export function ExportBookmarksDialog({
           </div>
 
           <p className="text-sm text-muted-foreground">
-            Export {totalCount} bookmark{totalCount !== 1 ? "s" : ""}
+            Export {totalCount} bookmark{totalCount !== 1 ? 's' : ''}
           </p>
         </div>
 
@@ -340,10 +328,10 @@ export function ExportBookmarksDialog({
               isExporting || selectedGroups.size === 0 || totalCount === 0
             }
           >
-            {isExporting ? "Exporting…" : "Export"}
+            {isExporting ? 'Exporting…' : 'Export'}
           </Button>
         </div>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
