@@ -3,11 +3,13 @@ import { defineConfig, devices } from "@playwright/test";
 /**
  * Playwright configuration for E2E testing
  * Uses system browsers instead of downloading
- * WebKit tests only run in CI
+ * Dev: Chrome and Firefox only
+ * CI: All browsers including WebKit and mobile
  * @see https://playwright.dev/docs/test-configuration
  */
 
-const projects = [
+// Dev projects: Chrome and Firefox only
+const devProjects = [
   {
     name: "chromium",
     use: {
@@ -26,6 +28,20 @@ const projects = [
       },
     },
   },
+];
+
+// CI projects: All browsers including WebKit and mobile
+const ciProjects = [
+  ...devProjects,
+  {
+    name: "webkit",
+    use: {
+      ...devices["Desktop Safari"],
+      launchOptions: {
+        executablePath: "/usr/bin/epiphany",
+      },
+    },
+  },
   {
     name: "Mobile Chrome",
     use: {
@@ -35,31 +51,16 @@ const projects = [
       },
     },
   },
+  {
+    name: "Mobile Safari",
+    use: {
+      ...devices["iPhone 12"],
+      launchOptions: {
+        executablePath: "/usr/bin/epiphany",
+      },
+    },
+  },
 ];
-
-// Only add WebKit projects in CI
-if (process.env.CI) {
-  projects.push(
-    {
-      name: "webkit",
-      use: {
-        ...devices["Desktop Safari"],
-        launchOptions: {
-          executablePath: "/usr/bin/epiphany",
-        },
-      },
-    },
-    {
-      name: "Mobile Safari",
-      use: {
-        ...devices["iPhone 12"],
-        launchOptions: {
-          executablePath: "/usr/bin/epiphany",
-        },
-      },
-    },
-  );
-}
 
 export default defineConfig({
   testDir: "./playwright-tests",
@@ -78,7 +79,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
     actionTimeout: 15000,
   },
-  projects,
+  projects: process.env.CI ? ciProjects : devProjects,
   webServer: {
     command: "pnpm dev",
     url: "http://localhost:3000",
