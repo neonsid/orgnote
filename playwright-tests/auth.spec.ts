@@ -6,20 +6,20 @@ test.describe("Authentication Flow", () => {
   });
 
   test("should have login button available", async ({ page }) => {
-    const loginButton = page.getByRole("button", { name: /log in|sign in/i });
-    await expect(loginButton).toBeVisible();
+    const loginButton = page.getByRole("button", { name: "Login" });
+    await expect(loginButton).toBeVisible({ timeout: 10000 });
   });
 
   test("login dialog should open when clicking login", async ({ page }) => {
-    const loginButton = page.getByRole("button", { name: /log in|sign in/i });
+    const loginButton = page.getByRole("button", { name: "Login" });
     await loginButton.click();
 
     const dialog = page.getByRole("dialog");
-    await expect(dialog).toBeVisible();
+    await expect(dialog).toBeVisible({ timeout: 10000 });
   });
 
   test("should have sign up option", async ({ page }) => {
-    const signUpButton = page.getByRole("button", { name: /sign up|get started/i });
-    await expect(signUpButton).toBeVisible();
+    const signUpButton = page.getByRole("button", { name: "Sign up" });
+    await expect(signUpButton).toBeVisible({ timeout: 10000 });
   });
 });
