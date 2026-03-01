@@ -253,8 +253,10 @@ export const moveBookMark = mutation({
       throw new Error("UserId is required");
     }
 
-    await verifyBookmarkOwnership(ctx, args.bookmarkId, args.userId);
-    await verifyGroupOwnership(ctx, args.groupId, args.userId);
+    await Promise.all([
+      verifyBookmarkOwnership(ctx, args.bookmarkId, args.userId),
+      verifyGroupOwnership(ctx, args.groupId, args.userId),
+    ]);
 
     await ctx.db.patch(args.bookmarkId, {
       groupId: args.groupId,
@@ -274,26 +276,14 @@ export const getAllUserBookmarks = query({
       )
       .collect();
 
-    const bookmarks: {
-      _id: string;
-      title: string;
-      url: string;
-      description?: string;
-      imageUrl: string;
-      doneReading: boolean;
-      createdAt: number;
-      groupId: string;
-      groupTitle: string;
-    }[] = [];
+    const groupBookmarks = await Promise.all(
+      groups.map(async (group) => {
+        const bookmarks = await ctx.db
+          .query("bookmarks")
+          .withIndex("groupId", (q) => q.eq("groupId", group._id))
+          .collect();
 
-    for (const group of groups) {
-      const groupBookmarks = await ctx.db
-        .query("bookmarks")
-        .withIndex("groupId", (q) => q.eq("groupId", group._id))
-        .collect();
-
-      for (const bookmark of groupBookmarks) {
-        bookmarks.push({
+        return bookmarks.map((bookmark) => ({
           _id: bookmark._id,
           title: bookmark.title,
           url: bookmark.url,
@@ -303,11 +293,11 @@ export const getAllUserBookmarks = query({
           createdAt: bookmark.createdAt,
           groupId: group._id,
           groupTitle: group.title,
-        });
-      }
-    }
+        }));
+      }),
+    );
 
-    return bookmarks;
+    return groupBookmarks.flat();
   },
 });
 
