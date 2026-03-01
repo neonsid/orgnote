@@ -1,11 +1,9 @@
-import type { Bookmark } from "./types";
-
 export const KEYBOARD_SHORTCUTS = {
-  open: ["⊞", "Enter"],
-  copy: ["⌘", "C"],
-  rename: ["⌘", "E"],
-  delete: ["⌘", "⌫"],
-} as const;
+  open: ['⊞', 'Enter'],
+  copy: ['⌘', 'C'],
+  rename: ['⌘', 'E'],
+  delete: ['⌘', '⌫'],
+} as const
 
 export const containerVariants = {
   hidden: { opacity: 0 },
@@ -16,7 +14,7 @@ export const containerVariants = {
       delayChildren: 0.15,
     },
   },
-};
+}
 
 export const itemVariants = {
   hidden: {
@@ -33,7 +31,7 @@ export const itemVariants = {
       ease: [0.25, 0.1, 0.25, 1] as const,
     },
   },
-};
+}
 
 export const headerVariants = {
   hidden: { opacity: 0, y: -10 },
@@ -42,20 +40,20 @@ export const headerVariants = {
     y: 0,
     transition: {
       duration: 0.4,
-      ease: "easeOut",
+      ease: 'easeOut',
     },
   },
-};
+}
 
 export function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
 
-  if (days === 0) return "Today";
-  if (days === 1) return "Yesterday";
-  if (days < 7) return `${days} days ago`;
-  if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (days === 0) return 'Today'
+  if (days === 1) return 'Yesterday'
+  if (days < 7) return `${days} days ago`
+  if (days < 30) return `${Math.floor(days / 7)} weeks ago`
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
