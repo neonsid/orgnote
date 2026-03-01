@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@convex-dev/rate-limiter':
+        specifier: ^0.3.2
+        version: 0.3.2(convex@1.32.0(react@19.2.4))(react@19.2.4)
       '@phosphor-icons/react':
         specifier: ^2.1.10
         version: 2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -303,6 +306,15 @@ packages:
     resolution: {integrity: sha512-4NsTWNJJLPbti10LZsV1/7UkbaMPFxNz5Ekd3yW5bDkaoU1I0b4TJxk0V+ShbNFTJ2fSqTxm+iGy9XSNCmAoVA==}
     peerDependencies:
       convex: ^1.31.0
+
+  '@convex-dev/rate-limiter@0.3.2':
+    resolution: {integrity: sha512-+oBPsBfFbzdxiF/9XaaTQmVnvDlvEfg/c69/v8LxTbw4VLuiflIKlfnPQL8OS0azXQQ11hcPWHmU8ytFmHKDXA==}
+    peerDependencies:
+      convex: ^1.24.8
+      react: ^18.2.0 || ^19.0.0
+    peerDependenciesMeta:
+      react:
+        optional: true
 
   '@dotenvx/dotenvx@1.52.0':
     resolution: {integrity: sha512-CaQcc8JvtzQhUSm9877b6V4Tb7HCotkcyud9X2YwdqtQKwgljkMRwU96fVYKnzN3V0Hj74oP7Es+vZ0mS+Aa1w==}
@@ -4895,6 +4907,12 @@ snapshots:
       - eslint
       - supports-color
       - typescript
+
+  '@convex-dev/rate-limiter@0.3.2(convex@1.32.0(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      convex: 1.32.0(react@19.2.4)
+    optionalDependencies:
+      react: 19.2.4
 
   '@dotenvx/dotenvx@1.52.0':
     dependencies:
