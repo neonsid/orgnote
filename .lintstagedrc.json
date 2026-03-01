@@ -1,0 +1,9 @@
+{
+  "*.{js,jsx,ts,tsx,mjs,cjs}": [
+    "oxfmt",
+    "eslint --fix --ignore-pattern 'convex/_generated/**'"
+  ],
+  "*.{json,md,yml,yaml}": [
+    "prettier --write"
+  ]
+}
