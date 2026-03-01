@@ -6,6 +6,7 @@ import {
   getVerificationEmailTemplate,
   getPasswordResetTemplate,
 } from './email'
+import { be } from 'zod/v4/locales'
 
 // Sync user to Convex database via HTTP action
 async function syncUserToConvex(user: {
@@ -52,8 +53,17 @@ async function syncUserToConvex(user: {
   }
 }
 
+const betterAuthUrl =
+  process.env.NODE_ENV === 'development'
+    ? 'http://localhost:3000'
+    : process.env.BETTER_AUTH_URL
+
+if (!betterAuthUrl) {
+  throw new Error('DB URL for better auth not configured')
+}
+
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL,
+  baseURL: betterAuthUrl,
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
   }),
