@@ -6,7 +6,6 @@ import {
   getVerificationEmailTemplate,
   getPasswordResetTemplate,
 } from './email'
-import { be } from 'zod/v4/locales'
 
 // Sync user to Convex database via HTTP action
 async function syncUserToConvex(user: {
@@ -28,7 +27,7 @@ async function syncUserToConvex(user: {
       return
     }
 
-    console.log('Syncing user to Convex:', user.id, 'at', convexSiteUrl)
+    console.info('Syncing user to Convex:', user.id, 'at', convexSiteUrl)
 
     const response = await fetch(`${convexSiteUrl}/sync-user`, {
       method: 'POST',
@@ -46,7 +45,7 @@ async function syncUserToConvex(user: {
       console.error('Failed to sync user to Convex:', await response.text())
     } else {
       const result = await response.json()
-      console.log('User synced to Convex successfully:', result)
+      console.info('User synced to Convex successfully:', result)
     }
   } catch (error) {
     console.error('Error syncing user to Convex:', error)
@@ -71,14 +70,17 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (user) => {
-          console.log(
+          console.info(
             '[BetterAuth] User create BEFORE hook triggered:',
             user.id
           )
           return { data: user }
         },
         after: async (user) => {
-          console.log('[BetterAuth] User create AFTER hook triggered:', user.id)
+          console.info(
+            '[BetterAuth] User create AFTER hook triggered:',
+            user.id
+          )
           // Sync user to Convex after creation
           await syncUserToConvex({
             id: user.id,
@@ -89,7 +91,10 @@ export const auth = betterAuth({
       },
       update: {
         after: async (user) => {
-          console.log('[BetterAuth] User update AFTER hook triggered:', user.id)
+          console.info(
+            '[BetterAuth] User update AFTER hook triggered:',
+            user.id
+          )
           // Sync user to Convex after update
           await syncUserToConvex({
             id: user.id,
@@ -104,7 +109,7 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 8,
     maxPasswordLength: 128,
-    sendResetPassword: async ({ user, url, token }, request) => {
+    sendResetPassword: async ({ user, url }) => {
       const { text, html } = getPasswordResetTemplate(url)
       void sendEmail({
         to: user.email,
@@ -113,14 +118,14 @@ export const auth = betterAuth({
         html,
       })
     },
-    onPasswordReset: async ({ user }, request) => {
+    onPasswordReset: async ({ user }) => {
       // Optional: Add post-password reset logic here
-      console.log(`Password for user ${user.email} has been reset.`)
+      console.info(`Password for user ${user.email} has been reset.`)
     },
     resetPasswordTokenExpiresIn: 3600, // 1 hour
   },
   emailVerification: {
-    sendVerificationEmail: async ({ user, url, token }, request) => {
+    sendVerificationEmail: async ({ user, url }) => {
       const { text, html } = getVerificationEmailTemplate(url)
       void sendEmail({
         to: user.email,

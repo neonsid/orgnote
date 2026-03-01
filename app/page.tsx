@@ -1,13 +1,13 @@
-"use client";
+'use client'
 
-import { motion } from "motion/react";
-import Image from "next/image";
-import Sparkles from "lucide-react/dist/esm/icons/sparkles";
-import BrainCog from "lucide-react/dist/esm/icons/brain-cog";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import { DashboardDemo } from "@/components/landing/dashboard-demo";
-import { FeaturesSection } from "@/components/features-section";
+import { motion } from 'motion/react'
+import Image from 'next/image'
+import Sparkles from 'lucide-react/dist/esm/icons/sparkles'
+import BrainCog from 'lucide-react/dist/esm/icons/brain-cog'
+import { Header } from '@/components/header'
+import { Footer } from '@/components/footer'
+import { DashboardDemo } from '@/components/landing/dashboard-demo'
+import { FeaturesSection } from '@/components/features-section'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -18,7 +18,7 @@ const containerVariants = {
       delayChildren: 0.1,
     },
   },
-};
+}
 
 const itemVariants = {
   hidden: { opacity: 0, y: 30, scale: 0.95 },
@@ -31,19 +31,7 @@ const itemVariants = {
       ease: [0.25, 0.1, 0.25, 1] as const,
     },
   },
-};
-
-const badgeVariants = {
-  hidden: { opacity: 0, scale: 0.8 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: {
-      duration: 0.5,
-      ease: [0.25, 0.1, 0.25, 1] as const,
-    },
-  },
-};
+}
 
 const demoVariants = {
   hidden: { opacity: 0, y: 60 },
@@ -56,7 +44,7 @@ const demoVariants = {
       delay: 0.3,
     },
   },
-};
+}
 
 const featuresVariants = {
   hidden: { opacity: 0 },
@@ -68,7 +56,7 @@ const featuresVariants = {
       delay: 0.5,
     },
   },
-};
+}
 
 export default function Home() {
   return (
@@ -90,7 +78,7 @@ export default function Home() {
               <motion.div
                 whileHover={{ scale: 1.05, rotate: 5 }}
                 whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 17 }}
               >
                 <Image
                   src="/logo.svg"
@@ -107,7 +95,7 @@ export default function Home() {
               variants={itemVariants}
             >
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.1]">
-                Bookmarks you'll actually find
+                Bookmarks you&apos;ll actually find
               </h1>
               <p className="text-base sm:text-lg md:text-xl text-muted-foreground font-normal max-w-lg mx-auto leading-relaxed">
                 Forget where you saved that link? Orgnote remembers for you—with
@@ -149,5 +137,5 @@ export default function Home() {
       </main>
       <Footer />
     </div>
-  );
+  )
 }

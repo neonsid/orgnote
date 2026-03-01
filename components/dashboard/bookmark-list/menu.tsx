@@ -1,35 +1,32 @@
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback } from 'react'
 import {
-  ContextMenu,
-  ContextMenuTrigger,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuShortcut,
   ContextMenuSub,
   ContextMenuSubTrigger,
   ContextMenuSubContent,
-} from "@/components/ui/context-menu";
-import Copy from "lucide-react/dist/esm/icons/copy";
-import Pencil from "lucide-react/dist/esm/icons/pencil";
-import Trash2 from "lucide-react/dist/esm/icons/trash-2";
-import ChevronsRightIcon from "lucide-react/dist/esm/icons/chevrons-right";
-import CheckCircle2 from "lucide-react/dist/esm/icons/check-circle-2";
-import Circle from "lucide-react/dist/esm/icons/circle";
-import type { Bookmark } from "./types";
-import type { ConvexGroup } from "../group-selector";
-import { FALLBACK_COLORS } from "../group-selector";
-import { KEYBOARD_SHORTCUTS } from "./constants";
-import type { Id } from "@/convex/_generated/dataModel";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/context-menu'
+import Copy from 'lucide-react/dist/esm/icons/copy'
+import Pencil from 'lucide-react/dist/esm/icons/pencil'
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2'
+import ChevronsRightIcon from 'lucide-react/dist/esm/icons/chevrons-right'
+import CheckCircle2 from 'lucide-react/dist/esm/icons/check-circle-2'
+import Circle from 'lucide-react/dist/esm/icons/circle'
+import type { Bookmark } from './types'
+import type { ConvexGroup } from '../group-selector'
+import { FALLBACK_COLORS } from '../group-selector'
+import { KEYBOARD_SHORTCUTS } from './constants'
+import type { Id } from '@/convex/_generated/dataModel'
 
 interface DesktopMenuProps {
-  bookmark: Bookmark;
-  groups: ConvexGroup[];
-  onCopy: () => void;
-  onRename: () => void;
-  onDelete: () => void;
-  onMove: (groupId: Id<"groups">) => void;
-  onToggleRead: () => void;
+  bookmark: Bookmark
+  groups: ConvexGroup[]
+  onCopy: () => void
+  onRename: () => void
+  onDelete: () => void
+  onMove: (groupId: Id<'groups'>) => void
+  onToggleRead: () => void
 }
 
 function KeyboardShortcut({ keys }: { keys: readonly string[] }) {
@@ -44,7 +41,7 @@ function KeyboardShortcut({ keys }: { keys: readonly string[] }) {
         </kbd>
       ))}
     </ContextMenuShortcut>
-  );
+  )
 }
 
 export function DesktopMenu({
@@ -64,8 +61,8 @@ export function DesktopMenu({
           group,
           fallbackColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length],
         })),
-    [groups, bookmark.groupId],
-  );
+    [groups, bookmark.groupId]
+  )
 
   return (
     <ContextMenuContent className="w-56">
@@ -122,18 +119,18 @@ export function DesktopMenu({
         <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.delete} />
       </ContextMenuItem>
     </ContextMenuContent>
-  );
+  )
 }
 
 interface MobileMenuProps {
-  bookmark: Bookmark;
-  groups: ConvexGroup[];
-  onCopy: () => void;
-  onRename: () => void;
-  onDelete: () => void;
-  onMove: (groupId: Id<"groups">) => void;
-  onToggleRead: () => void;
-  onClose: () => void;
+  bookmark: Bookmark
+  groups: ConvexGroup[]
+  onCopy: () => void
+  onRename: () => void
+  onDelete: () => void
+  onMove: (groupId: Id<'groups'>) => void
+  onToggleRead: () => void
+  onClose: () => void
 }
 
 export function MobileMenu({
@@ -154,16 +151,16 @@ export function MobileMenu({
           group,
           fallbackColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length],
         })),
-    [groups, bookmark.groupId],
-  );
+    [groups, bookmark.groupId]
+  )
 
   const handleAction = useCallback(
     (action: () => void) => {
-      action();
-      onClose();
+      action()
+      onClose()
     },
-    [onClose],
-  );
+    [onClose]
+  )
 
   return (
     <div className="w-56 py-1">
@@ -236,5 +233,5 @@ export function MobileMenu({
         Delete
       </button>
     </div>
-  );
+  )
 }

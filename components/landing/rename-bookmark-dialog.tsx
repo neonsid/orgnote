@@ -1,22 +1,22 @@
-"use client";
+'use client'
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { type LandingBookmark } from "@/components/landing/bookmark-list";
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { type LandingBookmark } from '@/components/landing/bookmark-list'
 
 interface LandingRenameBookmarkDialogProps {
-  bookmark: LandingBookmark | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: (bookmarkId: string, newTitle: string) => void;
+  bookmark: LandingBookmark | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onConfirm: (bookmarkId: string, newTitle: string) => void
 }
 
 export function LandingRenameBookmarkDialog({
@@ -25,20 +25,23 @@ export function LandingRenameBookmarkDialog({
   onOpenChange,
   onConfirm,
 }: LandingRenameBookmarkDialogProps) {
-  const [newTitle, setNewTitle] = useState("");
+  const [newTitle, setNewTitle] = useState(() => bookmark?.title ?? '')
 
   // Sync the input when a new bookmark is selected
   useEffect(() => {
     if (bookmark) {
-      setNewTitle(bookmark.title);
+      // Use requestAnimationFrame to avoid setState during render warning
+      requestAnimationFrame(() => {
+        setNewTitle(bookmark.title)
+      })
     }
-  }, [bookmark]);
+  }, [bookmark])
 
   const handleConfirm = useCallback(() => {
-    if (!bookmark || !newTitle.trim()) return;
-    onConfirm(bookmark.id, newTitle.trim());
-    onOpenChange(false);
-  }, [bookmark, newTitle, onConfirm, onOpenChange]);
+    if (!bookmark || !newTitle.trim()) return
+    onConfirm(bookmark.id, newTitle.trim())
+    onOpenChange(false)
+  }, [bookmark, newTitle, onConfirm, onOpenChange])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -51,7 +54,7 @@ export function LandingRenameBookmarkDialog({
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             placeholder="Bookmark title"
-            onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
+            onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
           />
         </div>
         <DialogFooter>
@@ -62,5 +65,5 @@ export function LandingRenameBookmarkDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
