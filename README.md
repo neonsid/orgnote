@@ -6,6 +6,4 @@
 - [] Deploy it on vercel
 - [] Get normal websites data from orgnote/backend/get-data.ts file
 - [] For twitter use scira
-- [] Make /u/ route beautiful
-- [] Also in navbar add the username (refer: Minimal)
 
