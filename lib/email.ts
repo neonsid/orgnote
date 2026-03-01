@@ -16,11 +16,11 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
 
   // For development, log to console
   if (process.env.NODE_ENV === 'development') {
-    console.log('\n📧 Email would be sent:')
-    console.log('To:', to)
-    console.log('Subject:', subject)
-    console.log('Text:', text)
-    console.log('---')
+    console.info('\n📧 Email would be sent:')
+    console.info('To:', to)
+    console.info('Subject:', subject)
+    console.info('Text:', text)
+    console.info('---')
   }
 
   // Send email via Resend
