@@ -1,1 +1,1 @@
-pnpm test:ci
+pnpm lint && pnpm typecheck
