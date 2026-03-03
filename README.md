@@ -7,3 +7,5 @@
 - [] Get normal websites data from orgnote/backend/get-data.ts file
 - [] For twitter use scira
 
+- [] Create markdown to word or using docx to generate word file using agents
+

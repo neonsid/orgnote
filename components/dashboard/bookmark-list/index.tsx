@@ -48,8 +48,8 @@ export const BookmarkList = memo(function BookmarkList({
 
   if (loading && bookmarks.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12 text-muted-foreground animate-in fade-in duration-300">
-        <span className="text-muted-foreground">Loading Bookmarks...</span>
+      <div className="flex items-center justify-center py-12">
+        <div className="h-px w-16 bg-muted-foreground/30 animate-pulse" />
       </div>
     );
   }

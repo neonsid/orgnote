@@ -244,6 +244,7 @@ export default function DashboardPage() {
           </div>
         ) : (
           <BookmarkList
+            key={effectiveGroupId}
             loading={loadingBookMarks}
             groups={groups}
             bookmarks={filteredBookmarks}
