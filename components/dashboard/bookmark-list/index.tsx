@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Shimmer } from "@/components/ai-elements/shimmer";
 import { useIsSmallMobile } from "@/hooks/use-mobile";
 import { BookmarkItem } from "./bookmark-item";
 import { useBookmarkShortcuts } from "./use-bookmark-shortcuts";
@@ -60,10 +59,19 @@ export const BookmarkList = memo(function BookmarkList({
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.4 }}
-        className="flex items-center justify-center py-12 text-muted-foreground"
+        transition={{ duration: 0.3 }}
+        className="w-full space-y-1"
       >
-        <Shimmer duration={2}>Loading Bookmarks...</Shimmer>
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="flex items-center gap-3 p-2 animate-pulse">
+            <div className="size-5 rounded bg-muted" />
+            <div className="flex-1 flex items-center gap-2">
+              <div className="h-4 w-32 rounded bg-muted" />
+              <div className="h-3 w-24 rounded bg-muted hidden sm:block" />
+            </div>
+            <div className="h-3 w-16 rounded bg-muted" />
+          </div>
+        ))}
       </motion.div>
     );
   }
@@ -86,7 +94,7 @@ export const BookmarkList = memo(function BookmarkList({
 
   return (
     <div className="w-full">
-      <AnimatePresence mode="popLayout" initial={false}>
+      <AnimatePresence mode="popLayout">
         {bookmarks.map((bookmark) => (
           <BookmarkItem
             key={bookmark.id}

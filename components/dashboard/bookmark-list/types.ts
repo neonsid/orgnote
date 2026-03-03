@@ -5,9 +5,9 @@ export interface Bookmark {
   title: string;
   domain: string;
   url: string;
-  favicon: string | null;
+  favicon: string;
   fallbackColor: string;
   createdAt: string;
-  groupId: string;
+  groupId: Id<"groups">;
   doneReading: boolean;
 }

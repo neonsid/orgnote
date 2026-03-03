@@ -1,16 +1,24 @@
 import { create } from "zustand";
 
+interface BookmarkData {
+  id: string;
+  title: string;
+  url: string;
+}
+
 interface DialogState {
   // Rename bookmark dialog
   renameBookmark: {
     open: boolean;
     bookmarkId: string | null;
+    bookmarkData: BookmarkData | null;
   };
 
   // Delete bookmark dialog
   deleteBookmark: {
     open: boolean;
     bookmarkId: string | null;
+    bookmarkData: BookmarkData | null;
   };
 
   // Delete group dialog
@@ -36,10 +44,13 @@ interface DialogState {
   };
 
   // Actions
-  openRenameDialog: (bookmarkId: string) => void;
+  openRenameDialog: (bookmarkId: string, bookmarkData: BookmarkData) => void;
   closeRenameDialog: () => void;
 
-  openDeleteBookmarkDialog: (bookmarkId: string) => void;
+  openDeleteBookmarkDialog: (
+    bookmarkId: string,
+    bookmarkData: BookmarkData,
+  ) => void;
   closeDeleteBookmarkDialog: () => void;
 
   openDeleteGroupDialog: (groupId: string) => void;
@@ -58,24 +69,28 @@ interface DialogState {
 
 export const useDialogStore = create<DialogState>((set) => ({
   // Initial states
-  renameBookmark: { open: false, bookmarkId: null },
-  deleteBookmark: { open: false, bookmarkId: null },
+  renameBookmark: { open: false, bookmarkId: null, bookmarkData: null },
+  deleteBookmark: { open: false, bookmarkId: null, bookmarkData: null },
   deleteGroup: { open: false, groupId: null },
   userSettings: { open: false, activeTab: "general" },
   exportBookmarks: { open: false },
   createGroup: { open: false },
 
   // Rename bookmark actions
-  openRenameDialog: (bookmarkId: string) =>
-    set({ renameBookmark: { open: true, bookmarkId } }),
+  openRenameDialog: (bookmarkId: string, bookmarkData: BookmarkData) =>
+    set({ renameBookmark: { open: true, bookmarkId, bookmarkData } }),
   closeRenameDialog: () =>
-    set({ renameBookmark: { open: false, bookmarkId: null } }),
+    set({
+      renameBookmark: { open: false, bookmarkId: null, bookmarkData: null },
+    }),
 
   // Delete bookmark actions
-  openDeleteBookmarkDialog: (bookmarkId: string) =>
-    set({ deleteBookmark: { open: true, bookmarkId } }),
+  openDeleteBookmarkDialog: (bookmarkId: string, bookmarkData: BookmarkData) =>
+    set({ deleteBookmark: { open: true, bookmarkId, bookmarkData } }),
   closeDeleteBookmarkDialog: () =>
-    set({ deleteBookmark: { open: false, bookmarkId: null } }),
+    set({
+      deleteBookmark: { open: false, bookmarkId: null, bookmarkData: null },
+    }),
 
   // Delete group actions
   openDeleteGroupDialog: (groupId: string) =>

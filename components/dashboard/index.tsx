@@ -1,19 +1,22 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
-import { motion } from "motion/react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Loader2 from "lucide-react/dist/esm/icons/loader-2";
 import Link from "next/link";
-import { useQuery, useMutation } from "convex/react";
+import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { authClient } from "@/lib/auth-client";
-import { toast } from "sonner";
 import { DashboardHeader } from "./dashboard-header";
+import { BookmarkList, type Bookmark } from "./bookmark-list";
 import { FilterDropdown, type FilterType } from "./filter-dropdown";
 import { BookmarkSearch } from "./bookmark-search";
-import { BookmarkList, type Bookmark } from "./bookmark-list";
+import { motion } from "motion/react";
 import dynamic from "next/dynamic";
-import { type Doc, type Id } from "@/convex/_generated/dataModel";
+import { type Id } from "@/convex/_generated/dataModel";
+import { extractDomain } from "@/lib/domain-utils";
+import { useDialogStore } from "@/stores/dialog-store";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { toast } from "sonner";
 
 const RenameBookmarkDialog = dynamic(
   () => import("./rename-bookmark-dialog").then((m) => m.RenameBookmarkDialog),
@@ -24,20 +27,22 @@ const DeleteBookmarkDialog = dynamic(
   () => import("./delete-bookmark-dialog").then((m) => m.DeleteBookmarkDialog),
   { ssr: false },
 );
-import { extractDomain, COLORS } from "@/lib/domain-utils";
-import { useDialogStore } from "@/stores/dialog-store";
-
-
 
 export default function DashboardPage() {
   const { data: session, isPending: isSessionLoading } =
     authClient.useSession();
   const userId = session?.user?.id ?? "";
 
-  // Fetch groups from Convex (skip query while session is loading)
-  const groups = useQuery(api.groups.list, userId ? { userId } : "skip");
+  // Unified dashboard data hook - single query for groups + bookmarks
+  const { groups, bookmarks, effectiveGroupId, selectGroup, isLoading } =
+    useDashboardData(userId);
 
-  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
+  // Use ref to track current group without causing re-renders
+  const effectiveGroupIdRef = useRef(effectiveGroupId);
+  useEffect(() => {
+    effectiveGroupIdRef.current = effectiveGroupId;
+  }, [effectiveGroupId]);
+
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
 
@@ -51,31 +56,11 @@ export default function DashboardPage() {
     closeDeleteBookmarkDialog,
   } = useDialogStore();
 
-  // Auto-select the first group when groups load
-  const effectiveGroupId = useMemo(() => {
-    if (selectedGroupId && groups?.some((g) => g._id === selectedGroupId)) {
-      return selectedGroupId;
-    }
-    return groups?.[0]?._id ?? "";
-  }, [selectedGroupId, groups]);
-
-  // Fetch bookmarks from Convex
-  const convexBookmarks = useQuery(
-    api.bookmarks.listBookMarks,
-    effectiveGroupId && userId
-      ? { groupId: effectiveGroupId as Id<"groups">, userId }
-      : "skip",
-  );
-
-  const loadingBookMarks = effectiveGroupId
-    ? convexBookmarks === undefined
-    : false;
-
   const createBookmark = useMutation(api.bookmarks.createBookMark);
   const moveBookmark = useMutation(api.bookmarks.moveBookMark);
   const toggleReadStatus = useMutation(api.bookmarks.toggleReadStatus);
 
-  const handleSubmit = useCallback(
+  const handleSubmitBookmark = useCallback(
     async (value: string) => {
       const domain = extractDomain(value);
       const isUrl = domain.includes(".");
@@ -90,12 +75,13 @@ export default function DashboardPage() {
           : `https://${value}`
         : "#";
 
-      if (!effectiveGroupId) return;
+      const currentGroupId = effectiveGroupIdRef.current;
+      if (!currentGroupId) return;
 
       await createBookmark({
         title,
         url,
-        groupId: effectiveGroupId as Id<"groups">,
+        groupId: currentGroupId as Id<"groups">,
         imageUrl: isUrl
           ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
           : "",
@@ -103,61 +89,36 @@ export default function DashboardPage() {
       });
       setDebouncedQuery("");
     },
-    [effectiveGroupId, createBookmark, userId],
+    [createBookmark, userId],
   );
 
-  const allBookmarks = useMemo(() => {
-    if (!convexBookmarks) return [];
-    return convexBookmarks.map((b: Doc<"bookmarks">) => ({
-      id: b._id,
-      title: b.title,
-      domain: extractDomain(b.url),
-      url: b.url,
-      favicon: b.imageUrl || null,
-      fallbackColor: COLORS[b.title.charCodeAt(0) % COLORS.length],
-      createdAt: new Date(b.createdAt).toISOString().split("T")[0],
-      groupId: b.groupId,
-      doneReading: b.doneReading,
-    }));
-  }, [convexBookmarks]);
-
-  const filteredBookmarks: Bookmark[] = useMemo(() => {
-    let result = allBookmarks;
-
+  // Filter bookmarks client-side
+  const filteredBookmarks = bookmarks.filter((b) => {
     if (debouncedQuery.trim()) {
       const q = debouncedQuery.toLowerCase();
-      result = result.filter(
-        (b) =>
-          b.title.toLowerCase().includes(q) ||
-          b.domain.toLowerCase().includes(q),
-      );
+      const matchesSearch =
+        b.title.toLowerCase().includes(q) || b.domain.toLowerCase().includes(q);
+      if (!matchesSearch) return false;
     }
 
-    if (filter === "read") {
-      result = result.filter((b) => b.doneReading);
-    } else if (filter === "unread") {
-      result = result.filter((b) => !b.doneReading);
-    }
-
-    return result;
-  }, [allBookmarks, debouncedQuery, filter]);
-
-  // Get selected bookmark from store bookmarkId
-  const selectedBookmark = useMemo(() => {
-    const bookmarkId = renameBookmark.bookmarkId || deleteBookmark.bookmarkId;
-    if (!bookmarkId) return null;
-    return allBookmarks.find((b) => b.id === bookmarkId) || null;
-  }, [allBookmarks, renameBookmark.bookmarkId, deleteBookmark.bookmarkId]);
+    if (filter === "read") return b.doneReading;
+    if (filter === "unread") return !b.doneReading;
+    return true;
+  });
 
   // Context menu handlers
   const handleCopy = useCallback((bookmark: Bookmark) => {
     navigator.clipboard.writeText(bookmark.url);
-    toast.success("URL copied successfully");
+    toast.success("URL copied to clipboard");
   }, []);
 
   const handleRename = useCallback(
     (bookmark: Bookmark) => {
-      openRenameDialog(bookmark.id);
+      openRenameDialog(bookmark.id, {
+        id: bookmark.id,
+        title: bookmark.title,
+        url: bookmark.url,
+      });
     },
     [openRenameDialog],
   );
@@ -172,7 +133,11 @@ export default function DashboardPage() {
 
   const handleDelete = useCallback(
     (bookmark: Bookmark) => {
-      openDeleteBookmarkDialog(bookmark.id);
+      openDeleteBookmarkDialog(bookmark.id, {
+        id: bookmark.id,
+        title: bookmark.title,
+        url: bookmark.url,
+      });
     },
     [openDeleteBookmarkDialog],
   );
@@ -185,8 +150,8 @@ export default function DashboardPage() {
     [toggleReadStatus, userId],
   );
 
-  // Loading state
-  if (isSessionLoading || groups === undefined) {
+  // Only block for session loading
+  if (isSessionLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="size-6 text-muted-foreground animate-spin" />
@@ -218,9 +183,10 @@ export default function DashboardPage() {
       <DashboardHeader
         groups={groups}
         effectiveGroupId={effectiveGroupId}
-        onSelectGroup={setSelectedGroupId}
+        onSelectGroup={selectGroup}
         userId={userId}
         user={session.user}
+        loading={isLoading}
       />
 
       <main className="flex-1 w-full max-w-4xl mx-auto px-3 sm:px-6 py-4 sm:py-6 mt-2 sm:mt-10">
@@ -228,7 +194,7 @@ export default function DashboardPage() {
           <div className="flex-1">
             <BookmarkSearch
               onSearch={setDebouncedQuery}
-              onSubmit={handleSubmit}
+              onSubmit={handleSubmitBookmark}
             />
           </div>
           <FilterDropdown value={filter} onChange={setFilter} />
@@ -252,41 +218,27 @@ export default function DashboardPage() {
           <div className="h-px bg-foreground/20 dark:bg-white/80" />
         </motion.div>
 
-        {groups.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-            className="flex flex-col items-center justify-center py-12 text-muted-foreground"
-          >
-            <p className="text-sm font-medium">No groups found</p>
-            <p className="text-xs mt-1">
-              Create a group to start adding bookmarks
-            </p>
-          </motion.div>
-        ) : (
-          <BookmarkList
-            loading={loadingBookMarks}
-            groups={groups}
-            bookmarks={filteredBookmarks}
-            onCopy={handleCopy}
-            onRename={handleRename}
-            onDelete={handleDelete}
-            onMove={handleMove}
-            onToggleRead={handleToggleRead}
-          />
-        )}
+        <BookmarkList
+          loading={isLoading}
+          groups={groups}
+          bookmarks={filteredBookmarks}
+          onCopy={handleCopy}
+          onRename={handleRename}
+          onDelete={handleDelete}
+          onMove={handleMove}
+          onToggleRead={handleToggleRead}
+        />
       </main>
 
       <RenameBookmarkDialog
-        bookmark={selectedBookmark}
+        bookmark={renameBookmark.bookmarkData}
         open={renameBookmark.open}
         onOpenChange={closeRenameDialog}
         userId={userId}
       />
 
       <DeleteBookmarkDialog
-        bookmark={selectedBookmark}
+        bookmark={deleteBookmark.bookmarkData}
         open={deleteBookmark.open}
         onOpenChange={closeDeleteBookmarkDialog}
         userId={userId}

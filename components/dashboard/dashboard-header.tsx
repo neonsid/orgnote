@@ -6,12 +6,33 @@ import { GroupSelector } from "./group-selector";
 import { UserInfo } from "./user-info";
 import type { ConvexGroup } from "./group-selector";
 
+// Memoized logo - never rerenders
+const Logo = memo(function Logo() {
+  return (
+    <Link
+      href="/dashboard"
+      className="flex items-center gap-2 text-foreground hover:opacity-80 transition-opacity"
+    >
+      <div className="size-8 rounded-lg bg-linear-to-br from-blue-50 to-cyan-50 dark:from-blue-950/40 dark:to-cyan-950/30 border border-border flex items-center justify-center p-1">
+        <Image
+          src="/logo.svg"
+          alt="Logo"
+          width={24}
+          height={24}
+          className="size-5"
+        />
+      </div>
+    </Link>
+  );
+});
+
 interface DashboardHeaderProps {
   groups: ConvexGroup[];
   effectiveGroupId: string;
   onSelectGroup: (id: string) => void;
   userId: string;
   user: { id: string; name: string; email: string; image?: string | null };
+  loading?: boolean;
 }
 
 export const DashboardHeader = memo(function DashboardHeader({
@@ -20,31 +41,20 @@ export const DashboardHeader = memo(function DashboardHeader({
   onSelectGroup,
   userId,
   user,
+  loading = false,
 }: DashboardHeaderProps) {
   return (
     <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="flex h-14 items-center justify-between px-3 sm:px-6 gap-2">
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 text-foreground hover:opacity-80 transition-opacity"
-          >
-            <div className="size-8 rounded-lg bg-linear-to-br from-blue-50 to-cyan-50 dark:from-blue-950/40 dark:to-cyan-950/30 border border-border flex items-center justify-center p-1">
-              <Image
-                src="/logo.svg"
-                alt="Logo"
-                width={24}
-                height={24}
-                className="size-5"
-              />
-            </div>
-          </Link>
+          <Logo />
           <span className="text-muted-foreground select-none">/</span>
           <GroupSelector
             groups={groups}
             selectedGroupId={effectiveGroupId}
             onSelect={onSelectGroup}
             userId={userId}
+            loading={loading}
           />
         </div>
 
