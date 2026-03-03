@@ -1,18 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import ChevronsUpDown from "lucide-react/dist/esm/icons/chevrons-up-down";
-import LogOut from "lucide-react/dist/esm/icons/log-out";
-import Settings from "lucide-react/dist/esm/icons/settings";
-import Keyboard from "lucide-react/dist/esm/icons/keyboard";
+import { ChevronsUpDown, LogOut, Settings, Keyboard, User } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { KeyboardShortcutsDialog } from "@/components/dashboard/keyboard-shortcuts-dialog";
 import { UserSettingsDialog } from "@/components/dashboard/settings";
-import { useIsSmallMobile } from "@/hooks/use-mobile";
 import Image from "next/image";
 import { AnimatedThemeToggler } from "../ui/animated-theme-toggler";
-import { UserIcon } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
@@ -31,7 +26,6 @@ export function UserInfo({ user }: UserInfoProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const isSmallMobile = useIsSmallMobile();
 
   // Fetch user profile to check if public profile is enabled
   const profile = useQuery(api.profile.getProfile, { userId: user.id });
@@ -102,21 +96,17 @@ export function UserInfo({ user }: UserInfoProps) {
         {open && (
           <div className="absolute right-0 top-full mt-1 z-50 min-w-55 rounded-xl border border-border bg-background shadow-lg animate-in fade-in slide-in-from-top-1 duration-150">
             <div className="p-1.5">
-              {isSmallMobile && (
-                <>
-                  <button
-                    id="theme-changing-button"
-                    onClick={() => themeToggleRef.current?.toggle()}
-                    className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                  >
-                    <span>Theme</span>
-                    <AnimatedThemeToggler
-                      iconOnly
-                      triggerRef={themeToggleRef}
-                    />
-                  </button>
-                </>
-              )}
+              {/* Theme toggle - only shown on mobile (hidden on sm+) */}
+              <div className="block sm:hidden">
+                <button
+                  id="theme-changing-button"
+                  onClick={() => themeToggleRef.current?.toggle()}
+                  className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                >
+                  <span>Theme</span>
+                  <AnimatedThemeToggler iconOnly triggerRef={themeToggleRef} />
+                </button>
+              </div>
               <button
                 id="user-settings-button"
                 onClick={() => {
@@ -135,7 +125,7 @@ export function UserInfo({ user }: UserInfoProps) {
                   className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                 >
                   Public Profile
-                  <UserIcon className="size-4 text-muted-foreground" />
+                  <User className="size-4 text-muted-foreground" />
                 </button>
               )}
               <button

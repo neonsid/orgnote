@@ -1,39 +1,36 @@
-import { memo } from 'react'
-import { motion } from 'motion/react'
+import { memo } from "react";
 import {
   Popover,
   PopoverTrigger,
   PopoverContent,
-} from '@/components/ui/popover'
-import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu'
-import { FaviconIcon } from './favicon-icon'
-import { DesktopMenu, MobileMenu } from './menu'
-import { formatDate, KEYBOARD_SHORTCUTS } from './constants'
-import type { Bookmark } from './types'
-import type { ConvexGroup } from '../group-selector'
-import type { Id } from '@/convex/_generated/dataModel'
+} from "@/components/ui/popover";
+import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { FaviconIcon } from "./favicon-icon";
+import { DesktopMenu, MobileMenu } from "./menu";
+import { formatDate, KEYBOARD_SHORTCUTS } from "./constants";
+import type { Bookmark } from "./types";
+import type { ConvexGroup } from "../group-selector";
+import type { Id } from "@/convex/_generated/dataModel";
 
 interface BookmarkItemProps {
-  bookmark: Bookmark
-  groups: ConvexGroup[]
-  isMobile: boolean
-  isPopoverOpen: boolean
-  onPopoverOpenChange: (open: boolean) => void
-  onTouchStart: (e: React.TouchEvent) => void
-  onTouchEnd: () => void
-  onMouseEnter: () => void
-  onMouseLeave: () => void
-  onCopy: () => void
-  onRename: () => void
-  onDelete: () => void
-  onMove: (groupId: Id<'groups'>) => void
-  onToggleRead: () => void
+  bookmark: Bookmark;
+  groups: ConvexGroup[];
+  isPopoverOpen: boolean;
+  onPopoverOpenChange: (open: boolean) => void;
+  onTouchStart: (e: React.TouchEvent) => void;
+  onTouchEnd: () => void;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+  onCopy: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+  onMove: (groupId: Id<"groups">) => void;
+  onToggleRead: () => void;
 }
 
 export const BookmarkItem = memo(function BookmarkItem({
   bookmark,
   groups,
-  isMobile,
   isPopoverOpen,
   onPopoverOpenChange,
   onTouchStart,
@@ -53,7 +50,7 @@ export const BookmarkItem = memo(function BookmarkItem({
       <div className="flex-1 min-w-0 flex items-baseline gap-2">
         <span
           className={`font-medium text-sm truncate group-hover:text-primary transition-colors ${
-            bookmark.doneReading ? 'text-muted-foreground' : 'text-foreground'
+            bookmark.doneReading ? "text-muted-foreground" : "text-foreground"
           }`}
         >
           {bookmark.title}
@@ -77,16 +74,12 @@ export const BookmarkItem = memo(function BookmarkItem({
         ))}
       </span>
     </>
-  )
+  );
 
-  if (isMobile) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.98 }}
-        transition={{ duration: 0.25 }}
-      >
+  return (
+    <>
+      {/* Mobile view - hidden on sm and up */}
+      <div className="block sm:hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
         <Popover open={isPopoverOpen} onOpenChange={onPopoverOpenChange}>
           <PopoverTrigger asChild>
             <a
@@ -98,7 +91,7 @@ export const BookmarkItem = memo(function BookmarkItem({
               onTouchMove={onTouchEnd}
               onClick={(e) => {
                 if (isPopoverOpen) {
-                  e.preventDefault()
+                  e.preventDefault();
                 }
               }}
               onMouseEnter={onMouseEnter}
@@ -121,40 +114,34 @@ export const BookmarkItem = memo(function BookmarkItem({
             />
           </PopoverContent>
         </Popover>
-      </motion.div>
-    )
-  }
+      </div>
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.98 }}
-      transition={{ duration: 0.25 }}
-    >
-      <ContextMenu>
-        <ContextMenuTrigger asChild>
-          <a
-            href={bookmark.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onMouseEnter={onMouseEnter}
-            onMouseLeave={onMouseLeave}
-            className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
-          >
-            {content}
-          </a>
-        </ContextMenuTrigger>
-        <DesktopMenu
-          bookmark={bookmark}
-          groups={groups}
-          onCopy={onCopy}
-          onRename={onRename}
-          onDelete={onDelete}
-          onMove={onMove}
-          onToggleRead={onToggleRead}
-        />
-      </ContextMenu>
-    </motion.div>
-  )
-})
+      {/* Desktop view - hidden on small screens */}
+      <div className="hidden sm:block animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <ContextMenu>
+          <ContextMenuTrigger asChild>
+            <a
+              href={bookmark.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onMouseEnter={onMouseEnter}
+              onMouseLeave={onMouseLeave}
+              className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
+            >
+              {content}
+            </a>
+          </ContextMenuTrigger>
+          <DesktopMenu
+            bookmark={bookmark}
+            groups={groups}
+            onCopy={onCopy}
+            onRename={onRename}
+            onDelete={onDelete}
+            onMove={onMove}
+            onToggleRead={onToggleRead}
+          />
+        </ContextMenu>
+      </div>
+    </>
+  );
+});

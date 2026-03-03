@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { motion } from "motion/react";
 import Loader2 from "lucide-react/dist/esm/icons/loader-2";
 import Link from "next/link";
 import { useQuery, useMutation } from "convex/react";
@@ -232,27 +231,17 @@ export default function DashboardPage() {
           </span>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, scaleX: 0 }}
-          animate={{ opacity: 1, scaleX: 1 }}
-          transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1], delay: 0.1 }}
-          className="origin-left mb-2 px-2"
-        >
+        <div className="origin-left mb-2 px-2 animate-in zoom-in-0 duration-500 delay-100">
           <div className="h-px bg-foreground/20 dark:bg-white/80" />
-        </motion.div>
+        </div>
 
         {groups.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-            className="flex flex-col items-center justify-center py-12 text-muted-foreground"
-          >
+          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground animate-in fade-in slide-in-from-bottom-5 duration-500">
             <p className="text-sm font-medium">No groups found</p>
             <p className="text-xs mt-1">
               Create a group to start adding bookmarks
             </p>
-          </motion.div>
+          </div>
         ) : (
           <BookmarkList
             loading={loadingBookMarks}

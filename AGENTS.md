@@ -1,7 +1,7 @@
 # Agent Rules
 
 ## UI Components
-
+- **ALWAYS use pnpm** 
 - **ALWAYS use shadcn/ui components** when available
 - If a shadcn component doesn't exist in the project, install it using:
   ```bash
@@ -22,4 +22,3 @@
   - `tabs` - Tab navigation
   - `toast` / `sonner` - Notifications
 
-- **ALWAYS use pnpm** 
