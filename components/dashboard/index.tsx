@@ -65,6 +65,11 @@ export default function DashboardPage() {
 
   const handleSubmit = useCallback(
     async (value: string) => {
+      if (!effectiveGroupId || !userId) {
+        toast.error("Please select a group first");
+        return;
+      }
+
       const domain = extractDomain(value);
       const isUrl = domain.includes(".");
       const domainName = isUrl ? domain.split(".")[0] : "";
@@ -78,18 +83,22 @@ export default function DashboardPage() {
           : `https://${value}`
         : "#";
 
-      if (!effectiveGroupId) return;
-
-      await createBookmark({
-        title,
-        url,
-        groupId: effectiveGroupId as Id<"groups">,
-        imageUrl: isUrl
-          ? `https://www.google.com/s2/favicons?domain=${domain}&sz=256`
-          : "",
-        userId,
-      });
-      setDebouncedQuery("");
+      try {
+        await createBookmark({
+          title,
+          url,
+          groupId: effectiveGroupId as Id<"groups">,
+          imageUrl: isUrl
+            ? `https://www.google.com/s2/favicons?domain=${domain}&sz=256`
+            : "",
+          userId,
+        });
+        toast.success("Bookmark created successfully");
+        setDebouncedQuery("");
+      } catch (error) {
+        toast.error("Failed to create bookmark");
+        console.error("Error creating bookmark:", error);
+      }
     },
     [effectiveGroupId, createBookmark, userId],
   );
@@ -244,7 +253,6 @@ export default function DashboardPage() {
           </div>
         ) : (
           <BookmarkList
-            key={effectiveGroupId}
             loading={loadingBookMarks}
             groups={groups}
             bookmarks={filteredBookmarks}

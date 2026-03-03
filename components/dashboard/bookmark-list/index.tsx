@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, memo } from "react";
+import { useState, useRef, useCallback } from "react";
 import { BookmarkItem } from "./bookmark-item";
 import { useBookmarkShortcuts } from "./use-bookmark-shortcuts";
 import type { Bookmark } from "./types";
@@ -18,7 +18,7 @@ interface BookmarkListProps {
   onToggleRead: (bookmarkId: Id<"bookmarks">) => void;
 }
 
-export const BookmarkList = memo(function BookmarkList({
+export function BookmarkList({
   bookmarks,
   groups,
   onCopy,
@@ -89,7 +89,7 @@ export const BookmarkList = memo(function BookmarkList({
       ))}
     </div>
   );
-});
+}
 
 // Re-export types for backwards compatibility
 export type { Bookmark } from "./types";
