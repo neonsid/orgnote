@@ -82,10 +82,11 @@ export const BookmarkItem = memo(function BookmarkItem({
   if (isMobile) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 8 }}
+        layout
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.98 }}
-        transition={{ duration: 0.25 }}
+        exit={{ opacity: 0, height: 0, transition: { duration: 0.2 } }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
       >
         <Popover open={isPopoverOpen} onOpenChange={onPopoverOpenChange}>
           <PopoverTrigger asChild>
@@ -127,10 +128,11 @@ export const BookmarkItem = memo(function BookmarkItem({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      layout
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.98 }}
-      transition={{ duration: 0.25 }}
+      exit={{ opacity: 0, height: 0, transition: { duration: 0.4 } }}
+      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
     >
       <ContextMenu>
         <ContextMenuTrigger asChild>

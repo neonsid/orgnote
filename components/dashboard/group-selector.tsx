@@ -16,12 +16,18 @@ import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
 
 const CreateGroupDialog = dynamic(
-  () => import("@/components/dashboard/create-group-dialog").then((m) => m.CreateGroupDialog),
+  () =>
+    import("@/components/dashboard/create-group-dialog").then(
+      (m) => m.CreateGroupDialog,
+    ),
   { ssr: false },
 );
 
 const DeleteGroupDialog = dynamic(
-  () => import("@/components/dashboard/delete-group-dialog").then((m) => m.DeleteGroupDialog),
+  () =>
+    import("@/components/dashboard/delete-group-dialog").then(
+      (m) => m.DeleteGroupDialog,
+    ),
   { ssr: false },
 );
 
@@ -52,6 +58,7 @@ interface GroupSelectorProps {
   selectedGroupId: string;
   onSelect: (groupId: string) => void;
   userId: string;
+  loading?: boolean;
 }
 
 export const GroupSelector = memo(function GroupSelector({
@@ -59,6 +66,7 @@ export const GroupSelector = memo(function GroupSelector({
   selectedGroupId,
   onSelect,
   userId,
+  loading = false,
 }: GroupSelectorProps) {
   const [open, setOpen] = useState(false);
 
@@ -107,8 +115,10 @@ export const GroupSelector = memo(function GroupSelector({
               }}
             />
             <span className="truncate">
-              {selectedGroup?.title ??
-                (groups.length === 0 ? "No groups" : "Select Group")}
+              {loading
+                ? "Loading..."
+                : (selectedGroup?.title ??
+                  (groups.length === 0 ? "No groups" : "Select Group"))}
             </span>
             <ChevronsUpDownIcon
               className={`size-4 text-muted-foreground transition-transform duration-200 shrink-0 ${open ? "rotate-180" : ""}`}

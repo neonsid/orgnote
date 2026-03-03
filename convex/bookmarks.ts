@@ -100,8 +100,90 @@ export const listBookMarks = query({
 
     return await ctx.db
       .query("bookmarks")
-      .withIndex("groupId", (q) => q.eq("groupId", args.groupId))
+      .withIndex("by_group_created", (q) => q.eq("groupId", args.groupId))
+      .order("desc")
       .collect();
+  },
+});
+
+// Granular query - returns only fields needed for list view
+export const listBookmarksMinimal = query({
+  args: { groupId: v.id("groups"), userId: v.string() },
+  handler: async (ctx, args) => {
+    if (!args.userId) {
+      throw new Error("UserId is required");
+    }
+
+    await verifyGroupOwnership(ctx, args.groupId, args.userId);
+
+    const bookmarks = await ctx.db
+      .query("bookmarks")
+      .withIndex("by_group_created", (q) => q.eq("groupId", args.groupId))
+      .order("desc")
+      .collect();
+
+    // Return only fields needed for list view
+    return bookmarks.map((b) => ({
+      _id: b._id,
+      title: b.title,
+      url: b.url,
+      doneReading: b.doneReading,
+      createdAt: b.createdAt,
+      groupId: b.groupId,
+    }));
+  },
+});
+
+// Unified dashboard query - returns groups + all bookmarks for initial load
+export const getDashboardData = query({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    if (!args.userId) {
+      throw new Error("UserId is required");
+    }
+
+    // Fetch all groups for user
+    const groups = await ctx.db
+      .query("groups")
+      .withIndex("by_user_provided_id", (q) =>
+        q.eq("userProvidedId", args.userId),
+      )
+      .order("desc")
+      .collect();
+
+    // Fetch all bookmarks for all groups
+    const allBookmarks: Array<{
+      _id: string;
+      title: string;
+      url: string;
+      doneReading: boolean;
+      createdAt: number;
+      groupId: string;
+    }> = [];
+
+    for (const group of groups) {
+      const groupBookmarks = await ctx.db
+        .query("bookmarks")
+        .withIndex("by_group_created", (q) => q.eq("groupId", group._id))
+        .order("desc")
+        .collect();
+
+      for (const bookmark of groupBookmarks) {
+        allBookmarks.push({
+          _id: bookmark._id,
+          title: bookmark.title,
+          url: bookmark.url,
+          doneReading: bookmark.doneReading,
+          createdAt: bookmark.createdAt,
+          groupId: bookmark.groupId,
+        });
+      }
+    }
+
+    return {
+      groups,
+      bookmarks: allBookmarks,
+    };
   },
 });
 

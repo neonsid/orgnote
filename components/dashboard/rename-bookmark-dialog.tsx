@@ -18,9 +18,10 @@ import {
   renameBookmarkSchema,
   type RenameBookmarkFormData,
 } from "@/lib/validation";
+import { toast } from "sonner";
 
 interface Bookmark {
-  id: Id<"bookmarks">;
+  id: string;
   title: string;
 }
 
@@ -50,10 +51,11 @@ export function RenameBookmarkDialog({
     onSubmit: async ({ value }) => {
       if (!bookmark || !userId) return;
       await renameBookmark({
-        bookmarkId: bookmark.id,
+        bookmarkId: bookmark.id as Id<"bookmarks">,
         title: value.title,
         userId,
       });
+      toast.success("Bookmark renamed successfully");
       onOpenChange(false);
     },
   });

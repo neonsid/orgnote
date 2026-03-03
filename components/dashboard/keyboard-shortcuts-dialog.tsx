@@ -8,6 +8,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { MousePointerClick } from 'lucide-react'
 
 interface Shortcut {
   label: string
@@ -17,13 +18,10 @@ interface Shortcut {
 const shortcuts: Shortcut[] = [
   { label: 'Focus search', keys: ['Ctrl', 'F'] },
   { label: 'Navigate bookmarks', keys: ['↑', '/', '↓'] },
-  { label: 'Open / copy bookmark', keys: ['Enter'] },
-  { label: 'Copy', keys: ['Ctrl', 'C'] },
+  { label: 'Open bookmark', keys: ['Ctrl', 'Enter'] },
   { label: 'Rename', keys: ['Ctrl', 'E'] },
   { label: 'Delete', keys: ['Ctrl', '⌫'] },
   { label: 'Exit selection', keys: ['Esc'] },
-  { label: 'Select all', keys: ['Ctrl', 'A'] },
-  { label: 'Toggle select', keys: ['Space'] },
 ]
 
 interface KeyboardShortcutsDialogProps {
@@ -74,6 +72,16 @@ export function KeyboardShortcutsDialog({
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Right-click hint */}
+          <div className="mt-4 pt-4 border-t border-border">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <span>
+                <strong className="text-foreground">Tip:</strong> Right-click
+                any bookmark for more options like Copy, Move, and Mark as Read
+              </span>
+            </div>
           </div>
         </div>
 

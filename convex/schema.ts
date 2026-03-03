@@ -46,5 +46,7 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.optional(v.number()),
     groupId: v.id("groups"),
-  }).index("groupId", ["groupId"]),
+  })
+    .index("groupId", ["groupId"])
+    .index("by_group_created", ["groupId", "createdAt"]),
 });

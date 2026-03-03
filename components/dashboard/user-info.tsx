@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, memo } from "react";
+import { useState, useRef, useEffect, memo, useDeferredValue } from "react";
 import ChevronsUpDown from "lucide-react/dist/esm/icons/chevrons-up-down";
 import LogOut from "lucide-react/dist/esm/icons/log-out";
 import Settings from "lucide-react/dist/esm/icons/settings";
@@ -16,12 +16,16 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
 const KeyboardShortcutsDialog = dynamic(
-  () => import("@/components/dashboard/keyboard-shortcuts-dialog").then((m) => m.KeyboardShortcutsDialog),
+  () =>
+    import("@/components/dashboard/keyboard-shortcuts-dialog").then(
+      (m) => m.KeyboardShortcutsDialog,
+    ),
   { ssr: false },
 );
 
 const UserSettingsDialog = dynamic(
-  () => import("@/components/dashboard/settings").then((m) => m.UserSettingsDialog),
+  () =>
+    import("@/components/dashboard/settings").then((m) => m.UserSettingsDialog),
   { ssr: false },
 );
 
@@ -42,8 +46,17 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
   const router = useRouter();
   const isSmallMobile = useIsSmallMobile();
 
-  // Fetch user profile to check if public profile is enabled
-  const profile = useQuery(api.profile.getProfile, { userId: user.id });
+  // Defer profile query - not needed for initial page load
+  const [enableProfileQuery, setEnableProfileQuery] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setEnableProfileQuery(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const profile = useQuery(
+    api.profile.getProfile,
+    enableProfileQuery ? { userId: user.id } : "skip",
+  );
   const hasPublicProfile = profile?.isPublic && profile?.username;
 
   const initial = user.name?.charAt(0)?.toUpperCase() ?? "U";

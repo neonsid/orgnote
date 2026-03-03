@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 interface Bookmark {
-  id: Id<"bookmarks">;
+  id: string;
   title: string;
 }
 
@@ -35,7 +35,10 @@ export function DeleteBookmarkDialog({
 
   const handleConfirm = useCallback(async () => {
     if (!bookmark || !userId) return;
-    await deleteBookmark({ bookmarkId: bookmark.id, userId });
+    await deleteBookmark({
+      bookmarkId: bookmark.id as Id<"bookmarks">,
+      userId,
+    });
     onOpenChange(false);
   }, [bookmark, deleteBookmark, onOpenChange, userId]);
 

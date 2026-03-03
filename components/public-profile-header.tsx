@@ -1,45 +1,60 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
-import { Button } from '@/components/ui/button'
-import { LoginDialog } from '@/components/login-dialog'
-import { SignupDialog } from '@/components/signup-dialog'
-import { Menu, X } from 'lucide-react'
-import { authClient } from '@/lib/auth-client'
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import { Button } from "@/components/ui/button";
+import { LoginDialog } from "@/components/login-dialog";
+import { SignupDialog } from "@/components/signup-dialog";
+import { Menu, X } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import { motion, AnimatePresence } from "motion/react";
 
 interface PublicProfileHeaderProps {
-  onLoginClick?: () => void
-  onSignupClick?: () => void
+  onLoginClick?: () => void;
+  onSignupClick?: () => void;
 }
 
 export function PublicProfileHeader({
   onLoginClick,
   onSignupClick,
 }: PublicProfileHeaderProps) {
-  const [loginOpen, setLoginOpen] = useState(false)
-  const [signupOpen, setSignupOpen] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const { data: session } = authClient.useSession()
-  const isLoggedIn = !!session
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [signupOpen, setSignupOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { data: session } = authClient.useSession();
+  const isLoggedIn = !!session;
+
+  // Lock body scroll when menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
 
   const handleLoginClick = () => {
     if (onLoginClick) {
-      onLoginClick()
+      onLoginClick();
     } else {
-      setLoginOpen(true)
+      setLoginOpen(true);
     }
-  }
+    setMobileMenuOpen(false);
+  };
 
   const handleSignupClick = () => {
     if (onSignupClick) {
-      onSignupClick()
+      onSignupClick();
     } else {
-      setSignupOpen(true)
+      setSignupOpen(true);
     }
-  }
+    setMobileMenuOpen(false);
+  };
 
   return (
     <>
@@ -85,94 +100,104 @@ export function PublicProfileHeader({
             )}
           </nav>
 
-          {/* Mobile hamburger button — visible only on mobile */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen((v) => !v)}
-            className="md:hidden flex items-center justify-center rounded-md p-2 text-foreground hover:bg-accent transition-colors"
-            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-          >
-            {mobileMenuOpen ? (
-              <X className="size-5" />
-            ) : (
-              <Menu className="size-5" />
-            )}
-          </button>
-        </div>
-
-        {/* Mobile menu panel */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-border bg-background/98 backdrop-blur animate-in slide-in-from-top-2 duration-200">
-            <div className="flex flex-col gap-2 px-4 py-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground font-medium">
-                  Theme
-                </span>
-                <div className="flex items-center justify-center rounded-md border border-input bg-background p-1.5 hover:bg-accent hover:text-accent-foreground">
-                  <AnimatedThemeToggler aria-label="Toggle theme" />
-                </div>
-              </div>
-              <div className="border-t border-border my-1" />
-              {!isLoggedIn ? (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      handleLoginClick()
-                      setMobileMenuOpen(false)
-                    }}
-                    className="justify-start font-medium text-sm h-10"
-                  >
-                    Login
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      handleSignupClick()
-                      setMobileMenuOpen(false)
-                    }}
-                    className="font-medium text-sm h-10"
-                  >
-                    Sign up
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  asChild
-                  className="justify-start font-medium text-sm h-10"
-                >
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Dashboard
-                  </Link>
-                </Button>
-              )}
+          {/* Mobile menu button — show hamburger if not logged in, theme toggle if logged in */}
+          {isLoggedIn ? (
+            <div className="md:hidden flex items-center justify-center rounded-md border border-input bg-background p-2">
+              <AnimatedThemeToggler aria-label="Toggle theme" />
             </div>
-          </div>
-        )}
+          ) : (
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((v) => !v)}
+              className="md:hidden flex items-center justify-center rounded-md p-2 text-foreground hover:bg-accent transition-colors"
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            >
+              {mobileMenuOpen ? (
+                <X className="size-5" />
+              ) : (
+                <Menu className="size-5" />
+              )}
+            </button>
+          )}
+        </div>
       </header>
+
+      {/* Mobile menu overlay - fixed position so it doesn't push content */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            {/* Backdrop with blur */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="md:hidden fixed inset-0 top-14 z-30 bg-background/80 backdrop-blur-sm"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+
+            {/* Menu panel */}
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+              className="md:hidden fixed top-14 left-0 right-0 z-40 bg-background shadow-lg"
+            >
+              <div className="flex flex-col px-4 py-4">
+                {/* Theme toggle row */}
+                <div className="flex items-center justify-between py-3 px-2 rounded-lg hover:bg-muted/50">
+                  <span className="text-sm font-medium">Theme</span>
+                  <div className="flex items-center justify-center rounded-md border border-input bg-background p-1.5">
+                    <AnimatedThemeToggler aria-label="Toggle theme" />
+                  </div>
+                </div>
+
+                {/* Auth buttons - only show if not logged in */}
+                {!isLoggedIn && (
+                  <>
+                    <div className="border-t border-border my-2" />
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleLoginClick}
+                        className="justify-center font-medium text-sm h-11"
+                      >
+                        Login
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleSignupClick}
+                        className="font-medium text-sm h-11"
+                      >
+                        Sign up
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <LoginDialog
         open={loginOpen}
         onOpenChange={setLoginOpen}
         onSignupClick={() => {
-          setLoginOpen(false)
-          setSignupOpen(true)
+          setLoginOpen(false);
+          setSignupOpen(true);
         }}
       />
       <SignupDialog
         open={signupOpen}
         onOpenChange={setSignupOpen}
         onLoginClick={() => {
-          setSignupOpen(false)
-          setLoginOpen(true)
+          setSignupOpen(false);
+          setLoginOpen(true);
         }}
       />
     </>
-  )
+  );
 }
