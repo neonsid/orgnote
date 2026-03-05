@@ -156,6 +156,7 @@ export const getDashboardData = query({
       _id: string;
       title: string;
       url: string;
+      description?: string;
       doneReading: boolean;
       createdAt: number;
       groupId: string;
@@ -173,6 +174,7 @@ export const getDashboardData = query({
           _id: bookmark._id,
           title: bookmark.title,
           url: bookmark.url,
+          description: bookmark.description,
           doneReading: bookmark.doneReading,
           createdAt: bookmark.createdAt,
           groupId: bookmark.groupId,
@@ -444,5 +446,51 @@ export const getPublicBookmarksByUsername = query({
     bookmarks.sort((a, b) => b.createdAt - a.createdAt);
 
     return bookmarks;
+  },
+});
+
+export const updateBookmarkDetails = mutation({
+  args: {
+    bookmarkId: v.id("bookmarks"),
+    title: v.optional(v.string()),
+    url: v.optional(v.string()),
+    description: v.optional(v.string()),
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    if (!args.userId) {
+      throw new Error("UserId is required");
+    }
+
+    // Verify ownership
+    await verifyBookmarkOwnership(ctx, args.bookmarkId, args.userId);
+
+    const updateData: {
+      title?: string;
+      url?: string;
+      description?: string;
+      updatedAt: number;
+    } = {
+      updatedAt: Date.now(),
+    };
+
+    if (args.title !== undefined) {
+      updateData.title = args.title;
+    }
+
+    if (args.url !== undefined) {
+      if (!isValidUrl(args.url)) {
+        throw new Error("Invalid URL format");
+      }
+      updateData.url = args.url;
+    }
+
+    if (args.description !== undefined) {
+      updateData.description = args.description;
+    }
+
+    await ctx.db.patch(args.bookmarkId, updateData);
+
+    return { success: true };
   },
 });
