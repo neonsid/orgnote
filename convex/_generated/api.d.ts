@@ -12,7 +12,6 @@ import type * as bookmarks from "../bookmarks.js";
 import type * as groups from "../groups.js";
 import type * as http from "../http.js";
 import type * as lib_scira from "../lib/scira.js";
-import type * as lib_skyra from "../lib/skyra.js";
 import type * as lib_url_classifier from "../lib/url_classifier.js";
 import type * as metadata from "../metadata.js";
 import type * as metadata_internal from "../metadata_internal.js";
@@ -31,7 +30,6 @@ declare const fullApi: ApiFromModules<{
   groups: typeof groups;
   http: typeof http;
   "lib/scira": typeof lib_scira;
-  "lib/skyra": typeof lib_skyra;
   "lib/url_classifier": typeof lib_url_classifier;
   metadata: typeof metadata;
   metadata_internal: typeof metadata_internal;

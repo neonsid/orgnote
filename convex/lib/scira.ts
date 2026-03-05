@@ -1,8 +1,11 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateText } from "ai";
 import { extractTweetId } from "./url_classifier";
+import { GenericMutationCtx } from "convex/server";
+import { DataModel } from "../_generated/dataModel";
 
 const SCIRA_API_URL = "https://api.scira.ai/api/xsearch";
+const SCIRA_DAILY_LIMIT = 20;
 
 interface SciraResponse {
   text?: string;
@@ -258,4 +261,59 @@ export async function fetchTweetContentWithScira(
  */
 export function isSciraConfigured(): boolean {
   return !!getSciraApiKey();
+}
+
+/**
+ * Check if user has remaining Scira quota for today
+ */
+export async function checkSciraQuota(
+  ctx: GenericMutationCtx<DataModel>,
+  userProvidedId: string,
+): Promise<{ hasQuota: boolean; remaining: number; currentCount: number }> {
+  const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+
+  const usage = await ctx.db
+    .query("sciraUsage")
+    .withIndex("by_user_date", (q) =>
+      q.eq("userProvidedId", userProvidedId).eq("date", today),
+    )
+    .first();
+
+  const currentCount = usage?.requestCount ?? 0;
+  const remaining = Math.max(0, SCIRA_DAILY_LIMIT - currentCount);
+
+  return {
+    hasQuota: remaining > 0,
+    remaining,
+    currentCount,
+  };
+}
+
+/**
+ * Increment Scira usage counter for the user
+ */
+export async function incrementSciraQuota(
+  ctx: GenericMutationCtx<DataModel>,
+  userProvidedId: string,
+): Promise<void> {
+  const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+
+  const existing = await ctx.db
+    .query("sciraUsage")
+    .withIndex("by_user_date", (q) =>
+      q.eq("userProvidedId", userProvidedId).eq("date", today),
+    )
+    .first();
+
+  if (existing) {
+    await ctx.db.patch(existing._id, {
+      requestCount: existing.requestCount + 1,
+    });
+  } else {
+    await ctx.db.insert("sciraUsage", {
+      userProvidedId,
+      date: today,
+      requestCount: 1,
+    });
+  }
 }
