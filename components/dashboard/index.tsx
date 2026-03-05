@@ -1,61 +1,56 @@
-'use client'
+"use client";
 
-import { useState, useCallback, useRef, useEffect } from 'react'
-import { Loader2 } from 'lucide-react'
-import Link from 'next/link'
-import { useMutation } from 'convex/react'
-import { api } from '@/convex/_generated/api'
-import { authClient } from '@/lib/auth-client'
-import { DashboardHeader } from './dashboard-header'
-import { BookmarkList, type Bookmark } from './bookmark-list'
-import { FilterDropdown, type FilterType } from './filter-dropdown'
-import { BookmarkSearch } from './bookmark-search'
-import { motion } from 'motion/react'
-import dynamic from 'next/dynamic'
-import { type Id } from '@/convex/_generated/dataModel'
-import { extractDomain } from '@/lib/domain-utils'
-import { useDialogStore } from '@/stores/dialog-store'
-import { useDashboardData } from '@/hooks/use-dashboard-data'
-import { toast } from 'sonner'
+import { useState, useCallback } from "react";
+import { Loader2 } from "lucide-react";
+import Link from "next/link";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { authClient } from "@/lib/auth-client";
+import { DashboardHeader } from "./dashboard-header";
+import { BookmarkList, type Bookmark } from "./bookmark-list";
+import { FilterDropdown, type FilterType } from "./filter-dropdown";
+import { BookmarkSearch } from "./bookmark-search";
+import { motion } from "motion/react";
+import dynamic from "next/dynamic";
+import { type Id } from "@/convex/_generated/dataModel";
+import { extractDomain } from "@/lib/domain-utils";
+import { useDialogStore } from "@/stores/dialog-store";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { toast } from "sonner";
 
 const RenameBookmarkDialog = dynamic(
   () =>
-    import('./dialog/rename-bookmark-dialog').then(
-      (m) => m.RenameBookmarkDialog
+    import("./dialog/rename-bookmark-dialog").then(
+      (m) => m.RenameBookmarkDialog,
     ),
-  { ssr: false }
-)
+  { ssr: false },
+);
 
 const EditBookmarkDialog = dynamic(
   () =>
-    import('./dialog/edit-bookmark-dialog').then((m) => m.EditBookmarkDialog),
-  { ssr: false }
-)
+    import("./dialog/edit-bookmark-dialog").then((m) => m.EditBookmarkDialog),
+  { ssr: false },
+);
 
 const DeleteBookmarkDialog = dynamic(
   () =>
-    import('./dialog/delete-bookmark-dialog').then(
-      (m) => m.DeleteBookmarkDialog
+    import("./dialog/delete-bookmark-dialog").then(
+      (m) => m.DeleteBookmarkDialog,
     ),
-  { ssr: false }
-)
+  { ssr: false },
+);
 
 export default function DashboardPage() {
-  const { data: session, isPending: isSessionLoading } = authClient.useSession()
-  const userId = session?.user?.id ?? ''
+  const { data: session, isPending: isSessionLoading } =
+    authClient.useSession();
+  const userId = session?.user?.id ?? "";
 
   // Unified dashboard data hook - single query for groups + bookmarks
   const { groups, bookmarks, effectiveGroupId, selectGroup, isLoading } =
-    useDashboardData(userId)
+    useDashboardData(userId);
 
-  // Use ref to track current group without causing re-renders
-  const effectiveGroupIdRef = useRef(effectiveGroupId)
-  useEffect(() => {
-    effectiveGroupIdRef.current = effectiveGroupId
-  }, [effectiveGroupId])
-
-  const [debouncedQuery, setDebouncedQuery] = useState('')
-  const [filter, setFilter] = useState<FilterType>('all')
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [filter, setFilter] = useState<FilterType>("all");
 
   // Dialog state from Zustand store
   const {
@@ -68,63 +63,63 @@ export default function DashboardPage() {
     closeEditBookmarkDialog,
     openDeleteBookmarkDialog,
     closeDeleteBookmarkDialog,
-  } = useDialogStore()
+  } = useDialogStore();
 
-  const createBookmark = useMutation(api.bookmarks.createBookMark)
-  const moveBookmark = useMutation(api.bookmarks.moveBookMark)
-  const toggleReadStatus = useMutation(api.bookmarks.toggleReadStatus)
+  const createBookmark = useMutation(api.bookmarks.createBookMark);
+  const moveBookmark = useMutation(api.bookmarks.moveBookMark);
+  const toggleReadStatus = useMutation(api.bookmarks.toggleReadStatus);
 
   const handleSubmitBookmark = useCallback(
     async (value: string) => {
-      const domain = extractDomain(value)
-      const isUrl = domain.includes('.')
-      const domainName = isUrl ? domain.split('.')[0] : ''
+      const domain = extractDomain(value);
+      const isUrl = domain.includes(".");
+      const domainName = isUrl ? domain.split(".")[0] : "";
       const title = isUrl
         ? domainName.charAt(0).toUpperCase() + domainName.slice(1)
-        : value
+        : value;
 
       const url = isUrl
-        ? value.startsWith('http')
+        ? value.startsWith("http")
           ? value
           : `https://${value}`
-        : '#'
+        : "#";
 
-      const currentGroupId = effectiveGroupIdRef.current
-      if (!currentGroupId) return
+      const currentGroupId = effectiveGroupId;
+      if (!currentGroupId) return;
 
       await createBookmark({
         title,
         url,
-        groupId: currentGroupId as Id<'groups'>,
+        groupId: currentGroupId as Id<"groups">,
         imageUrl: isUrl
           ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
-          : '',
+          : "",
         userId,
-      })
-      setDebouncedQuery('')
+      });
+      setDebouncedQuery("");
     },
-    [createBookmark, userId]
-  )
+    [createBookmark, effectiveGroupId, userId],
+  );
 
   // Filter bookmarks client-side
   const filteredBookmarks = bookmarks.filter((b) => {
     if (debouncedQuery.trim()) {
-      const q = debouncedQuery.toLowerCase()
+      const q = debouncedQuery.toLowerCase();
       const matchesSearch =
-        b.title.toLowerCase().includes(q) || b.domain.toLowerCase().includes(q)
-      if (!matchesSearch) return false
+        b.title.toLowerCase().includes(q) || b.domain.toLowerCase().includes(q);
+      if (!matchesSearch) return false;
     }
 
-    if (filter === 'read') return b.doneReading
-    if (filter === 'unread') return !b.doneReading
-    return true
-  })
+    if (filter === "read") return b.doneReading;
+    if (filter === "unread") return !b.doneReading;
+    return true;
+  });
 
   // Context menu handlers
   const handleCopy = useCallback((bookmark: Bookmark) => {
-    navigator.clipboard.writeText(bookmark.url)
-    toast.success('URL copied to clipboard')
-  }, [])
+    navigator.clipboard.writeText(bookmark.url);
+    toast.success("URL copied to clipboard");
+  }, []);
 
   const handleRename = useCallback(
     (bookmark: Bookmark) => {
@@ -132,10 +127,10 @@ export default function DashboardPage() {
         id: bookmark.id,
         title: bookmark.title,
         url: bookmark.url,
-      })
+      });
     },
-    [openRenameDialog]
-  )
+    [openRenameDialog],
+  );
 
   const handleEdit = useCallback(
     (bookmark: Bookmark) => {
@@ -144,18 +139,18 @@ export default function DashboardPage() {
         title: bookmark.title,
         url: bookmark.url,
         description: bookmark.description,
-      })
+      });
     },
-    [openEditBookmarkDialog]
-  )
+    [openEditBookmarkDialog],
+  );
 
   const handleMove = useCallback(
-    (bookmarkId: Id<'bookmarks'>, newGroupId: Id<'groups'>) => {
-      if (!userId) return
-      moveBookmark({ bookmarkId: bookmarkId, groupId: newGroupId, userId })
+    (bookmarkId: Id<"bookmarks">, newGroupId: Id<"groups">) => {
+      if (!userId) return;
+      moveBookmark({ bookmarkId: bookmarkId, groupId: newGroupId, userId });
     },
-    [moveBookmark, userId]
-  )
+    [moveBookmark, userId],
+  );
 
   const handleDelete = useCallback(
     (bookmark: Bookmark) => {
@@ -163,18 +158,18 @@ export default function DashboardPage() {
         id: bookmark.id,
         title: bookmark.title,
         url: bookmark.url,
-      })
+      });
     },
-    [openDeleteBookmarkDialog]
-  )
+    [openDeleteBookmarkDialog],
+  );
 
   const handleToggleRead = useCallback(
-    (bookmarkId: Id<'bookmarks'>) => {
-      if (!userId) return
-      toggleReadStatus({ bookmarkId, userId })
+    (bookmarkId: Id<"bookmarks">) => {
+      if (!userId) return;
+      toggleReadStatus({ bookmarkId, userId });
     },
-    [toggleReadStatus, userId]
-  )
+    [toggleReadStatus, userId],
+  );
 
   // Only block for session loading
   if (isSessionLoading) {
@@ -182,7 +177,7 @@ export default function DashboardPage() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="size-6 text-muted-foreground animate-spin" />
       </div>
-    )
+    );
   }
 
   // Not logged in
@@ -201,7 +196,7 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -278,5 +273,5 @@ export default function DashboardPage() {
         userId={userId}
       />
     </div>
-  )
+  );
 }

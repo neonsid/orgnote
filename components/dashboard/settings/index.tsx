@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useReducer } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import {
@@ -63,9 +63,41 @@ export function UserSettingsDialog({
   onOpenChange,
   user,
 }: UserSettingsDialogProps) {
-  const [activeTab, setActiveTab] = useState<SettingsTab>("general");
-  const [isLoading, setIsLoading] = useState(false);
-  const [exportOpen, setExportOpen] = useState(false);
+  type SettingsState = {
+    activeTab: SettingsTab;
+    isSaving: boolean;
+    exportOpen: boolean;
+  };
+
+  type SettingsAction =
+    | { type: "setActiveTab"; tab: SettingsTab }
+    | { type: "setSaving"; saving: boolean }
+    | { type: "setExportOpen"; open: boolean }
+    | { type: "reset" };
+
+  function reducer(
+    state: SettingsState,
+    action: SettingsAction,
+  ): SettingsState {
+    switch (action.type) {
+      case "setActiveTab":
+        return { ...state, activeTab: action.tab };
+      case "setSaving":
+        return { ...state, isSaving: action.saving };
+      case "setExportOpen":
+        return { ...state, exportOpen: action.open };
+      case "reset":
+        return { activeTab: "general", isSaving: false, exportOpen: false };
+      default:
+        return state;
+    }
+  }
+
+  const [state, dispatch] = useReducer(reducer, {
+    activeTab: "general",
+    isSaving: false,
+    exportOpen: false,
+  });
 
   const { data: hasPassword } = useHasPassword(open);
   const existingProfile = useQuery(api.profile.getProfile, { userId: user.id });
@@ -76,19 +108,15 @@ export function UserSettingsDialog({
     existingProfile,
   });
 
-  // Reset name form when user prop changes
-  useEffect(() => {
-    nameForm.setFieldValue("name", user.name);
-  }, [user.name, nameForm]);
-
   const handleClose = () => {
     nameForm.reset();
     profileForm.reset();
+    dispatch({ type: "reset" });
     onOpenChange(false);
   };
 
   const handleSave = async () => {
-    setIsLoading(true);
+    dispatch({ type: "setSaving", saving: true });
     try {
       // Submit name form
       await nameForm.handleSubmit();
@@ -101,7 +129,7 @@ export function UserSettingsDialog({
     } catch {
       toast.error("Failed to save settings");
     } finally {
-      setIsLoading(false);
+      dispatch({ type: "setSaving", saving: false });
     }
   };
 
@@ -116,19 +144,24 @@ export function UserSettingsDialog({
         </DialogHeader>
 
         <div className="mt-4">
-          <SettingsTabs activeTab={activeTab} onTabChange={setActiveTab} />
+          <SettingsTabs
+            activeTab={state.activeTab}
+            onTabChange={(tab) => dispatch({ type: "setActiveTab", tab })}
+          />
 
           <div className="mt-6">
-            {activeTab === "general" && (
+            {state.activeTab === "general" && (
               <GeneralSettings
                 user={user}
                 nameForm={nameForm}
                 hasPassword={hasPassword}
-                onExportClick={() => setExportOpen(true)}
+                onExportClick={() =>
+                  dispatch({ type: "setExportOpen", open: true })
+                }
               />
             )}
 
-            {activeTab === "public-profile" && (
+            {state.activeTab === "public-profile" && (
               <PublicProfileSettings profileForm={profileForm} />
             )}
           </div>
@@ -138,15 +171,15 @@ export function UserSettingsDialog({
           <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isLoading}>
-            {isLoading ? "Saving…" : "Save"}
+          <Button onClick={handleSave} disabled={state.isSaving}>
+            {state.isSaving ? "Saving…" : "Save"}
           </Button>
         </div>
       </DialogContent>
 
       <ExportBookmarksDialog
-        open={exportOpen}
-        onOpenChange={setExportOpen}
+        open={state.exportOpen}
+        onOpenChange={(open) => dispatch({ type: "setExportOpen", open })}
         userId={user.id}
       />
     </Dialog>

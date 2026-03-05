@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect, memo } from "react";
+import { useReducer, useCallback, useMemo, useEffect, memo } from "react";
 import { useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { type Id } from "@/convex/_generated/dataModel";
@@ -31,6 +31,23 @@ interface FormState {
   description: string;
 }
 
+interface DialogState {
+  form: FormState;
+  isGenerating: boolean;
+  hasExistingDescription: boolean;
+}
+
+type DialogAction =
+  | { type: "initialize"; form: FormState; hasExistingDescription: boolean }
+  | { type: "reset" }
+  | { type: "setGenerating"; isGenerating: boolean }
+  | {
+      type: "updateField";
+      field: keyof FormState;
+      value: FormState[keyof FormState];
+    }
+  | { type: "mergeForm"; form: Partial<FormState> };
+
 interface EditBookmarkDialogProps {
   bookmark: Bookmark | null;
   open: boolean;
@@ -43,6 +60,36 @@ const INITIAL_FORM_STATE: FormState = {
   url: "",
   description: "",
 };
+
+const INITIAL_DIALOG_STATE: DialogState = {
+  form: INITIAL_FORM_STATE,
+  isGenerating: false,
+  hasExistingDescription: false,
+};
+
+function reducer(state: DialogState, action: DialogAction): DialogState {
+  switch (action.type) {
+    case "initialize":
+      return {
+        form: action.form,
+        hasExistingDescription: action.hasExistingDescription,
+        isGenerating: false,
+      };
+    case "reset":
+      return INITIAL_DIALOG_STATE;
+    case "setGenerating":
+      return { ...state, isGenerating: action.isGenerating };
+    case "updateField":
+      return {
+        ...state,
+        form: { ...state.form, [action.field]: action.value },
+      };
+    case "mergeForm":
+      return { ...state, form: { ...state.form, ...action.form } };
+    default:
+      return state;
+  }
+}
 
 function validateUrl(url: string): boolean {
   try {
@@ -59,10 +106,7 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
   onOpenChange,
   userId,
 }: EditBookmarkDialogProps) {
-  // Form state - initialized from bookmark when dialog opens
-  const [form, setForm] = useState<FormState>(INITIAL_FORM_STATE);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [hasExistingDescription, setHasExistingDescription] = useState(false);
+  const [state, dispatch] = useReducer(reducer, INITIAL_DIALOG_STATE);
 
   const updateBookmark = useMutation(api.bookmarks.updateBookmarkDetails);
   const generateDescription = useAction(
@@ -73,13 +117,15 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
   useEffect(() => {
     if (open && bookmark) {
       const existingDesc = bookmark.description || "";
-      setForm({
-        title: bookmark.title,
-        url: bookmark.url,
-        description: existingDesc,
+      dispatch({
+        type: "initialize",
+        form: {
+          title: bookmark.title,
+          url: bookmark.url,
+          description: existingDesc,
+        },
+        hasExistingDescription: !!existingDesc,
       });
-      setHasExistingDescription(!!existingDesc);
-      setIsGenerating(false);
     }
   }, [open, bookmark]);
 
@@ -87,9 +133,7 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
   const handleOpenChange = useCallback(
     (isOpen: boolean) => {
       if (!isOpen) {
-        setForm(INITIAL_FORM_STATE);
-        setIsGenerating(false);
-        setHasExistingDescription(false);
+        dispatch({ type: "reset" });
       }
       onOpenChange(isOpen);
     },
@@ -97,38 +141,42 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
   );
 
   // Derived state
-  const descriptionLength = form.description.length;
-  const canSave = form.title.trim() && form.url.trim();
-  const isValidUrl = !form.url.trim() || validateUrl(form.url);
+  const descriptionLength = state.form.description.length;
+  const canSave = state.form.title.trim() && state.form.url.trim();
+  const isValidUrl = !state.form.url.trim() || validateUrl(state.form.url);
 
   // Form field updates
   const updateField = useCallback(
     <K extends keyof FormState>(field: K, value: FormState[K]) => {
-      setForm((prev) => ({ ...prev, [field]: value }));
+      dispatch({ type: "updateField", field, value });
     },
     [],
   );
 
   const handleGenerateDescription = useCallback(async () => {
-    if (!form.url) {
+    if (!state.form.url) {
       toast.error("Please enter a URL first");
       return;
     }
 
-    setIsGenerating(true);
+    dispatch({ type: "setGenerating", isGenerating: true });
 
     try {
       const result = await generateDescription({
-        url: form.url,
+        url: state.form.url,
         userId,
       });
 
       if (result.success && result.description) {
-        setForm((prev) => ({
-          ...prev,
-          description: result.description ?? "",
-          ...(result.title && !prev.title ? { title: result.title } : {}),
-        }));
+        dispatch({
+          type: "mergeForm",
+          form: {
+            description: result.description ?? "",
+            ...(result.title && !state.form.title
+              ? { title: result.title }
+              : {}),
+          },
+        });
         toast.success("Description generated successfully");
       } else {
         toast.error(result.error || "Failed to generate description");
@@ -139,24 +187,24 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
         "Failed to generate description. Try again or enter manually.",
       );
     } finally {
-      setIsGenerating(false);
+      dispatch({ type: "setGenerating", isGenerating: false });
     }
-  }, [form.url, userId, generateDescription]);
+  }, [state.form.url, state.form.title, userId, generateDescription]);
 
   const handleSave = useCallback(async () => {
     if (!bookmark || !userId) return;
 
-    if (!form.title.trim()) {
+    if (!state.form.title.trim()) {
       toast.error("Title is required");
       return;
     }
 
-    if (!form.url.trim()) {
+    if (!state.form.url.trim()) {
       toast.error("URL is required");
       return;
     }
 
-    if (!validateUrl(form.url)) {
+    if (!validateUrl(state.form.url)) {
       toast.error("Please enter a valid URL");
       return;
     }
@@ -164,9 +212,9 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
     try {
       await updateBookmark({
         bookmarkId: bookmark.id as Id<"bookmarks">,
-        title: form.title.trim(),
-        url: form.url.trim(),
-        description: form.description.trim() || undefined,
+        title: state.form.title.trim(),
+        url: state.form.url.trim(),
+        description: state.form.description.trim() || undefined,
         userId,
       });
 
@@ -176,7 +224,7 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
       console.error("Error updating bookmark:", error);
       toast.error("Failed to update bookmark");
     }
-  }, [bookmark, userId, form, updateBookmark, handleOpenChange]);
+  }, [bookmark, userId, state.form, updateBookmark, handleOpenChange]);
 
   const handleDescriptionChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -190,7 +238,7 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
 
   // Memoized button content for description generation
   const generateButtonContent = useMemo(() => {
-    if (isGenerating) {
+    if (state.isGenerating) {
       return (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -198,7 +246,7 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
         </>
       );
     }
-    if (hasExistingDescription && form.description) {
+    if (state.hasExistingDescription && state.form.description) {
       return (
         <>
           <RefreshCw className="mr-2 h-4 w-4" />
@@ -212,7 +260,11 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
         Generate with AI
       </>
     );
-  }, [isGenerating, hasExistingDescription, form.description]);
+  }, [
+    state.isGenerating,
+    state.hasExistingDescription,
+    state.form.description,
+  ]);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -226,7 +278,7 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
             <Label htmlFor="title">Title</Label>
             <Input
               id="title"
-              value={form.title}
+              value={state.form.title}
               onChange={(e) => updateField("title", e.target.value)}
               placeholder="Bookmark title"
             />
@@ -236,11 +288,11 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
             <Label htmlFor="url">URL</Label>
             <Input
               id="url"
-              value={form.url}
+              value={state.form.url}
               onChange={(e) => updateField("url", e.target.value)}
               placeholder="https://example.com"
             />
-            {!isValidUrl && form.url && (
+            {!isValidUrl && state.form.url && (
               <p className="text-xs text-destructive">
                 Please enter a valid URL
               </p>
@@ -255,28 +307,30 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
                   ({descriptionLength}/150)
                 </span>
               </Label>
-              {hasExistingDescription && form.description && !isGenerating && (
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Pencil className="h-3 w-3" />
-                  {form.description === bookmark?.description
-                    ? "Original"
-                    : "Modified"}
-                </span>
-              )}
+              {state.hasExistingDescription &&
+                state.form.description &&
+                !state.isGenerating && (
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Pencil className="h-3 w-3" />
+                    {state.form.description === bookmark?.description
+                      ? "Original"
+                      : "Modified"}
+                  </span>
+                )}
             </div>
             <Textarea
               id="description"
-              value={form.description}
+              value={state.form.description}
               onChange={handleDescriptionChange}
               placeholder={
-                hasExistingDescription
+                state.hasExistingDescription
                   ? "Edit the existing description or regenerate with AI"
                   : "Enter a description or generate with AI"
               }
               rows={3}
             />
-            {hasExistingDescription &&
-              form.description === bookmark?.description && (
+            {state.hasExistingDescription &&
+              state.form.description === bookmark?.description && (
                 <p className="text-xs text-muted-foreground">
                   This is the original AI-generated description. You can edit it
                   above or regenerate.
@@ -287,7 +341,7 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
           <Button
             variant="outline"
             onClick={handleGenerateDescription}
-            disabled={isGenerating || !form.url}
+            disabled={state.isGenerating || !state.form.url}
             className="w-full"
           >
             {generateButtonContent}

@@ -1,7 +1,14 @@
 "use client";
 
-import { useState, useRef, useEffect, memo, useDeferredValue } from "react";
-import { ChevronsUpDown, LogOut, Settings, Keyboard, User } from "lucide-react";
+import { useReducer, useRef, useEffect, memo } from "react";
+import {
+  ChevronsUpDown,
+  LogOut,
+  Settings,
+  Keyboard,
+  User,
+  Loader2,
+} from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -36,24 +43,58 @@ interface UserInfoProps {
 }
 
 export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
-  const [open, setOpen] = useState(false);
-  const [shortcutsOpen, setShortcutsOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  type UserInfoState = {
+    open: boolean;
+    shortcutsOpen: boolean;
+    settingsOpen: boolean;
+    isRedirecting: boolean;
+  };
+
+  type UserInfoAction =
+    | { type: "toggleMenu" }
+    | { type: "setMenuOpen"; open: boolean }
+    | { type: "openShortcuts" }
+    | { type: "setShortcutsOpen"; open: boolean }
+    | { type: "openSettings" }
+    | { type: "setSettingsOpen"; open: boolean }
+    | { type: "setRedirecting"; redirecting: boolean };
+
+  function reducer(
+    state: UserInfoState,
+    action: UserInfoAction,
+  ): UserInfoState {
+    switch (action.type) {
+      case "toggleMenu":
+        return { ...state, open: !state.open };
+      case "setMenuOpen":
+        return { ...state, open: action.open, isRedirecting: false };
+      case "openShortcuts":
+        return { ...state, open: false, shortcutsOpen: true };
+      case "setShortcutsOpen":
+        return { ...state, shortcutsOpen: action.open };
+      case "openSettings":
+        return { ...state, open: false, settingsOpen: true };
+      case "setSettingsOpen":
+        return { ...state, settingsOpen: action.open };
+      case "setRedirecting":
+        return { ...state, isRedirecting: action.redirecting };
+      default:
+        return state;
+    }
+  }
+
+  const [state, dispatch] = useReducer(reducer, {
+    open: false,
+    shortcutsOpen: false,
+    settingsOpen: false,
+    isRedirecting: false,
+  });
+
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const isSmallMobile = useIsSmallMobile();
 
-  // Defer profile query - not needed for initial page load
-  const [enableProfileQuery, setEnableProfileQuery] = useState(false);
-  useEffect(() => {
-    const timer = setTimeout(() => setEnableProfileQuery(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const profile = useQuery(
-    api.profile.getProfile,
-    enableProfileQuery ? { userId: user.id } : "skip",
-  );
+  const profile = useQuery(api.profile.getProfile, { userId: user.id });
   const hasPublicProfile = profile?.isPublic && profile?.username;
 
   const initial = user.name?.charAt(0)?.toUpperCase() ?? "U";
@@ -63,20 +104,20 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
     user.name.length > maxLen ? user.name.slice(0, maxLen) + "…" : user.name;
 
   useEffect(() => {
-    if (!open) return;
+    if (!state.open) return;
 
     function handleClickOutside(e: MouseEvent) {
       if (
         containerRef.current &&
         !containerRef.current.contains(e.target as Node)
       ) {
-        setOpen(false);
+        dispatch({ type: "setMenuOpen", open: false });
       }
     }
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
+  }, [state.open]);
 
   const handleSignOut = async () => {
     await authClient.signOut();
@@ -85,9 +126,11 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
   const themeToggleRef = useRef<{ toggle: () => void }>(null);
 
   const handlePublicProfileClick = () => {
-    setOpen(false);
     if (profile?.username) {
-      router.push(`/u/${profile.username}`);
+      dispatch({ type: "setRedirecting", redirecting: true });
+      window.setTimeout(() => {
+        router.push(`/u/${profile.username}`);
+      }, 150);
     }
   };
 
@@ -96,7 +139,7 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
       <div ref={containerRef} className="relative">
         <button
           id="user-info-trigger"
-          onClick={() => setOpen(!open)}
+          onClick={() => dispatch({ type: "toggleMenu" })}
           className="inline-flex items-center gap-1.5 sm:gap-2 rounded-lg px-1.5 sm:px-2.5 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
         >
           {user.image ? (
@@ -118,7 +161,7 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
           <ChevronsUpDown className="size-3.5 text-muted-foreground shrink-0" />
         </button>
 
-        {open && (
+        {state.open && (
           <div className="absolute right-0 top-full mt-1 z-50 min-w-55 rounded-xl border border-border bg-background shadow-lg animate-in fade-in slide-in-from-top-1 duration-150">
             <div className="p-1.5">
               {isSmallMobile && (
@@ -138,10 +181,7 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
               )}
               <button
                 id="user-settings-button"
-                onClick={() => {
-                  setOpen(false);
-                  setSettingsOpen(true);
-                }}
+                onClick={() => dispatch({ type: "openSettings" })}
                 className="flex w-full items-center justify-between  gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
               >
                 Settings
@@ -151,18 +191,20 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
                 <button
                   id="public-profile"
                   onClick={handlePublicProfileClick}
-                  className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                  disabled={state.isRedirecting}
+                  className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors disabled:opacity-70 disabled:pointer-events-none"
                 >
-                  Public Profile
-                  <User className="size-4 text-muted-foreground" />
+                  {state.isRedirecting ? "Redirecting..." : "Public Profile"}
+                  {state.isRedirecting ? (
+                    <Loader2 className="size-4 text-muted-foreground animate-spin" />
+                  ) : (
+                    <User className="size-4 text-muted-foreground" />
+                  )}
                 </button>
               )}
               <button
                 id="user-keyboard-shortcuts-button"
-                onClick={() => {
-                  setOpen(false);
-                  setShortcutsOpen(true);
-                }}
+                onClick={() => dispatch({ type: "openShortcuts" })}
                 className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
               >
                 Keyboard Shortcuts
@@ -182,16 +224,16 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
         )}
       </div>
 
-      {shortcutsOpen && (
+      {state.shortcutsOpen && (
         <KeyboardShortcutsDialog
-          open={shortcutsOpen}
-          onOpenChange={setShortcutsOpen}
+          open={state.shortcutsOpen}
+          onOpenChange={(open) => dispatch({ type: "setShortcutsOpen", open })}
         />
       )}
-      {settingsOpen && (
+      {state.settingsOpen && (
         <UserSettingsDialog
-          open={settingsOpen}
-          onOpenChange={setSettingsOpen}
+          open={state.settingsOpen}
+          onOpenChange={(open) => dispatch({ type: "setSettingsOpen", open })}
           user={user}
         />
       )}
