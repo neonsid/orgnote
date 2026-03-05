@@ -1,7 +1,7 @@
-export { CreateGroupDialog } from "./create-group-dialog";
-export { DeleteBookmarkDialog } from "./delete-bookmark-dialog";
-export { DeleteGroupDialog } from "./delete-group-dialog";
-export { EditBookmarkDialog } from "./edit-bookmark-dialog";
-export { ExportBookmarksDialog } from "./export-bookmarks-dialog";
-export { KeyboardShortcutsDialog } from "./keyboard-shortcuts-dialog";
-export { RenameBookmarkDialog } from "./rename-bookmark-dialog";
+export { CreateGroupDialog } from './create-group-dialog'
+export { DeleteBookmarkDialog } from './delete-bookmark-dialog'
+export { DeleteGroupDialog } from './delete-group-dialog'
+export { EditBookmarkDialog } from './edit-bookmark-dialog'
+export { ExportBookmarksDialog } from './export-bookmarks-dialog'
+export { KeyboardShortcutsDialog } from './keyboard-shortcuts-dialog'
+export { RenameBookmarkDialog } from './rename-bookmark-dialog'
