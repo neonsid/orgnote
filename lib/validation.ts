@@ -145,6 +145,15 @@ export const renameBookmarkSchema = z.object({
   title: bookmarkTitleSchema,
 });
 
+export const editBookmarkSchema = z.object({
+  title: bookmarkTitleSchema,
+  url: z.string().url("Please enter a valid URL"),
+  description: z
+    .string()
+    .max(150, "Description must be at most 150 characters")
+    .optional(),
+});
+
 // Type exports
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type SignupFormData = z.infer<typeof signupSchema>;
@@ -155,3 +164,4 @@ export type UpdateNameFormData = z.infer<typeof updateNameSchema>;
 export type PublicProfileFormData = z.infer<typeof publicProfileSchema>;
 export type CreateGroupFormData = z.infer<typeof createGroupSchema>;
 export type RenameBookmarkFormData = z.infer<typeof renameBookmarkSchema>;
+export type EditBookmarkFormData = z.infer<typeof editBookmarkSchema>;

@@ -15,6 +15,7 @@ interface BookmarkListProps {
   loading: boolean;
   onCopy: (bookmark: Bookmark) => void;
   onRename: (bookmark: Bookmark) => void;
+  onEdit: (bookmark: Bookmark) => void;
   onDelete: (bookmark: Bookmark) => void;
   onMove: (bookmarkId: Id<"bookmarks">, newGroupId: Id<"groups">) => void;
   onToggleRead: (bookmarkId: Id<"bookmarks">) => void;
@@ -25,6 +26,7 @@ export const BookmarkList = memo(function BookmarkList({
   groups,
   onCopy,
   onRename,
+  onEdit,
   onDelete,
   onMove,
   onToggleRead,
@@ -32,9 +34,25 @@ export const BookmarkList = memo(function BookmarkList({
 }: BookmarkListProps) {
   const isSmallMobile = useIsSmallMobile();
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
+  const [showDescriptionId, setShowDescriptionId] = useState<string | null>(
+    null,
+  );
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
-  const { setHoveredBookmark } = useBookmarkShortcuts({ onRename, onDelete });
+  const { setHoveredBookmark } = useBookmarkShortcuts({
+    onRename,
+    onDelete,
+    onShowDescription: useCallback(
+      (bookmark: Bookmark) => {
+        if (bookmark.description) {
+          setShowDescriptionId(bookmark.id);
+          // Auto-hide after 3 seconds
+          setTimeout(() => setShowDescriptionId(null), 3000);
+        }
+      },
+      [setShowDescriptionId],
+    ),
+  });
 
   const handleTouchStart = useCallback(
     (e: React.TouchEvent, id: string) => {
@@ -111,9 +129,17 @@ export const BookmarkList = memo(function BookmarkList({
             onMouseLeave={() => setHoveredBookmark(null)}
             onCopy={() => onCopy(bookmark)}
             onRename={() => onRename(bookmark)}
+            onEdit={() => onEdit(bookmark)}
             onDelete={() => onDelete(bookmark)}
             onMove={(groupId) => onMove(bookmark.id, groupId)}
             onToggleRead={() => onToggleRead(bookmark.id)}
+            onShowDescription={() => {
+              if (bookmark.description) {
+                setShowDescriptionId(bookmark.id);
+                setTimeout(() => setShowDescriptionId(null), 3000);
+              }
+            }}
+            showDescription={showDescriptionId === bookmark.id}
           />
         ))}
       </AnimatePresence>

@@ -23,6 +23,11 @@ const RenameBookmarkDialog = dynamic(
   { ssr: false },
 );
 
+const EditBookmarkDialog = dynamic(
+  () => import("./edit-bookmark-dialog").then((m) => m.EditBookmarkDialog),
+  { ssr: false },
+);
+
 const DeleteBookmarkDialog = dynamic(
   () => import("./delete-bookmark-dialog").then((m) => m.DeleteBookmarkDialog),
   { ssr: false },
@@ -49,9 +54,12 @@ export default function DashboardPage() {
   // Dialog state from Zustand store
   const {
     renameBookmark,
+    editBookmark,
     deleteBookmark,
     openRenameDialog,
+    openEditBookmarkDialog,
     closeRenameDialog,
+    closeEditBookmarkDialog,
     openDeleteBookmarkDialog,
     closeDeleteBookmarkDialog,
   } = useDialogStore();
@@ -121,6 +129,18 @@ export default function DashboardPage() {
       });
     },
     [openRenameDialog],
+  );
+
+  const handleEdit = useCallback(
+    (bookmark: Bookmark) => {
+      openEditBookmarkDialog(bookmark.id, {
+        id: bookmark.id,
+        title: bookmark.title,
+        url: bookmark.url,
+        description: bookmark.description,
+      });
+    },
+    [openEditBookmarkDialog],
   );
 
   const handleMove = useCallback(
@@ -224,6 +244,7 @@ export default function DashboardPage() {
           bookmarks={filteredBookmarks}
           onCopy={handleCopy}
           onRename={handleRename}
+          onEdit={handleEdit}
           onDelete={handleDelete}
           onMove={handleMove}
           onToggleRead={handleToggleRead}
@@ -234,6 +255,13 @@ export default function DashboardPage() {
         bookmark={renameBookmark.bookmarkData}
         open={renameBookmark.open}
         onOpenChange={closeRenameDialog}
+        userId={userId}
+      />
+
+      <EditBookmarkDialog
+        bookmark={editBookmark.bookmarkData}
+        open={editBookmark.open}
+        onOpenChange={closeEditBookmarkDialog}
         userId={userId}
       />
 
