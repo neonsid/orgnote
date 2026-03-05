@@ -1,12 +1,14 @@
 import { useState, memo } from "react";
-import Check from "lucide-react/dist/esm/icons/check";
+import { Check } from "lucide-react";
 import type { Bookmark } from "./types";
 
 interface FaviconIconProps {
   bookmark: Bookmark;
 }
 
-export const FaviconIcon = memo(function FaviconIcon({ bookmark }: FaviconIconProps) {
+export const FaviconIcon = memo(function FaviconIcon({
+  bookmark,
+}: FaviconIconProps) {
   const [imgError, setImgError] = useState(false);
 
   if (bookmark.favicon && !imgError) {

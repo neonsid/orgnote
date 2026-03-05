@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback } from "react";
 import {
   ContextMenuContent,
   ContextMenuItem,
@@ -6,27 +6,33 @@ import {
   ContextMenuSub,
   ContextMenuSubTrigger,
   ContextMenuSubContent,
-} from '@/components/ui/context-menu'
-import Copy from 'lucide-react/dist/esm/icons/copy'
-import Pencil from 'lucide-react/dist/esm/icons/pencil'
-import Trash2 from 'lucide-react/dist/esm/icons/trash-2'
-import ChevronsRightIcon from 'lucide-react/dist/esm/icons/chevrons-right'
-import CheckCircle2 from 'lucide-react/dist/esm/icons/check-circle-2'
-import Circle from 'lucide-react/dist/esm/icons/circle'
-import type { Bookmark } from './types'
-import type { ConvexGroup } from '../group-selector'
-import { FALLBACK_COLORS } from '../group-selector'
-import { KEYBOARD_SHORTCUTS } from './constants'
-import type { Id } from '@/convex/_generated/dataModel'
+} from "@/components/ui/context-menu";
+import {
+  Copy,
+  Pencil,
+  Edit3,
+  Trash2,
+  ChevronsRight,
+  CheckCircle2,
+  Circle,
+  Info,
+} from "lucide-react";
+import type { Bookmark } from "./types";
+import type { ConvexGroup } from "../group-selector";
+import { FALLBACK_COLORS } from "../group-selector";
+import { KEYBOARD_SHORTCUTS } from "./constants";
+import type { Id } from "@/convex/_generated/dataModel";
 
 interface DesktopMenuProps {
-  bookmark: Bookmark
-  groups: ConvexGroup[]
-  onCopy: () => void
-  onRename: () => void
-  onDelete: () => void
-  onMove: (groupId: Id<'groups'>) => void
-  onToggleRead: () => void
+  bookmark: Bookmark;
+  groups: ConvexGroup[];
+  onCopy: () => void;
+  onRename: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onMove: (groupId: Id<"groups">) => void;
+  onToggleRead: () => void;
+  onShowDescription?: () => void;
 }
 
 function KeyboardShortcut({ keys }: { keys: readonly string[] }) {
@@ -41,7 +47,7 @@ function KeyboardShortcut({ keys }: { keys: readonly string[] }) {
         </kbd>
       ))}
     </ContextMenuShortcut>
-  )
+  );
 }
 
 export function DesktopMenu({
@@ -49,9 +55,11 @@ export function DesktopMenu({
   groups,
   onCopy,
   onRename,
+  onEdit,
   onDelete,
   onMove,
   onToggleRead,
+  onShowDescription,
 }: DesktopMenuProps) {
   const otherGroups = useMemo(
     () =>
@@ -61,8 +69,8 @@ export function DesktopMenu({
           group,
           fallbackColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length],
         })),
-    [groups, bookmark.groupId]
-  )
+    [groups, bookmark.groupId],
+  );
 
   return (
     <ContextMenuContent className="w-56">
@@ -92,9 +100,23 @@ export function DesktopMenu({
         <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.rename} />
       </ContextMenuItem>
 
+      <ContextMenuItem onClick={onEdit}>
+        <Edit3 className="size-4 mr-2" />
+        Edit...
+        <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.edit} />
+      </ContextMenuItem>
+
+      {bookmark.description && onShowDescription && (
+        <ContextMenuItem onClick={onShowDescription}>
+          <Info className="size-4 mr-2" />
+          Description
+          <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.description} />
+        </ContextMenuItem>
+      )}
+
       <ContextMenuSub>
         <ContextMenuSubTrigger>
-          <ChevronsRightIcon className="size-4 mr-2" />
+          <ChevronsRight className="size-4 mr-2" />
           Move to
         </ContextMenuSubTrigger>
 
@@ -119,18 +141,20 @@ export function DesktopMenu({
         <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.delete} />
       </ContextMenuItem>
     </ContextMenuContent>
-  )
+  );
 }
 
 interface MobileMenuProps {
-  bookmark: Bookmark
-  groups: ConvexGroup[]
-  onCopy: () => void
-  onRename: () => void
-  onDelete: () => void
-  onMove: (groupId: Id<'groups'>) => void
-  onToggleRead: () => void
-  onClose: () => void
+  bookmark: Bookmark;
+  groups: ConvexGroup[];
+  onCopy: () => void;
+  onRename: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onMove: (groupId: Id<"groups">) => void;
+  onToggleRead: () => void;
+  onShowDescription?: () => void;
+  onClose: () => void;
 }
 
 export function MobileMenu({
@@ -138,9 +162,11 @@ export function MobileMenu({
   groups,
   onCopy,
   onRename,
+  onEdit,
   onDelete,
   onMove,
   onToggleRead,
+  onShowDescription,
   onClose,
 }: MobileMenuProps) {
   const otherGroups = useMemo(
@@ -151,16 +177,16 @@ export function MobileMenu({
           group,
           fallbackColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length],
         })),
-    [groups, bookmark.groupId]
-  )
+    [groups, bookmark.groupId],
+  );
 
   const handleAction = useCallback(
     (action: () => void) => {
-      action()
-      onClose()
+      action();
+      onClose();
     },
-    [onClose]
-  )
+    [onClose],
+  );
 
   return (
     <div className="w-56 py-1">
@@ -199,9 +225,27 @@ export function MobileMenu({
         Rename
       </button>
 
+      <button
+        onClick={() => handleAction(onEdit)}
+        className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
+      >
+        <Edit3 className="size-4 mr-2" />
+        Edit...
+      </button>
+
+      {bookmark.description && onShowDescription && (
+        <button
+          onClick={() => handleAction(onShowDescription)}
+          className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
+        >
+          <Info className="size-4 mr-2" />
+          Description
+        </button>
+      )}
+
       <div className="relative group">
         <button className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm">
-          <ChevronsRightIcon className="size-4 mr-2" />
+          <ChevronsRight className="size-4 mr-2" />
           Move to
         </button>
         <div className="absolute left-full top-0 ml-1 w-48 bg-popover border rounded-md shadow-lg py-1 hidden group-hover:block z-50">
@@ -233,5 +277,5 @@ export function MobileMenu({
         Delete
       </button>
     </div>
-  )
+  );
 }

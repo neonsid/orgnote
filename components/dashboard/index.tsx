@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
-import Loader2 from "lucide-react/dist/esm/icons/loader-2";
+import { useState, useCallback } from "react";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -19,12 +19,24 @@ import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { toast } from "sonner";
 
 const RenameBookmarkDialog = dynamic(
-  () => import("./rename-bookmark-dialog").then((m) => m.RenameBookmarkDialog),
+  () =>
+    import("./dialog/rename-bookmark-dialog").then(
+      (m) => m.RenameBookmarkDialog,
+    ),
+  { ssr: false },
+);
+
+const EditBookmarkDialog = dynamic(
+  () =>
+    import("./dialog/edit-bookmark-dialog").then((m) => m.EditBookmarkDialog),
   { ssr: false },
 );
 
 const DeleteBookmarkDialog = dynamic(
-  () => import("./delete-bookmark-dialog").then((m) => m.DeleteBookmarkDialog),
+  () =>
+    import("./dialog/delete-bookmark-dialog").then(
+      (m) => m.DeleteBookmarkDialog,
+    ),
   { ssr: false },
 );
 
@@ -37,21 +49,18 @@ export default function DashboardPage() {
   const { groups, bookmarks, effectiveGroupId, selectGroup, isLoading } =
     useDashboardData(userId);
 
-  // Use ref to track current group without causing re-renders
-  const effectiveGroupIdRef = useRef(effectiveGroupId);
-  useEffect(() => {
-    effectiveGroupIdRef.current = effectiveGroupId;
-  }, [effectiveGroupId]);
-
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
 
   // Dialog state from Zustand store
   const {
     renameBookmark,
+    editBookmark,
     deleteBookmark,
     openRenameDialog,
+    openEditBookmarkDialog,
     closeRenameDialog,
+    closeEditBookmarkDialog,
     openDeleteBookmarkDialog,
     closeDeleteBookmarkDialog,
   } = useDialogStore();
@@ -75,7 +84,7 @@ export default function DashboardPage() {
           : `https://${value}`
         : "#";
 
-      const currentGroupId = effectiveGroupIdRef.current;
+      const currentGroupId = effectiveGroupId;
       if (!currentGroupId) return;
 
       await createBookmark({
@@ -89,7 +98,7 @@ export default function DashboardPage() {
       });
       setDebouncedQuery("");
     },
-    [createBookmark, userId],
+    [createBookmark, effectiveGroupId, userId],
   );
 
   // Filter bookmarks client-side
@@ -121,6 +130,18 @@ export default function DashboardPage() {
       });
     },
     [openRenameDialog],
+  );
+
+  const handleEdit = useCallback(
+    (bookmark: Bookmark) => {
+      openEditBookmarkDialog(bookmark.id, {
+        id: bookmark.id,
+        title: bookmark.title,
+        url: bookmark.url,
+        description: bookmark.description,
+      });
+    },
+    [openEditBookmarkDialog],
   );
 
   const handleMove = useCallback(
@@ -224,6 +245,7 @@ export default function DashboardPage() {
           bookmarks={filteredBookmarks}
           onCopy={handleCopy}
           onRename={handleRename}
+          onEdit={handleEdit}
           onDelete={handleDelete}
           onMove={handleMove}
           onToggleRead={handleToggleRead}
@@ -234,6 +256,13 @@ export default function DashboardPage() {
         bookmark={renameBookmark.bookmarkData}
         open={renameBookmark.open}
         onOpenChange={closeRenameDialog}
+        userId={userId}
+      />
+
+      <EditBookmarkDialog
+        bookmark={editBookmark.bookmarkData}
+        open={editBookmark.open}
+        onOpenChange={closeEditBookmarkDialog}
         userId={userId}
       />
 

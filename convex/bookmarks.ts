@@ -151,34 +151,26 @@ export const getDashboardData = query({
       .order("desc")
       .collect();
 
-    // Fetch all bookmarks for all groups
-    const allBookmarks: Array<{
-      _id: string;
-      title: string;
-      url: string;
-      doneReading: boolean;
-      createdAt: number;
-      groupId: string;
-    }> = [];
+    // Fetch all bookmarks in parallel using Promise.all (removes N+1 query pattern)
+    const bookmarkLists = await Promise.all(
+      groups.map((group) =>
+        ctx.db
+          .query("bookmarks")
+          .withIndex("by_group_created", (q) => q.eq("groupId", group._id))
+          .order("desc")
+          .collect(),
+      ),
+    );
 
-    for (const group of groups) {
-      const groupBookmarks = await ctx.db
-        .query("bookmarks")
-        .withIndex("by_group_created", (q) => q.eq("groupId", group._id))
-        .order("desc")
-        .collect();
-
-      for (const bookmark of groupBookmarks) {
-        allBookmarks.push({
-          _id: bookmark._id,
-          title: bookmark.title,
-          url: bookmark.url,
-          doneReading: bookmark.doneReading,
-          createdAt: bookmark.createdAt,
-          groupId: bookmark.groupId,
-        });
-      }
-    }
+    const allBookmarks = bookmarkLists.flat().map((bookmark) => ({
+      _id: bookmark._id,
+      title: bookmark.title,
+      url: bookmark.url,
+      description: bookmark.description,
+      doneReading: bookmark.doneReading,
+      createdAt: bookmark.createdAt,
+      groupId: bookmark.groupId,
+    }));
 
     return {
       groups,
@@ -444,5 +436,51 @@ export const getPublicBookmarksByUsername = query({
     bookmarks.sort((a, b) => b.createdAt - a.createdAt);
 
     return bookmarks;
+  },
+});
+
+export const updateBookmarkDetails = mutation({
+  args: {
+    bookmarkId: v.id("bookmarks"),
+    title: v.optional(v.string()),
+    url: v.optional(v.string()),
+    description: v.optional(v.string()),
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    if (!args.userId) {
+      throw new Error("UserId is required");
+    }
+
+    // Verify ownership
+    await verifyBookmarkOwnership(ctx, args.bookmarkId, args.userId);
+
+    const updateData: {
+      title?: string;
+      url?: string;
+      description?: string;
+      updatedAt: number;
+    } = {
+      updatedAt: Date.now(),
+    };
+
+    if (args.title !== undefined) {
+      updateData.title = args.title;
+    }
+
+    if (args.url !== undefined) {
+      if (!isValidUrl(args.url)) {
+        throw new Error("Invalid URL format");
+      }
+      updateData.url = args.url;
+    }
+
+    if (args.description !== undefined) {
+      updateData.description = args.description;
+    }
+
+    await ctx.db.patch(args.bookmarkId, updateData);
+
+    return { success: true };
   },
 });

@@ -1,8 +1,10 @@
 export const KEYBOARD_SHORTCUTS = {
   open: ["⊞", "Enter"],
   copy: ["⌘", "C"],
-  rename: ["⌘", "E"],
+  rename: ["⌘", "R"],
+  edit: ["⌘", "E"],
   delete: ["⌘", "⌫"],
+  description: ["⌘", "I"],
 } as const;
 
 export const containerVariants = {

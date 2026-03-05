@@ -49,4 +49,16 @@ export default defineSchema({
   })
     .index("groupId", ["groupId"])
     .index("by_group_created", ["groupId", "createdAt"]),
+  // Track Skyra API usage per user per day (20 requests/day limit)
+  skyraUsage: defineTable({
+    userProvidedId: v.string(),
+    date: v.string(), // YYYY-MM-DD format
+    requestCount: v.number(),
+  }).index("by_user_date", ["userProvidedId", "date"]),
+  // Track Scira API usage per user per day (20 requests/day limit)
+  sciraUsage: defineTable({
+    userProvidedId: v.string(),
+    date: v.string(), // YYYY-MM-DD format
+    requestCount: v.number(),
+  }).index("by_user_date", ["userProvidedId", "date"]),
 });
