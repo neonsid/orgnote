@@ -1,7 +1,6 @@
 "use client";
 
-import Loader2 from "lucide-react/dist/esm/icons/loader-2";
-import Check from "lucide-react/dist/esm/icons/check";
+import { Loader2, Check } from "lucide-react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import {

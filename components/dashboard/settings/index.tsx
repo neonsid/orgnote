@@ -1,61 +1,61 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { useQuery } from 'convex/react'
-import { api } from '@/convex/_generated/api'
+import { useEffect, useState } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { ExportBookmarksDialog } from '@/components/dashboard/export-bookmarks-dialog'
-import { useHasPassword } from '@/hooks/use-has-password'
-import { useNameForm } from '@/hooks/use-name-form'
-import { usePublicProfileForm } from '@/hooks/use-public-profile-form'
-import { GeneralSettings } from './general-settings'
-import { PublicProfileSettings } from './public-profile-settings'
-import { toast } from 'sonner'
-import type { UserSettingsUser, SettingsTab } from './types'
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { ExportBookmarksDialog } from "@/components/dashboard/dialog";
+import { useHasPassword } from "@/hooks/use-has-password";
+import { useNameForm } from "@/hooks/use-name-form";
+import { usePublicProfileForm } from "@/hooks/use-public-profile-form";
+import { GeneralSettings } from "./general-settings";
+import { PublicProfileSettings } from "./public-profile-settings";
+import { toast } from "sonner";
+import type { UserSettingsUser, SettingsTab } from "./types";
 
 interface UserSettingsDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  user: UserSettingsUser
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  user: UserSettingsUser;
 }
 
 function SettingsTabs({
   activeTab,
   onTabChange,
 }: {
-  activeTab: SettingsTab
-  onTabChange: (tab: SettingsTab) => void
+  activeTab: SettingsTab;
+  onTabChange: (tab: SettingsTab) => void;
 }) {
   return (
     <div className="flex gap-2 p-1 bg-muted rounded-lg w-fit">
       <button
-        onClick={() => onTabChange('general')}
+        onClick={() => onTabChange("general")}
         className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-          activeTab === 'general'
-            ? 'bg-background text-foreground shadow-sm'
-            : 'text-muted-foreground hover:text-foreground'
+          activeTab === "general"
+            ? "bg-background text-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground"
         }`}
       >
         General
       </button>
       <button
-        onClick={() => onTabChange('public-profile')}
+        onClick={() => onTabChange("public-profile")}
         className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-          activeTab === 'public-profile'
-            ? 'bg-background text-foreground shadow-sm'
-            : 'text-muted-foreground hover:text-foreground'
+          activeTab === "public-profile"
+            ? "bg-background text-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground"
         }`}
       >
         Public Profile
       </button>
     </div>
-  )
+  );
 }
 
 export function UserSettingsDialog({
@@ -63,47 +63,47 @@ export function UserSettingsDialog({
   onOpenChange,
   user,
 }: UserSettingsDialogProps) {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('general')
-  const [isLoading, setIsLoading] = useState(false)
-  const [exportOpen, setExportOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<SettingsTab>("general");
+  const [isLoading, setIsLoading] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
-  const { data: hasPassword } = useHasPassword(open)
-  const existingProfile = useQuery(api.profile.getProfile, { userId: user.id })
+  const { data: hasPassword } = useHasPassword(open);
+  const existingProfile = useQuery(api.profile.getProfile, { userId: user.id });
 
-  const nameForm = useNameForm({ user })
+  const nameForm = useNameForm({ user });
   const profileForm = usePublicProfileForm({
     userId: user.id,
     existingProfile,
-  })
+  });
 
   // Reset name form when user prop changes
   useEffect(() => {
-    nameForm.setFieldValue('name', user.name)
-  }, [user.name, nameForm])
+    nameForm.setFieldValue("name", user.name);
+  }, [user.name, nameForm]);
 
   const handleClose = () => {
-    nameForm.reset()
-    profileForm.reset()
-    onOpenChange(false)
-  }
+    nameForm.reset();
+    profileForm.reset();
+    onOpenChange(false);
+  };
 
   const handleSave = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       // Submit name form
-      await nameForm.handleSubmit()
+      await nameForm.handleSubmit();
 
       // Submit profile form
-      await profileForm.handleSubmit()
+      await profileForm.handleSubmit();
 
-      toast.success('Profile saved successfully!')
-      handleClose()
+      toast.success("Profile saved successfully!");
+      handleClose();
     } catch {
-      toast.error('Failed to save settings')
+      toast.error("Failed to save settings");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -119,7 +119,7 @@ export function UserSettingsDialog({
           <SettingsTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
           <div className="mt-6">
-            {activeTab === 'general' && (
+            {activeTab === "general" && (
               <GeneralSettings
                 user={user}
                 nameForm={nameForm}
@@ -128,7 +128,7 @@ export function UserSettingsDialog({
               />
             )}
 
-            {activeTab === 'public-profile' && (
+            {activeTab === "public-profile" && (
               <PublicProfileSettings profileForm={profileForm} />
             )}
           </div>
@@ -139,7 +139,7 @@ export function UserSettingsDialog({
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={isLoading}>
-            {isLoading ? 'Saving…' : 'Save'}
+            {isLoading ? "Saving…" : "Save"}
           </Button>
         </div>
       </DialogContent>
@@ -150,5 +150,5 @@ export function UserSettingsDialog({
         userId={user.id}
       />
     </Dialog>
-  )
+  );
 }

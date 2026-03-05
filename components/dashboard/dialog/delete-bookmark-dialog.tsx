@@ -1,6 +1,5 @@
 "use client";
 
-import { useCallback } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { type Id } from "@/convex/_generated/dataModel";
@@ -33,14 +32,14 @@ export function DeleteBookmarkDialog({
 }: DeleteBookmarkDialogProps) {
   const deleteBookmark = useMutation(api.bookmarks.deleteBookMark);
 
-  const handleConfirm = useCallback(async () => {
+  async function handleConfirm() {
     if (!bookmark || !userId) return;
     await deleteBookmark({
       bookmarkId: bookmark.id as Id<"bookmarks">,
       userId,
     });
     onOpenChange(false);
-  }, [bookmark, deleteBookmark, onOpenChange, userId]);
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

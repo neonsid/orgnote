@@ -1,12 +1,7 @@
 "use client";
 
 import { useState, memo } from "react";
-import Check from "lucide-react/dist/esm/icons/check";
-import Plus from "lucide-react/dist/esm/icons/plus";
-import ChevronsUpDownIcon from "lucide-react/dist/esm/icons/chevrons-up-down";
-import Trash2Icon from "lucide-react/dist/esm/icons/trash-2";
-import Globe from "lucide-react/dist/esm/icons/globe";
-import Lock from "lucide-react/dist/esm/icons/lock";
+import { Check, Plus, ChevronsUpDown, Trash2, Globe, Lock } from "lucide-react";
 import { Popover as PopoverPrimitive } from "radix-ui";
 import { Id } from "@/convex/_generated/dataModel";
 import dynamic from "next/dynamic";
@@ -17,17 +12,13 @@ import { toast } from "sonner";
 
 const CreateGroupDialog = dynamic(
   () =>
-    import("@/components/dashboard/create-group-dialog").then(
-      (m) => m.CreateGroupDialog,
-    ),
+    import("@/components/dashboard/dialog").then((m) => m.CreateGroupDialog),
   { ssr: false },
 );
 
 const DeleteGroupDialog = dynamic(
   () =>
-    import("@/components/dashboard/delete-group-dialog").then(
-      (m) => m.DeleteGroupDialog,
-    ),
+    import("@/components/dashboard/dialog").then((m) => m.DeleteGroupDialog),
   { ssr: false },
 );
 
@@ -120,7 +111,7 @@ export const GroupSelector = memo(function GroupSelector({
                 : (selectedGroup?.title ??
                   (groups.length === 0 ? "No groups" : "Select Group"))}
             </span>
-            <ChevronsUpDownIcon
+            <ChevronsUpDown
               className={`size-4 text-muted-foreground transition-transform duration-200 shrink-0 ${open ? "rotate-180" : ""}`}
             />
           </button>
@@ -214,7 +205,7 @@ export const GroupSelector = memo(function GroupSelector({
                     }}
                     className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground transition-colors"
                   >
-                    <Trash2Icon className="size-4 text-destructive" />
+                    <Trash2 className="size-4 text-destructive" />
                     <span className="font-medium text-destructive">
                       Delete Group
                     </span>

@@ -1,7 +1,5 @@
 import { useState, memo } from "react";
-import CheckCircle2 from "lucide-react/dist/esm/icons/check-circle-2";
-import Circle from "lucide-react/dist/esm/icons/circle";
-import ListFilter from "lucide-react/dist/esm/icons/list-filter";
+import { CheckCircle2, Circle, ListFilter } from "lucide-react";
 import {
   Popover,
   PopoverContent,
