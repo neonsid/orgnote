@@ -15,6 +15,7 @@ interface Bookmark {
   createdAt: string;
   groupId: Id<"groups">;
   doneReading: boolean;
+  description?: string;
 }
 
 export function useDashboardData(userId: string) {
@@ -54,6 +55,7 @@ export function useDashboardData(userId: string) {
         createdAt: new Date(b.createdAt).toISOString().split("T")[0],
         groupId: b.groupId as Id<"groups">,
         doneReading: b.doneReading,
+        description: b.description,
       }));
   }, [dashboardData, effectiveGroupId]);
 

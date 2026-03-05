@@ -10,4 +10,5 @@ export interface Bookmark {
   createdAt: string;
   groupId: Id<"groups">;
   doneReading: boolean;
+  description?: string;
 }

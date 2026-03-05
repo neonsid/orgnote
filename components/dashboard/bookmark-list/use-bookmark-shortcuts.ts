@@ -4,11 +4,13 @@ import type { Bookmark } from "./types";
 interface UseBookmarkShortcutsOptions {
   onRename: (bookmark: Bookmark) => void;
   onDelete: (bookmark: Bookmark) => void;
+  onShowDescription?: (bookmark: Bookmark) => void;
 }
 
 export function useBookmarkShortcuts({
   onRename,
   onDelete,
+  onShowDescription,
 }: UseBookmarkShortcutsOptions) {
   const hoveredBookmarkRef = useRef<Bookmark | null>(null);
 
@@ -40,11 +42,17 @@ export function useBookmarkShortcuts({
           onDelete(hoveredBookmarkRef.current);
         }
       }
+      if ((e.metaKey || e.ctrlKey) && (e.key === "i" || e.key === "I")) {
+        e.preventDefault();
+        if (hoveredBookmarkRef.current && onShowDescription) {
+          onShowDescription(hoveredBookmarkRef.current);
+        }
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onRename, onDelete]);
+  }, [onRename, onDelete, onShowDescription]);
 
   return { hoveredBookmarkRef, setHoveredBookmark };
 }

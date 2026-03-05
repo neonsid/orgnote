@@ -6,12 +6,26 @@ interface BookmarkData {
   url: string;
 }
 
+interface EditBookmarkData {
+  id: string;
+  title: string;
+  url: string;
+  description?: string;
+}
+
 interface DialogState {
   // Rename bookmark dialog
   renameBookmark: {
     open: boolean;
     bookmarkId: string | null;
     bookmarkData: BookmarkData | null;
+  };
+
+  // Edit bookmark dialog
+  editBookmark: {
+    open: boolean;
+    bookmarkId: string | null;
+    bookmarkData: EditBookmarkData | null;
   };
 
   // Delete bookmark dialog
@@ -47,6 +61,12 @@ interface DialogState {
   openRenameDialog: (bookmarkId: string, bookmarkData: BookmarkData) => void;
   closeRenameDialog: () => void;
 
+  openEditBookmarkDialog: (
+    bookmarkId: string,
+    bookmarkData: EditBookmarkData,
+  ) => void;
+  closeEditBookmarkDialog: () => void;
+
   openDeleteBookmarkDialog: (
     bookmarkId: string,
     bookmarkData: BookmarkData,
@@ -70,6 +90,7 @@ interface DialogState {
 export const useDialogStore = create<DialogState>((set) => ({
   // Initial states
   renameBookmark: { open: false, bookmarkId: null, bookmarkData: null },
+  editBookmark: { open: false, bookmarkId: null, bookmarkData: null },
   deleteBookmark: { open: false, bookmarkId: null, bookmarkData: null },
   deleteGroup: { open: false, groupId: null },
   userSettings: { open: false, activeTab: "general" },
@@ -82,6 +103,16 @@ export const useDialogStore = create<DialogState>((set) => ({
   closeRenameDialog: () =>
     set({
       renameBookmark: { open: false, bookmarkId: null, bookmarkData: null },
+    }),
+
+  // Edit bookmark actions
+  openEditBookmarkDialog: (
+    bookmarkId: string,
+    bookmarkData: EditBookmarkData,
+  ) => set({ editBookmark: { open: true, bookmarkId, bookmarkData } }),
+  closeEditBookmarkDialog: () =>
+    set({
+      editBookmark: { open: false, bookmarkId: null, bookmarkData: null },
     }),
 
   // Delete bookmark actions

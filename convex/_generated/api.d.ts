@@ -11,6 +11,10 @@
 import type * as bookmarks from "../bookmarks.js";
 import type * as groups from "../groups.js";
 import type * as http from "../http.js";
+import type * as lib_scira from "../lib/scira.js";
+import type * as lib_url_classifier from "../lib/url_classifier.js";
+import type * as metadata from "../metadata.js";
+import type * as metadata_internal from "../metadata_internal.js";
 import type * as profile from "../profile.js";
 import type * as rate_limit from "../rate_limit.js";
 import type * as users from "../users.js";
@@ -25,6 +29,10 @@ declare const fullApi: ApiFromModules<{
   bookmarks: typeof bookmarks;
   groups: typeof groups;
   http: typeof http;
+  "lib/scira": typeof lib_scira;
+  "lib/url_classifier": typeof lib_url_classifier;
+  metadata: typeof metadata;
+  metadata_internal: typeof metadata_internal;
   profile: typeof profile;
   rate_limit: typeof rate_limit;
   users: typeof users;

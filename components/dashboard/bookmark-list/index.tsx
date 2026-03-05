@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, memo } from "react";
+import { useReducer, useRef, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useIsSmallMobile } from "@/hooks/use-mobile";
 import { BookmarkItem } from "./bookmark-item";
@@ -15,6 +15,7 @@ interface BookmarkListProps {
   loading: boolean;
   onCopy: (bookmark: Bookmark) => void;
   onRename: (bookmark: Bookmark) => void;
+  onEdit: (bookmark: Bookmark) => void;
   onDelete: (bookmark: Bookmark) => void;
   onMove: (bookmarkId: Id<"bookmarks">, newGroupId: Id<"groups">) => void;
   onToggleRead: (bookmarkId: Id<"bookmarks">) => void;
@@ -25,16 +26,53 @@ export const BookmarkList = memo(function BookmarkList({
   groups,
   onCopy,
   onRename,
+  onEdit,
   onDelete,
   onMove,
   onToggleRead,
   loading,
 }: BookmarkListProps) {
+  type ListState = {
+    openPopoverId: string | null;
+    showDescriptionId: string | null;
+  };
+
+  type ListAction =
+    | { type: "setOpenPopover"; id: string | null }
+    | { type: "showDescription"; id: string }
+    | { type: "clearDescription" };
+
+  function reducer(state: ListState, action: ListAction): ListState {
+    switch (action.type) {
+      case "setOpenPopover":
+        return { ...state, openPopoverId: action.id };
+      case "showDescription":
+        return { ...state, showDescriptionId: action.id };
+      case "clearDescription":
+        return { ...state, showDescriptionId: null };
+      default:
+        return state;
+    }
+  }
+
   const isSmallMobile = useIsSmallMobile();
-  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(reducer, {
+    openPopoverId: null,
+    showDescriptionId: null,
+  });
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
-  const { setHoveredBookmark } = useBookmarkShortcuts({ onRename, onDelete });
+  const { setHoveredBookmark } = useBookmarkShortcuts({
+    onRename,
+    onDelete,
+    onShowDescription: useCallback((bookmark: Bookmark) => {
+      if (bookmark.description) {
+        dispatch({ type: "showDescription", id: bookmark.id });
+        // Auto-hide after 3 seconds
+        setTimeout(() => dispatch({ type: "clearDescription" }), 3000);
+      }
+    }, []),
+  });
 
   const handleTouchStart = useCallback(
     (e: React.TouchEvent, id: string) => {
@@ -42,7 +80,7 @@ export const BookmarkList = memo(function BookmarkList({
 
       longPressTimer.current = setTimeout(() => {
         e.preventDefault();
-        setOpenPopoverId(id);
+        dispatch({ type: "setOpenPopover", id });
       }, 500);
     },
     [isSmallMobile],
@@ -101,9 +139,12 @@ export const BookmarkList = memo(function BookmarkList({
             bookmark={bookmark}
             groups={groups}
             isMobile={isSmallMobile}
-            isPopoverOpen={openPopoverId === bookmark.id}
+            isPopoverOpen={state.openPopoverId === bookmark.id}
             onPopoverOpenChange={(open) =>
-              setOpenPopoverId(open ? bookmark.id : null)
+              dispatch({
+                type: "setOpenPopover",
+                id: open ? bookmark.id : null,
+              })
             }
             onTouchStart={(e) => handleTouchStart(e, bookmark.id)}
             onTouchEnd={handleTouchEnd}
@@ -111,9 +152,17 @@ export const BookmarkList = memo(function BookmarkList({
             onMouseLeave={() => setHoveredBookmark(null)}
             onCopy={() => onCopy(bookmark)}
             onRename={() => onRename(bookmark)}
+            onEdit={() => onEdit(bookmark)}
             onDelete={() => onDelete(bookmark)}
             onMove={(groupId) => onMove(bookmark.id, groupId)}
             onToggleRead={() => onToggleRead(bookmark.id)}
+            onShowDescription={() => {
+              if (bookmark.description) {
+                dispatch({ type: "showDescription", id: bookmark.id });
+                setTimeout(() => dispatch({ type: "clearDescription" }), 3000);
+              }
+            }}
+            showDescription={state.showDescriptionId === bookmark.id}
           />
         ))}
       </AnimatePresence>
