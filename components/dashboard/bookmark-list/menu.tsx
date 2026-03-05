@@ -114,26 +114,31 @@ export function DesktopMenu({
         </ContextMenuItem>
       )}
 
-      <ContextMenuSub>
-        <ContextMenuSubTrigger>
-          <ChevronsRight className="size-4 mr-2" />
-          Move to
-        </ContextMenuSubTrigger>
+      {otherGroups.length > 0 && (
+        <ContextMenuSub>
+          <ContextMenuSubTrigger>
+            <ChevronsRight className="size-4 mr-2" />
+            Move to
+          </ContextMenuSubTrigger>
 
-        <ContextMenuSubContent className="w-48">
-          {otherGroups.map(({ group, fallbackColor }) => (
-            <ContextMenuItem key={group._id} onClick={() => onMove(group._id)}>
-              <span
-                className="size-2.5 rounded-full mr-2"
-                style={{
-                  backgroundColor: group.color || fallbackColor,
-                }}
-              />
-              {group.title}
-            </ContextMenuItem>
-          ))}
-        </ContextMenuSubContent>
-      </ContextMenuSub>
+          <ContextMenuSubContent className="w-48">
+            {otherGroups.map(({ group, fallbackColor }) => (
+              <ContextMenuItem
+                key={group._id}
+                onClick={() => onMove(group._id)}
+              >
+                <span
+                  className="size-2.5 rounded-full mr-2"
+                  style={{
+                    backgroundColor: group.color || fallbackColor,
+                  }}
+                />
+                {group.title}
+              </ContextMenuItem>
+            ))}
+          </ContextMenuSubContent>
+        </ContextMenuSub>
+      )}
 
       <ContextMenuItem variant="destructive" onClick={onDelete}>
         <Trash2 className="size-4 mr-2" />
@@ -243,29 +248,31 @@ export function MobileMenu({
         </button>
       )}
 
-      <div className="relative group">
-        <button className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm">
-          <ChevronsRight className="size-4 mr-2" />
-          Move to
-        </button>
-        <div className="absolute left-full top-0 ml-1 w-48 bg-popover border rounded-md shadow-lg py-1 hidden group-hover:block z-50">
-          {otherGroups.map(({ group, fallbackColor }) => (
-            <button
-              key={group._id}
-              onClick={() => handleAction(() => onMove(group._id))}
-              className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
-            >
-              <span
-                className="size-2.5 rounded-full mr-2"
-                style={{
-                  backgroundColor: group.color || fallbackColor,
-                }}
-              />
-              {group.title}
-            </button>
-          ))}
+      {otherGroups.length > 0 && (
+        <div className="relative group">
+          <button className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm">
+            <ChevronsRight className="size-4 mr-2" />
+            Move to
+          </button>
+          <div className="absolute left-full top-0 ml-1 w-48 bg-popover border rounded-md shadow-lg py-1 hidden group-hover:block z-50">
+            {otherGroups.map(({ group, fallbackColor }) => (
+              <button
+                key={group._id}
+                onClick={() => handleAction(() => onMove(group._id))}
+                className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
+              >
+                <span
+                  className="size-2.5 rounded-full mr-2"
+                  style={{
+                    backgroundColor: group.color || fallbackColor,
+                  }}
+                />
+                {group.title}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="h-px bg-border my-1" />
 
