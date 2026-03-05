@@ -1,23 +1,20 @@
 "use client";
 
 import { useState, useRef, useEffect, memo, useDeferredValue } from "react";
-import ChevronsUpDown from "lucide-react/dist/esm/icons/chevrons-up-down";
-import LogOut from "lucide-react/dist/esm/icons/log-out";
-import Settings from "lucide-react/dist/esm/icons/settings";
-import Keyboard from "lucide-react/dist/esm/icons/keyboard";
+import { ChevronsUpDown, LogOut, Settings, Keyboard, User } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useIsSmallMobile } from "@/hooks/use-mobile";
 import Image from "next/image";
 import { AnimatedThemeToggler } from "../ui/animated-theme-toggler";
-import UserIcon from "lucide-react/dist/esm/icons/user";
+
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
 const KeyboardShortcutsDialog = dynamic(
   () =>
-    import("@/components/dashboard/keyboard-shortcuts-dialog").then(
+    import("@/components/dashboard/dialog").then(
       (m) => m.KeyboardShortcutsDialog,
     ),
   { ssr: false },
@@ -157,7 +154,7 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
                   className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                 >
                   Public Profile
-                  <UserIcon className="size-4 text-muted-foreground" />
+                  <User className="size-4 text-muted-foreground" />
                 </button>
               )}
               <button

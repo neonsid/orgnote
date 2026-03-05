@@ -1,8 +1,7 @@
 "use client";
 
 import { memo, useState, useRef, useCallback, useEffect } from "react";
-import Plus from "lucide-react/dist/esm/icons/plus";
-import Command from "lucide-react/dist/esm/icons/command";
+import { Plus, Command } from "lucide-react";
 
 interface BookmarkSearchProps {
   /** Called with the debounced search query for filtering */

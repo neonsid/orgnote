@@ -7,14 +7,16 @@ import {
   ContextMenuSubTrigger,
   ContextMenuSubContent,
 } from "@/components/ui/context-menu";
-import Copy from "lucide-react/dist/esm/icons/copy";
-import Pencil from "lucide-react/dist/esm/icons/pencil";
-import Edit3 from "lucide-react/dist/esm/icons/edit-3";
-import Trash2 from "lucide-react/dist/esm/icons/trash-2";
-import ChevronsRightIcon from "lucide-react/dist/esm/icons/chevrons-right";
-import CheckCircle2 from "lucide-react/dist/esm/icons/check-circle-2";
-import Circle from "lucide-react/dist/esm/icons/circle";
-import Info from "lucide-react/dist/esm/icons/info";
+import {
+  Copy,
+  Pencil,
+  Edit3,
+  Trash2,
+  ChevronsRight,
+  CheckCircle2,
+  Circle,
+  Info,
+} from "lucide-react";
 import type { Bookmark } from "./types";
 import type { ConvexGroup } from "../group-selector";
 import { FALLBACK_COLORS } from "../group-selector";
@@ -114,7 +116,7 @@ export function DesktopMenu({
 
       <ContextMenuSub>
         <ContextMenuSubTrigger>
-          <ChevronsRightIcon className="size-4 mr-2" />
+          <ChevronsRight className="size-4 mr-2" />
           Move to
         </ContextMenuSubTrigger>
 
@@ -243,7 +245,7 @@ export function MobileMenu({
 
       <div className="relative group">
         <button className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm">
-          <ChevronsRightIcon className="size-4 mr-2" />
+          <ChevronsRight className="size-4 mr-2" />
           Move to
         </button>
         <div className="absolute left-full top-0 ml-1 w-48 bg-popover border rounded-md shadow-lg py-1 hidden group-hover:block z-50">

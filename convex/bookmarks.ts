@@ -151,36 +151,26 @@ export const getDashboardData = query({
       .order("desc")
       .collect();
 
-    // Fetch all bookmarks for all groups
-    const allBookmarks: Array<{
-      _id: string;
-      title: string;
-      url: string;
-      description?: string;
-      doneReading: boolean;
-      createdAt: number;
-      groupId: string;
-    }> = [];
+    // Fetch all bookmarks in parallel using Promise.all (removes N+1 query pattern)
+    const bookmarkLists = await Promise.all(
+      groups.map((group) =>
+        ctx.db
+          .query("bookmarks")
+          .withIndex("by_group_created", (q) => q.eq("groupId", group._id))
+          .order("desc")
+          .collect(),
+      ),
+    );
 
-    for (const group of groups) {
-      const groupBookmarks = await ctx.db
-        .query("bookmarks")
-        .withIndex("by_group_created", (q) => q.eq("groupId", group._id))
-        .order("desc")
-        .collect();
-
-      for (const bookmark of groupBookmarks) {
-        allBookmarks.push({
-          _id: bookmark._id,
-          title: bookmark.title,
-          url: bookmark.url,
-          description: bookmark.description,
-          doneReading: bookmark.doneReading,
-          createdAt: bookmark.createdAt,
-          groupId: bookmark.groupId,
-        });
-      }
-    }
+    const allBookmarks = bookmarkLists.flat().map((bookmark) => ({
+      _id: bookmark._id,
+      title: bookmark.title,
+      url: bookmark.url,
+      description: bookmark.description,
+      doneReading: bookmark.doneReading,
+      createdAt: bookmark.createdAt,
+      groupId: bookmark.groupId,
+    }));
 
     return {
       groups,
