@@ -1,6 +1,6 @@
-'use client'
+"use client";
 
-import { useReducer, useRef, useEffect, memo } from 'react'
+import { useReducer, useRef, useEffect, memo } from "react";
 import {
   ChevronsUpDown,
   LogOut,
@@ -8,79 +8,82 @@ import {
   Keyboard,
   User,
   Loader2,
-} from 'lucide-react'
-import { authClient } from '@/lib/auth-client'
-import { useRouter } from 'next/navigation'
-import dynamic from 'next/dynamic'
-import { useIsSmallMobile } from '@/hooks/use-mobile'
-import Image from 'next/image'
-import { AnimatedThemeToggler } from '../ui/animated-theme-toggler'
+} from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import { useIsSmallMobile } from "@/hooks/use-mobile";
+import Image from "next/image";
+import { AnimatedThemeToggler } from "../ui/animated-theme-toggler";
 
-import { useQuery } from 'convex/react'
-import { api } from '@/convex/_generated/api'
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 const KeyboardShortcutsDialog = dynamic(
   () =>
-    import('@/components/dashboard/dialog').then(
-      (m) => m.KeyboardShortcutsDialog
+    import("@/components/dashboard/dialog").then(
+      (m) => m.KeyboardShortcutsDialog,
     ),
-  { ssr: false }
-)
+  { ssr: false },
+);
 
 const UserSettingsDialog = dynamic(
   () =>
-    import('@/components/dashboard/settings').then((m) => m.UserSettingsDialog),
-  { ssr: false }
-)
+    import("@/components/dashboard/settings").then((m) => m.UserSettingsDialog),
+  { ssr: false },
+);
 
 interface UserInfoProps {
   user: {
-    id: string
-    name: string
-    email: string
-    image?: string | null
-  }
+    id: string;
+    name: string;
+    email: string;
+    image?: string | null;
+  };
 }
 
 export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
   type UserInfoState = {
-    open: boolean
-    shortcutsOpen: boolean
-    settingsOpen: boolean
-    isRedirecting: boolean
-    isSigningOut: boolean
-  }
+    open: boolean;
+    shortcutsOpen: boolean;
+    settingsOpen: boolean;
+    isRedirecting: boolean;
+    isSigningOut: boolean;
+  };
 
   type UserInfoAction =
-    | { type: 'toggleMenu' }
-    | { type: 'setMenuOpen'; open: boolean }
-    | { type: 'openShortcuts' }
-    | { type: 'setShortcutsOpen'; open: boolean }
-    | { type: 'openSettings' }
-    | { type: 'setSettingsOpen'; open: boolean }
-    | { type: 'setRedirecting'; redirecting: boolean }
+    | { type: "toggleMenu" }
+    | { type: "setMenuOpen"; open: boolean }
+    | { type: "openShortcuts" }
+    | { type: "setShortcutsOpen"; open: boolean }
+    | { type: "openSettings" }
+    | { type: "setSettingsOpen"; open: boolean }
+    | { type: "setRedirecting"; redirecting: boolean }
+    | { type: "setSigningOut"; signingOut: boolean };
 
   function reducer(
     state: UserInfoState,
-    action: UserInfoAction
+    action: UserInfoAction,
   ): UserInfoState {
     switch (action.type) {
-      case 'toggleMenu':
-        return { ...state, open: !state.open }
-      case 'setMenuOpen':
-        return { ...state, open: action.open, isRedirecting: false }
-      case 'openShortcuts':
-        return { ...state, open: false, shortcutsOpen: true }
-      case 'setShortcutsOpen':
-        return { ...state, shortcutsOpen: action.open }
-      case 'openSettings':
-        return { ...state, open: false, settingsOpen: true }
-      case 'setSettingsOpen':
-        return { ...state, settingsOpen: action.open }
-      case 'setRedirecting':
-        return { ...state, isRedirecting: action.redirecting }
+      case "toggleMenu":
+        return { ...state, open: !state.open };
+      case "setMenuOpen":
+        return { ...state, open: action.open, isRedirecting: false };
+      case "openShortcuts":
+        return { ...state, open: false, shortcutsOpen: true };
+      case "setShortcutsOpen":
+        return { ...state, shortcutsOpen: action.open };
+      case "openSettings":
+        return { ...state, open: false, settingsOpen: true };
+      case "setSettingsOpen":
+        return { ...state, settingsOpen: action.open };
+      case "setRedirecting":
+        return { ...state, isRedirecting: action.redirecting };
+      case "setSigningOut":
+        return { ...state, isSigningOut: action.signingOut };
       default:
-        return state
+        return state;
     }
   }
 
@@ -90,54 +93,54 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
     settingsOpen: false,
     isRedirecting: false,
     isSigningOut: false,
-  })
+  });
 
-  const containerRef = useRef<HTMLDivElement>(null)
-  const router = useRouter()
-  const isSmallMobile = useIsSmallMobile()
+  const containerRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const isSmallMobile = useIsSmallMobile();
 
-  const profile = useQuery(api.profile.getProfile, { userId: user.id })
-  const hasPublicProfile = profile?.isPublic && profile?.username
+  const profile = useQuery(api.profile.getProfile, { userId: user.id });
+  const hasPublicProfile = profile?.isPublic && profile?.username;
 
-  const initial = user.name?.charAt(0)?.toUpperCase() ?? 'U'
+  const initial = user.name?.charAt(0)?.toUpperCase() ?? "U";
 
-  const maxLen = 14
+  const maxLen = 14;
   const displayName =
-    user.name.length > maxLen ? user.name.slice(0, maxLen) + '…' : user.name
+    user.name.length > maxLen ? user.name.slice(0, maxLen) + "…" : user.name;
 
   useEffect(() => {
-    if (!state.open) return
+    if (!state.open) return;
 
     function handleClickOutside(e: MouseEvent) {
       if (
         containerRef.current &&
         !containerRef.current.contains(e.target as Node)
       ) {
-        dispatch({ type: 'setMenuOpen', open: false })
+        dispatch({ type: "setMenuOpen", open: false });
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [state.open])
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [state.open]);
 
-  const themeToggleRef = useRef<{ toggle: () => void }>(null)
+  const themeToggleRef = useRef<{ toggle: () => void }>(null);
 
   const handlePublicProfileClick = () => {
     if (profile?.username) {
-      dispatch({ type: 'setRedirecting', redirecting: true })
+      dispatch({ type: "setRedirecting", redirecting: true });
       window.setTimeout(() => {
-        router.push(`/u/${profile.username}`)
-      }, 150)
+        router.push(`/u/${profile.username}`);
+      }, 150);
     }
-  }
+  };
 
   return (
     <>
       <div ref={containerRef} className="relative">
         <button
           id="user-info-trigger"
-          onClick={() => dispatch({ type: 'toggleMenu' })}
+          onClick={() => dispatch({ type: "toggleMenu" })}
           className="inline-flex items-center gap-1.5 sm:gap-2 rounded-lg px-1.5 sm:px-2.5 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
         >
           {user.image ? (
@@ -179,7 +182,7 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
               )}
               <button
                 id="user-settings-button"
-                onClick={() => dispatch({ type: 'openSettings' })}
+                onClick={() => dispatch({ type: "openSettings" })}
                 className="flex w-full items-center justify-between  gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
               >
                 Settings
@@ -192,7 +195,7 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
                   disabled={state.isRedirecting}
                   className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors disabled:opacity-70 disabled:pointer-events-none"
                 >
-                  {state.isRedirecting ? 'Redirecting...' : 'Public Profile'}
+                  {state.isRedirecting ? "Redirecting..." : "Public Profile"}
                   {state.isRedirecting ? (
                     <Loader2 className="size-4 text-muted-foreground animate-spin" />
                   ) : (
@@ -202,7 +205,7 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
               )}
               <button
                 id="user-keyboard-shortcuts-button"
-                onClick={() => dispatch({ type: 'openShortcuts' })}
+                onClick={() => dispatch({ type: "openShortcuts" })}
                 className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
               >
                 Keyboard Shortcuts
@@ -211,19 +214,25 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
               <div className="my-1 h-px bg-border" />
               <button
                 id="user-signout-button"
-                onClick={() =>
+                disabled={state.isSigningOut}
+                onClick={() => {
+                  dispatch({ type: "setSigningOut", signingOut: true });
                   authClient.signOut({
                     fetchOptions: {
                       onSuccess: () => {
-                        window.location.href = '/'
+                        window.location.href = "/";
                       },
                     },
-                  })
-                }
+                  });
+                }}
                 className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors disabled:pointer-events-none disabled:opacity-70"
               >
-                Sign out
-                <LogOut className="size-4 text-muted-foreground" />
+                {state.isSigningOut ? "Signing out..." : "Sign out"}
+                {state.isSigningOut ? (
+                  <Loader2 className="size-4 text-muted-foreground animate-spin" />
+                ) : (
+                  <LogOut className="size-4 text-muted-foreground" />
+                )}
               </button>
             </div>
           </div>
@@ -233,16 +242,16 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
       {state.shortcutsOpen && (
         <KeyboardShortcutsDialog
           open={state.shortcutsOpen}
-          onOpenChange={(open) => dispatch({ type: 'setShortcutsOpen', open })}
+          onOpenChange={(open) => dispatch({ type: "setShortcutsOpen", open })}
         />
       )}
       {state.settingsOpen && (
         <UserSettingsDialog
           open={state.settingsOpen}
-          onOpenChange={(open) => dispatch({ type: 'setSettingsOpen', open })}
+          onOpenChange={(open) => dispatch({ type: "setSettingsOpen", open })}
           user={user}
         />
       )}
     </>
-  )
-})
+  );
+});
