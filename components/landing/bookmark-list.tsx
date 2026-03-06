@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import { useState, memo, useRef, useCallback, useMemo, useEffect } from 'react'
-import Image from 'next/image'
-import { motion, AnimatePresence } from 'motion/react'
+import { useState, memo, useRef, useCallback, useEffect, useMemo } from "react";
+import Image from "next/image";
+import { motion, AnimatePresence } from "motion/react";
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -12,66 +12,77 @@ import {
   ContextMenuSub,
   ContextMenuSubTrigger,
   ContextMenuSubContent,
-} from '@/components/ui/context-menu'
-import Copy from 'lucide-react/dist/esm/icons/copy'
-import { formatDate } from '@/components/dashboard/bookmark-list/constants'
-import Pencil from 'lucide-react/dist/esm/icons/pencil'
-import Trash2 from 'lucide-react/dist/esm/icons/trash-2'
-import ChevronsRightIcon from 'lucide-react/dist/esm/icons/chevrons-right'
-import { useIsSmallMobile } from '@/hooks/use-mobile'
+} from "@/components/ui/context-menu";
+import { Copy, Pencil, Trash2, ChevronsRight } from "lucide-react";
+import { formatDate } from "@/components/dashboard/bookmark-list/constants";
+import { useIsSmallMobile } from "@/hooks/use-mobile";
 
 export interface LandingBookmark {
-  id: string
-  title: string
-  domain: string
-  url: string
-  favicon: string | null
-  fallbackColor: string
-  createdAt: string
-  groupId: string
+  id: string;
+  title: string;
+  domain: string;
+  url: string;
+  favicon: string | null;
+  fallbackColor: string;
+  createdAt: string;
+  groupId: string;
 }
 
 export interface LandingGroup {
-  id: string
-  name: string
-  color: string
+  id: string;
+  name: string;
+  color: string;
 }
 
 interface LandingBookmarkListProps {
-  bookmarks: LandingBookmark[]
-  groups: LandingGroup[]
-  onCopy: (bookmark: LandingBookmark) => void
-  onRename: (bookmark: LandingBookmark) => void
-  onDelete: (bookmark: LandingBookmark) => void
-  onMove: (bookmarkId: string, newGroupId: string) => void
+  bookmarks: LandingBookmark[];
+  groups: LandingGroup[];
+  onCopy: (bookmark: LandingBookmark) => void;
+  onRename: (bookmark: LandingBookmark) => void;
+  onDelete: (bookmark: LandingBookmark) => void;
+  onMove: (bookmarkId: string, newGroupId: string) => void;
 }
 
 const KEYBOARD_SHORTCUTS = {
-  open: ['⌘', 'Enter'],
-  copy: ['⌘', 'C'],
-  rename: ['⌘', 'E'],
-  delete: ['⌘', '⌫'],
-}
+  open: ["⌘", "Enter"],
+  copy: ["⌘", "C"],
+  rename: ["⌘", "E"],
+  delete: ["⌘", "⌫"],
+};
 
 const FALLBACK_COLORS = [
-  '#f59e0b',
-  '#3b82f6',
-  '#10b981',
-  '#ef4444',
-  '#8b5cf6',
-  '#ec4899',
-  '#06b6d4',
-  '#f97316',
-]
+  "#f59e0b",
+  "#3b82f6",
+  "#10b981",
+  "#ef4444",
+  "#8b5cf6",
+  "#ec4899",
+  "#06b6d4",
+  "#f97316",
+];
 
-function FaviconIcon({ bookmark }: { bookmark: LandingBookmark }) {
-  const [imgError, setImgError] = useState(false)
+// ============================================================================
+// Memoized Favicon Icon - only re-renders when bookmark data changes
+// ============================================================================
 
-  if (bookmark.favicon && !imgError) {
+interface FaviconIconProps {
+  favicon: string | null;
+  fallbackColor: string;
+  title: string;
+}
+
+const FaviconIcon = memo(function FaviconIcon({
+  favicon,
+  fallbackColor,
+  title,
+}: FaviconIconProps) {
+  const [imgError, setImgError] = useState(false);
+
+  if (favicon && !imgError) {
     return (
       <div className="relative size-7 rounded-lg overflow-hidden shrink-0 border border-border bg-background">
         <Image
-          src={bookmark.favicon}
+          src={favicon}
           alt=""
           fill
           className="object-cover"
@@ -79,18 +90,22 @@ function FaviconIcon({ bookmark }: { bookmark: LandingBookmark }) {
           unoptimized
         />
       </div>
-    )
+    );
   }
 
   return (
     <div
       className="relative size-7 rounded-lg shrink-0 flex items-center justify-center text-white text-xs font-bold"
-      style={{ backgroundColor: bookmark.fallbackColor }}
+      style={{ backgroundColor: fallbackColor }}
     >
-      {bookmark.title.charAt(0).toUpperCase()}
+      {title.charAt(0).toUpperCase()}
     </div>
-  )
-}
+  );
+});
+
+// ============================================================================
+// Keyboard Shortcut Component
+// ============================================================================
 
 function KeyboardShortcut({ keys }: { keys: string[] }) {
   return (
@@ -104,38 +119,30 @@ function KeyboardShortcut({ keys }: { keys: string[] }) {
         </kbd>
       ))}
     </ContextMenuShortcut>
-  )
+  );
 }
+
+// ============================================================================
+// Memoized Menu Content - only re-renders when props change
+// ============================================================================
 
 interface MenuContentProps {
-  bookmark: LandingBookmark
-  groups: LandingGroup[]
-  onCopy: () => void
-  onRename: () => void
-  onDelete: () => void
-  onMove: (groupId: string) => void
+  bookmarkId: string;
+  bookmarkGroupId: string;
+  moveTargetGroups: Array<{ group: LandingGroup; fallbackColor: string }>;
+  onCopy: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+  onMove: (groupId: string) => void;
 }
 
-function MenuContent({
-  bookmark,
-  groups,
+const MenuContent = memo(function MenuContent({
+  moveTargetGroups,
   onCopy,
   onRename,
   onDelete,
   onMove,
 }: MenuContentProps) {
-  // Pre-filter groups for this bookmark
-  const otherGroups = useMemo(
-    () =>
-      groups
-        .filter((g) => g.id !== bookmark.groupId)
-        .map((group, i) => ({
-          group,
-          fallbackColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length],
-        })),
-    [groups, bookmark.groupId]
-  )
-
   return (
     <ContextMenuContent className="w-56">
       <ContextMenuItem onClick={onCopy}>
@@ -152,12 +159,12 @@ function MenuContent({
 
       <ContextMenuSub>
         <ContextMenuSubTrigger>
-          <ChevronsRightIcon className="size-4 mr-2" />
+          <ChevronsRight className="size-4 mr-2" />
           Move to
         </ContextMenuSubTrigger>
         <ContextMenuSubContent className="w-48">
-          {otherGroups.length > 0 ? (
-            otherGroups.map(({ group, fallbackColor }) => (
+          {moveTargetGroups.length > 0 ? (
+            moveTargetGroups.map(({ group, fallbackColor }) => (
               <ContextMenuItem key={group.id} onClick={() => onMove(group.id)}>
                 <span
                   className="size-2.5 rounded-full mr-2"
@@ -182,8 +189,165 @@ function MenuContent({
         <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.delete} />
       </ContextMenuItem>
     </ContextMenuContent>
-  )
+  );
+});
+
+// ============================================================================
+// Memoized Desktop Row - only re-renders when this bookmark's data changes
+// ============================================================================
+
+interface DesktopRowProps {
+  bookmark: LandingBookmark;
+  moveTargetGroups: Array<{ group: LandingGroup; fallbackColor: string }>;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+  onCopy: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+  onMove: (groupId: string) => void;
 }
+
+const DesktopRow = memo(function DesktopRow({
+  bookmark,
+  moveTargetGroups,
+  onMouseEnter,
+  onMouseLeave,
+  onCopy,
+  onRename,
+  onDelete,
+  onMove,
+}: DesktopRowProps) {
+  return (
+    <motion.div
+      key={bookmark.id}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.98 }}
+      transition={{ duration: 0.25 }}
+    >
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <a
+            href={bookmark.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+            className="flex items-center gap-3 py-2 px-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
+          >
+            <FaviconIcon
+              favicon={bookmark.favicon}
+              fallbackColor={bookmark.fallbackColor}
+              title={bookmark.title}
+            />
+
+            <div className="flex-1 min-w-0 flex items-baseline gap-2">
+              <span className="font-medium text-sm truncate group-hover:text-primary transition-colors text-foreground">
+                {bookmark.title}
+              </span>
+              <span className="text-xs text-muted-foreground truncate">
+                {bookmark.domain}
+              </span>
+            </div>
+
+            <span className="text-xs text-muted-foreground tabular-nums shrink-0 w-[72px] text-right group-hover:hidden">
+              {formatDate(bookmark.createdAt)}
+            </span>
+            <span className="text-xs text-muted-foreground tabular-nums shrink-0 w-[72px] text-right hidden group-hover:flex items-center justify-end gap-1">
+              {KEYBOARD_SHORTCUTS.open.map((key: string, index: number) => (
+                <kbd
+                  key={index}
+                  className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded bg-muted border border-border text-[10px] font-medium"
+                >
+                  {key}
+                </kbd>
+              ))}
+            </span>
+          </a>
+        </ContextMenuTrigger>
+        <MenuContent
+          bookmarkId={bookmark.id}
+          bookmarkGroupId={bookmark.groupId}
+          moveTargetGroups={moveTargetGroups}
+          onCopy={onCopy}
+          onRename={onRename}
+          onDelete={onDelete}
+          onMove={onMove}
+        />
+      </ContextMenu>
+    </motion.div>
+  );
+});
+
+// ============================================================================
+// Memoized Mobile Row - simplified for mobile
+// ============================================================================
+
+interface MobileRowProps {
+  bookmark: LandingBookmark;
+}
+
+const MobileRow = memo(function MobileRow({ bookmark }: MobileRowProps) {
+  return (
+    <motion.div
+      key={bookmark.id}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.98 }}
+      transition={{ duration: 0.25 }}
+    >
+      <a
+        href={bookmark.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 py-2 px-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
+      >
+        <FaviconIcon
+          favicon={bookmark.favicon}
+          fallbackColor={bookmark.fallbackColor}
+          title={bookmark.title}
+        />
+
+        <div className="flex-1 min-w-0 flex items-baseline gap-2">
+          <span className="font-medium text-sm truncate group-hover:text-primary transition-colors text-foreground">
+            {bookmark.title}
+          </span>
+          <span className="text-xs text-muted-foreground truncate hidden sm:inline">
+            {bookmark.domain}
+          </span>
+        </div>
+
+        <span className="text-xs text-muted-foreground tabular-nums shrink-0">
+          {formatDate(bookmark.createdAt)}
+        </span>
+      </a>
+    </motion.div>
+  );
+});
+
+// ============================================================================
+// Empty State Component
+// ============================================================================
+
+const EmptyState = memo(function EmptyState() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+      className="flex flex-col items-center justify-center py-12 text-muted-foreground"
+    >
+      <p className="text-sm font-medium">No bookmarks found</p>
+      <p className="text-xs mt-1">
+        Try a different search or press Enter to add
+      </p>
+    </motion.div>
+  );
+});
+
+// ============================================================================
+// Main Bookmark List - optimized with stable callbacks and memoized rows
+// ============================================================================
 
 export const LandingBookmarkList = memo(function LandingBookmarkList({
   bookmarks,
@@ -193,53 +357,61 @@ export const LandingBookmarkList = memo(function LandingBookmarkList({
   onDelete,
   onMove,
 }: LandingBookmarkListProps) {
-  const isSmallMobile = useIsSmallMobile()
-  const hoveredBookmarkRef = useRef<LandingBookmark | null>(null)
+  const isSmallMobile = useIsSmallMobile();
+  const hoveredBookmarkRef = useRef<LandingBookmark | null>(null);
 
+  // Stable keyboard handler using ref
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        e.preventDefault()
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        e.preventDefault();
         if (hoveredBookmarkRef.current) {
           window.open(
             hoveredBookmarkRef.current.url,
-            '_blank',
-            'noopener,noreferrer'
-          )
+            "_blank",
+            "noopener,noreferrer",
+          );
         }
       }
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'e' || e.key === 'E')) {
-        e.preventDefault()
+      if ((e.metaKey || e.ctrlKey) && (e.key === "e" || e.key === "E")) {
+        e.preventDefault();
         if (hoveredBookmarkRef.current) {
-          onRename(hoveredBookmarkRef.current)
+          onRename(hoveredBookmarkRef.current);
         }
       }
     },
-    [onRename]
-  )
+    [onRename],
+  );
 
   // Add keyboard listener
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.addEventListener('keydown', handleKeyDown, { passive: false })
-      return () => window.removeEventListener('keydown', handleKeyDown)
+    if (typeof window !== "undefined") {
+      window.addEventListener("keydown", handleKeyDown, { passive: false });
+      return () => window.removeEventListener("keydown", handleKeyDown);
     }
-  }, [handleKeyDown])
+  }, [handleKeyDown]);
+
+  // Precompute move targets once per group list
+  const moveTargetGroupsMap = useMemo(() => {
+    const map = new Map<string, Array<{ group: LandingGroup; fallbackColor: string }>>();
+    for (const bookmark of bookmarks) {
+      if (!map.has(bookmark.groupId)) {
+        map.set(
+          bookmark.groupId,
+          groups
+            .filter((g) => g.id !== bookmark.groupId)
+            .map((group, i) => ({
+              group,
+              fallbackColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length],
+            })),
+        );
+      }
+    }
+    return map;
+  }, [groups, bookmarks]);
 
   if (bookmarks.length === 0) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-        className="flex flex-col items-center justify-center py-12 text-muted-foreground"
-      >
-        <p className="text-sm font-medium">No bookmarks found</p>
-        <p className="text-xs mt-1">
-          Try a different search or press Enter to add
-        </p>
-      </motion.div>
-    )
+    return <EmptyState />;
   }
 
   return (
@@ -247,94 +419,22 @@ export const LandingBookmarkList = memo(function LandingBookmarkList({
       <AnimatePresence mode="popLayout" initial={false}>
         {bookmarks.map((bookmark) =>
           isSmallMobile ? (
-            <motion.div
-              key={bookmark.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.25 }}
-            >
-              <a
-                href={bookmark.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 py-2 px-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
-              >
-                <FaviconIcon bookmark={bookmark} />
-
-                <div className="flex-1 min-w-0 flex items-baseline gap-2">
-                  <span className="font-medium text-sm truncate group-hover:text-primary transition-colors text-foreground">
-                    {bookmark.title}
-                  </span>
-                  <span className="text-xs text-muted-foreground truncate hidden sm:inline">
-                    {bookmark.domain}
-                  </span>
-                </div>
-
-                <span className="text-xs text-muted-foreground tabular-nums shrink-0">
-                  {formatDate(bookmark.createdAt)}
-                </span>
-              </a>
-            </motion.div>
+            <MobileRow key={bookmark.id} bookmark={bookmark} />
           ) : (
-            <motion.div
+            <DesktopRow
               key={bookmark.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.25 }}
-            >
-              <ContextMenu>
-                <ContextMenuTrigger asChild>
-                  <a
-                    href={bookmark.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onMouseEnter={() => (hoveredBookmarkRef.current = bookmark)}
-                    onMouseLeave={() => (hoveredBookmarkRef.current = null)}
-                    className="flex items-center gap-3 py-2 px-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
-                  >
-                    <FaviconIcon bookmark={bookmark} />
-
-                    <div className="flex-1 min-w-0 flex items-baseline gap-2">
-                      <span className="font-medium text-sm truncate group-hover:text-primary transition-colors text-foreground">
-                        {bookmark.title}
-                      </span>
-                      <span className="text-xs text-muted-foreground truncate">
-                        {bookmark.domain}
-                      </span>
-                    </div>
-
-                    <span className="text-xs text-muted-foreground tabular-nums shrink-0 w-[72px] text-right group-hover:hidden">
-                      {formatDate(bookmark.createdAt)}
-                    </span>
-                    <span className="text-xs text-muted-foreground tabular-nums shrink-0 w-[72px] text-right hidden group-hover:flex items-center justify-end gap-1">
-                      {KEYBOARD_SHORTCUTS.open.map(
-                        (key: string, index: number) => (
-                          <kbd
-                            key={index}
-                            className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded bg-muted border border-border text-[10px] font-medium"
-                          >
-                            {key}
-                          </kbd>
-                        )
-                      )}
-                    </span>
-                  </a>
-                </ContextMenuTrigger>
-                <MenuContent
-                  bookmark={bookmark}
-                  groups={groups}
-                  onCopy={() => onCopy(bookmark)}
-                  onRename={() => onRename(bookmark)}
-                  onDelete={() => onDelete(bookmark)}
-                  onMove={(groupId: string) => onMove(bookmark.id, groupId)}
-                />
-              </ContextMenu>
-            </motion.div>
-          )
+              bookmark={bookmark}
+              moveTargetGroups={moveTargetGroupsMap.get(bookmark.groupId) || []}
+              onMouseEnter={() => (hoveredBookmarkRef.current = bookmark)}
+              onMouseLeave={() => (hoveredBookmarkRef.current = null)}
+              onCopy={() => onCopy(bookmark)}
+              onRename={() => onRename(bookmark)}
+              onDelete={() => onDelete(bookmark)}
+              onMove={(groupId) => onMove(bookmark.id, groupId)}
+            />
+          ),
         )}
       </AnimatePresence>
     </div>
-  )
-})
+  );
+});
