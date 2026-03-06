@@ -1,11 +1,19 @@
 import { httpRouter } from "convex/server";
+import { ConvexError } from "convex/values";
 import { httpAction, internalAction } from "./_generated/server";
-import { api, internal } from "./_generated/api";
+import { internal } from "./_generated/api";
 import { rateLimiter } from "./rate_limit";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 
 const http = httpRouter();
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Max-Age": "86400",
+};
 
 // Internal action with rate limiting for user sync
 export const syncUserWithRateLimit = internalAction({
@@ -21,22 +29,43 @@ export const syncUserWithRateLimit = internalAction({
     });
 
     if (!ok) {
-      throw new Error(`Rate limit exceeded. Try again after ${retryAfter}ms`);
+      throw new ConvexError({
+        code: "RATE_LIMITED",
+        message: `Rate limit exceeded. Try again after ${retryAfter}ms`,
+      });
     }
 
-    // Call the mutation to create or update user
-    const result = await ctx.runMutation(api.users.createOrUpdateUser, {
-      userProvidedId: args.userProvidedId,
-      name: args.name,
-      email: args.email,
-    });
+    // Call the internal mutation to create or update user
+    const result = await ctx.runMutation(
+      internal.users.createOrUpdateUser,
+      {
+        userProvidedId: args.userProvidedId,
+        name: args.name,
+        email: args.email,
+      },
+    );
 
     if (!result) {
-      throw new Error("Failed to create or update user");
+      throw new ConvexError({
+        code: "USER_SYNC_FAILED",
+        message: "Failed to create or update user",
+      });
     }
 
     return result;
   },
+});
+
+// CORS preflight handler for /sync-user
+http.route({
+  path: "/sync-user",
+  method: "OPTIONS",
+  handler: httpAction(async () => {
+    return new Response(null, {
+      status: 204,
+      headers: CORS_HEADERS,
+    });
+  }),
 });
 
 http.route({
@@ -50,7 +79,10 @@ http.route({
       if (!userProvidedId || !name || !email) {
         return new Response(
           JSON.stringify({ error: "Missing required fields" }),
-          { status: 400, headers: { "Content-Type": "application/json" } },
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+          },
         );
       }
 
@@ -59,7 +91,7 @@ http.route({
       if (!emailRegex.test(email)) {
         return new Response(JSON.stringify({ error: "Invalid email format" }), {
           status: 400,
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...CORS_HEADERS },
         });
       }
 
@@ -67,7 +99,7 @@ http.route({
       if (typeof userProvidedId !== "string" || userProvidedId.length < 1) {
         return new Response(JSON.stringify({ error: "Invalid user ID" }), {
           status: 400,
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...CORS_HEADERS },
         });
       }
 
@@ -80,7 +112,7 @@ http.route({
 
       return new Response(JSON.stringify({ success: true, userId: result }), {
         status: 200,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
       });
     } catch (error) {
       console.error("Error syncing user:", error);
@@ -91,13 +123,16 @@ http.route({
           JSON.stringify({
             error: "Too many requests. Please try again later.",
           }),
-          { status: 429, headers: { "Content-Type": "application/json" } },
+          {
+            status: 429,
+            headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+          },
         );
       }
 
       return new Response(JSON.stringify({ error: "Internal server error" }), {
         status: 500,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
       });
     }
   }),
