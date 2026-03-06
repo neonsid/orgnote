@@ -1,40 +1,52 @@
+'use client'
 import Link from 'next/link'
-import Image from 'next/image'
 
 const FOOTER_LINKS = [
-  { label: 'FAQ', href: '/faq' },
-  { label: 'Privacy Policy', href: '/privacy' },
-  { label: 'Terms of Service', href: '/terms' },
+  { label: 'Terms of Service', href: '/terms', external: false as const },
+  { label: 'Privacy Policy', href: '/privacy', external: false as const },
+  {
+    label: 'GitHub',
+    href: 'https://github.com/neonsid/orgnote',
+    external: true as const,
+  },
 ] as const
 
 export function Footer() {
   return (
     <footer className="w-full border-t border-border bg-background/80 backdrop-blur">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6 py-6">
-        {/* Brand */}
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Image
-            src="/logo.svg"
-            alt="Orgnote"
-            width={20}
-            height={20}
-            className="size-5 shrink-0 opacity-60"
-          />
-          <span className="text-sm">© {new Date().getFullYear()} Orgnote</span>
-        </div>
+      <div className="px-4 sm:px-6 py-8">
+        <div className="flex flex-col items-center gap-4">
+          {/* Links row */}
+          <nav className="flex items-center gap-6 sm:gap-10">
+            {FOOTER_LINKS.map((link) =>
+              link.external ? (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {link.label}
+                </a>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {link.label}
+                </Link>
+              )
+            )}
+          </nav>
 
-        {/* Links */}
-        <nav className="flex items-center gap-4 sm:gap-6">
-          {FOOTER_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+          {/* Copyright tagline */}
+          <p className="text-sm text-muted-foreground text-center">
+            © {new Date().getFullYear()} Orgnote – Save and organize your
+            bookmarks beautifully
+          </p>
+        </div>
       </div>
     </footer>
   )

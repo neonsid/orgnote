@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer, useRef, useCallback, memo } from "react";
+import { useReducer, useRef, useCallback, useEffect, memo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useIsSmallMobile } from "@/hooks/use-mobile";
 import { BookmarkItem } from "./bookmark-item";
@@ -74,12 +74,15 @@ export const BookmarkList = memo(function BookmarkList({
     }, []),
   });
 
+  const longPressTriggered = useRef(false);
+
   const handleTouchStart = useCallback(
     (e: React.TouchEvent, id: string) => {
       if (!isSmallMobile) return;
+      longPressTriggered.current = false;
 
       longPressTimer.current = setTimeout(() => {
-        e.preventDefault();
+        longPressTriggered.current = true;
         dispatch({ type: "setOpenPopover", id });
       }, 500);
     },
@@ -91,6 +94,34 @@ export const BookmarkList = memo(function BookmarkList({
       clearTimeout(longPressTimer.current);
     }
   }, []);
+
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      if (isSmallMobile) {
+        e.preventDefault();
+      }
+    },
+    [isSmallMobile],
+  );
+
+  // Auto-close mobile popover after 4 seconds
+  const autoCloseTimer = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    if (autoCloseTimer.current) {
+      clearTimeout(autoCloseTimer.current);
+      autoCloseTimer.current = null;
+    }
+    if (state.openPopoverId && isSmallMobile) {
+      autoCloseTimer.current = setTimeout(() => {
+        dispatch({ type: "setOpenPopover", id: null });
+      }, 4000);
+    }
+    return () => {
+      if (autoCloseTimer.current) {
+        clearTimeout(autoCloseTimer.current);
+      }
+    };
+  }, [state.openPopoverId, isSmallMobile]);
 
   if (loading && bookmarks.length === 0) {
     return (
@@ -148,6 +179,7 @@ export const BookmarkList = memo(function BookmarkList({
             }
             onTouchStart={(e) => handleTouchStart(e, bookmark.id)}
             onTouchEnd={handleTouchEnd}
+            onContextMenu={handleContextMenu}
             onMouseEnter={() => setHoveredBookmark(bookmark)}
             onMouseLeave={() => setHoveredBookmark(null)}
             onCopy={() => onCopy(bookmark)}

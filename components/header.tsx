@@ -1,18 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Image from 'next/image'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
 import { Button } from '@/components/ui/button'
 import { LoginDialog } from '@/components/login-dialog'
 import { SignupDialog } from '@/components/signup-dialog'
-import { Menu, X } from 'lucide-react'
+import { LogInIcon, Menu, UserIcon, X } from 'lucide-react'
 import Link from 'next/link'
 
 export function Header() {
   const [loginOpen, setLoginOpen] = useState(false)
   const [signupOpen, setSignupOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const themeToggleRef = useRef<{ toggle: () => void }>(null)
 
   return (
     <>
@@ -71,40 +72,53 @@ export function Header() {
 
         {/* Mobile menu panel */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-border bg-background/98 backdrop-blur animate-in slide-in-from-top-2 duration-200">
-            <div className="flex flex-col gap-2 px-4 py-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground font-medium">
-                  Theme
-                </span>
-                <div className="flex items-center justify-center rounded-md border border-input bg-background p-1.5 hover:bg-accent hover:text-accent-foreground">
-                  <AnimatedThemeToggler aria-label="Toggle theme" />
+          <>
+            {/* Overlay */}
+            <div
+              className="md:hidden fixed inset-0 top-14 z-30 bg-black/40"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            {/* Panel */}
+            <div className="md:hidden absolute top-14 left-0 right-0 z-40 border-b border-border bg-background shadow-lg animate-in slide-in-from-top-2 duration-200">
+              <div className="flex flex-col gap-1.5 p-3">
+                <div className="flex items-center justify-between">
+                  <button
+                    id="theme-changing-button"
+                    onClick={() => themeToggleRef.current?.toggle()}
+                    className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                  >
+                    <span>Theme</span>
+                    <AnimatedThemeToggler
+                      iconOnly
+                      triggerRef={themeToggleRef}
+                    />
+                  </button>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginOpen(true)
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors flex items-center justify-between"
+                >
+                  Login
+                  <LogInIcon className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSignupOpen(true)
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors flex items-center justify-between"
+                >
+                  Sign up
+                  <UserIcon className="size-4" />
+                </button>
               </div>
-              <div className="border-t border-border my-1" />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setLoginOpen(true)
-                  setMobileMenuOpen(false)
-                }}
-                className="justify-start font-medium text-sm h-10"
-              >
-                Login
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => {
-                  setSignupOpen(true)
-                  setMobileMenuOpen(false)
-                }}
-                className="font-medium text-sm h-10"
-              >
-                Sign up
-              </Button>
             </div>
-          </div>
+          </>
         )}
       </header>
 
