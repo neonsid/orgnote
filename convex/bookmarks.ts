@@ -1,54 +1,21 @@
 import { v } from "convex/values";
+import { ConvexError } from "convex/values";
+import { GenericQueryCtx } from "convex/server";
 import { mutation, query } from "./_generated/server";
-import { GenericMutationCtx, GenericQueryCtx } from "convex/server";
 import { DataModel, Id } from "./_generated/dataModel";
+import {
+  isValidUrl,
+  requireUserId,
+  verifyBookmarkOwnership,
+  verifyGroupOwnership,
+  fetchGroupBookmarks,
+  fetchGroupBookmarksByGroupId,
+  MAX_BOOKMARKS_PER_QUERY,
+} from "./bookmark_helpers";
 
-const MAX_URL_LENGTH = 2000;
-const ALLOWED_URL_PROTOCOLS = ["http:", "https:"];
-
-function isValidUrl(url: string): boolean {
-  if (!url || url.length > MAX_URL_LENGTH) return false;
-  try {
-    const parsed = new URL(url.startsWith("http") ? url : `https://${url}`);
-    return ALLOWED_URL_PROTOCOLS.includes(parsed.protocol);
-  } catch {
-    return false;
-  }
-}
-
-async function verifyBookmarkOwnership(
-  ctx: GenericMutationCtx<DataModel> | GenericQueryCtx<DataModel>,
-  bookmarkId: Id<"bookmarks">,
-  userId: string,
-): Promise<void> {
-  const bookmark = await ctx.db.get(bookmarkId);
-  if (!bookmark) {
-    throw new Error("Bookmark not found");
-  }
-
-  const group = await ctx.db.get(bookmark.groupId);
-  if (!group) {
-    throw new Error("Group not found");
-  }
-
-  if (group.userProvidedId !== userId) {
-    throw new Error("Forbidden: You don't own this bookmark");
-  }
-}
-
-async function verifyGroupOwnership(
-  ctx: GenericMutationCtx<DataModel> | GenericQueryCtx<DataModel>,
-  groupId: Id<"groups">,
-  userId: string,
-): Promise<void> {
-  const group = await ctx.db.get(groupId);
-  if (!group) {
-    throw new Error("Group not found");
-  }
-  if (group.userProvidedId !== userId) {
-    throw new Error("Forbidden: You don't own this group");
-  }
-}
+// ──────────────────────────────────────────────
+// Mutations
+// ──────────────────────────────────────────────
 
 export const createBookMark = mutation({
   args: {
@@ -60,17 +27,17 @@ export const createBookMark = mutation({
     doneReading: v.optional(v.boolean()),
     userId: v.string(),
   },
+  returns: v.id("bookmarks"),
   handler: async (ctx, args) => {
-    if (!args.userId) {
-      throw new Error("UserId is required");
-    }
+    await requireUserId(args.userId);
+    // TODO: Replace userId arg with ctx.auth.getUserIdentity() when Convex auth is configured
 
     if (!args.groupId) {
-      throw new Error("GroupId not found");
+      throw new ConvexError({ code: "INVALID_ARGS", message: "GroupId not found" });
     }
 
     if (!isValidUrl(args.url)) {
-      throw new Error("Invalid URL format");
+      throw new ConvexError({ code: "INVALID_ARGS", message: "Invalid URL format" });
     }
 
     await verifyGroupOwnership(ctx, args.groupId, args.userId);
@@ -89,20 +56,157 @@ export const createBookMark = mutation({
   },
 });
 
+export const deleteBookMark = mutation({
+  args: { bookmarkId: v.id("bookmarks"), userId: v.string() },
+  returns: v.object({ success: v.boolean(), deletedId: v.id("bookmarks") }),
+  handler: async (ctx, args) => {
+    await requireUserId(args.userId);
+
+    await verifyBookmarkOwnership(ctx, args.bookmarkId, args.userId);
+
+    await ctx.db.delete(args.bookmarkId);
+    return { success: true, deletedId: args.bookmarkId };
+  },
+});
+
+export const renameBookMark = mutation({
+  args: {
+    bookmarkId: v.id("bookmarks"),
+    title: v.string(),
+    userId: v.string(),
+  },
+  returns: v.object({ success: v.boolean() }),
+  handler: async (ctx, args) => {
+    await requireUserId(args.userId);
+
+    await verifyBookmarkOwnership(ctx, args.bookmarkId, args.userId);
+
+    await ctx.db.patch(args.bookmarkId, {
+      title: args.title,
+      updatedAt: Date.now(),
+    });
+    return { success: true };
+  },
+});
+
+export const markAsDone = mutation({
+  args: { bookmarkId: v.id("bookmarks"), userId: v.string() },
+  returns: v.object({ success: v.boolean() }),
+  handler: async (ctx, args) => {
+    await requireUserId(args.userId);
+
+    await verifyBookmarkOwnership(ctx, args.bookmarkId, args.userId);
+
+    await ctx.db.patch(args.bookmarkId, {
+      doneReading: true,
+      updatedAt: Date.now(),
+    });
+    return { success: true };
+  },
+});
+
+export const toggleReadStatus = mutation({
+  args: { bookmarkId: v.id("bookmarks"), userId: v.string() },
+  returns: v.object({ success: v.boolean(), doneReading: v.boolean() }),
+  handler: async (ctx, args) => {
+    await requireUserId(args.userId);
+
+    const bookmark = await ctx.db.get(args.bookmarkId);
+    if (!bookmark) {
+      throw new ConvexError({ code: "NOT_FOUND", message: "Bookmark not found" });
+    }
+
+    await verifyBookmarkOwnership(ctx, args.bookmarkId, args.userId);
+
+    const newDoneReading = !bookmark.doneReading;
+    await ctx.db.patch(args.bookmarkId, {
+      doneReading: newDoneReading,
+      updatedAt: Date.now(),
+    });
+    return { success: true, doneReading: newDoneReading };
+  },
+});
+
+export const moveBookMark = mutation({
+  args: {
+    bookmarkId: v.id("bookmarks"),
+    groupId: v.id("groups"),
+    userId: v.string(),
+  },
+  returns: v.object({ success: v.boolean() }),
+  handler: async (ctx, args) => {
+    await requireUserId(args.userId);
+
+    await Promise.all([
+      verifyBookmarkOwnership(ctx, args.bookmarkId, args.userId),
+      verifyGroupOwnership(ctx, args.groupId, args.userId),
+    ]);
+
+    await ctx.db.patch(args.bookmarkId, {
+      groupId: args.groupId,
+      updatedAt: Date.now(),
+    });
+    return { success: true };
+  },
+});
+
+export const updateBookmarkDetails = mutation({
+  args: {
+    bookmarkId: v.id("bookmarks"),
+    title: v.optional(v.string()),
+    url: v.optional(v.string()),
+    description: v.optional(v.string()),
+    userId: v.string(),
+  },
+  returns: v.object({ success: v.boolean() }),
+  handler: async (ctx, args) => {
+    await requireUserId(args.userId);
+
+    // Verify ownership
+    await verifyBookmarkOwnership(ctx, args.bookmarkId, args.userId);
+
+    const updateData: {
+      title?: string;
+      url?: string;
+      description?: string;
+      updatedAt: number;
+    } = {
+      updatedAt: Date.now(),
+    };
+
+    if (args.title !== undefined) {
+      updateData.title = args.title;
+    }
+
+    if (args.url !== undefined) {
+      if (!isValidUrl(args.url)) {
+        throw new ConvexError({ code: "INVALID_ARGS", message: "Invalid URL format" });
+      }
+      updateData.url = args.url;
+    }
+
+    if (args.description !== undefined) {
+      updateData.description = args.description;
+    }
+
+    await ctx.db.patch(args.bookmarkId, updateData);
+
+    return { success: true };
+  },
+});
+
+// ──────────────────────────────────────────────
+// Queries
+// ──────────────────────────────────────────────
+
 export const listBookMarks = query({
   args: { groupId: v.id("groups"), userId: v.string() },
   handler: async (ctx, args) => {
-    if (!args.userId) {
-      throw new Error("UserId is required");
-    }
+    await requireUserId(args.userId);
 
     await verifyGroupOwnership(ctx, args.groupId, args.userId);
 
-    return await ctx.db
-      .query("bookmarks")
-      .withIndex("by_group_created", (q) => q.eq("groupId", args.groupId))
-      .order("desc")
-      .collect();
+    return await fetchGroupBookmarks(ctx, args.groupId);
   },
 });
 
@@ -110,17 +214,11 @@ export const listBookMarks = query({
 export const listBookmarksMinimal = query({
   args: { groupId: v.id("groups"), userId: v.string() },
   handler: async (ctx, args) => {
-    if (!args.userId) {
-      throw new Error("UserId is required");
-    }
+    await requireUserId(args.userId);
 
     await verifyGroupOwnership(ctx, args.groupId, args.userId);
 
-    const bookmarks = await ctx.db
-      .query("bookmarks")
-      .withIndex("by_group_created", (q) => q.eq("groupId", args.groupId))
-      .order("desc")
-      .collect();
+    const bookmarks = await fetchGroupBookmarks(ctx, args.groupId);
 
     // Return only fields needed for list view
     return bookmarks.map((b) => ({
@@ -138,28 +236,20 @@ export const listBookmarksMinimal = query({
 export const getDashboardData = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
-    if (!args.userId) {
-      throw new Error("UserId is required");
-    }
+    await requireUserId(args.userId);
 
-    // Fetch all groups for user
+    // Fetch all groups for user (using compound index prefix query)
     const groups = await ctx.db
       .query("groups")
-      .withIndex("by_user_provided_id", (q) =>
+      .withIndex("by_userProvidedId_and_isPublic", (q) =>
         q.eq("userProvidedId", args.userId),
       )
       .order("desc")
-      .collect();
+      .take(MAX_BOOKMARKS_PER_QUERY);
 
     // Fetch all bookmarks in parallel using Promise.all (removes N+1 query pattern)
     const bookmarkLists = await Promise.all(
-      groups.map((group) =>
-        ctx.db
-          .query("bookmarks")
-          .withIndex("by_group_created", (q) => q.eq("groupId", group._id))
-          .order("desc")
-          .collect(),
-      ),
+      groups.map((group) => fetchGroupBookmarks(ctx, group._id)),
     );
 
     const allBookmarks = bookmarkLists.flat().map((bookmark) => ({
@@ -182,9 +272,7 @@ export const getDashboardData = query({
 export const getBookmarksByGroupIds = query({
   args: { groupIds: v.array(v.id("groups")), userId: v.string() },
   handler: async (ctx, args) => {
-    if (!args.userId) {
-      throw new Error("UserId is required");
-    }
+    await requireUserId(args.userId);
 
     const bookmarks: Array<{
       _id: string;
@@ -203,10 +291,7 @@ export const getBookmarksByGroupIds = query({
     for (const groupId of args.groupIds) {
       await verifyGroupOwnership(ctx, groupId, args.userId);
 
-      const groupBookmarks = await ctx.db
-        .query("bookmarks")
-        .withIndex("groupId", (q) => q.eq("groupId", groupId))
-        .collect();
+      const groupBookmarks = await fetchGroupBookmarksByGroupId(ctx, groupId);
       const group = await ctx.db.get(groupId);
       for (const bookmark of groupBookmarks) {
         bookmarks.push({
@@ -224,119 +309,17 @@ export const getBookmarkCountsByUser = query({
   handler: async (ctx, args) => {
     const groups = await ctx.db
       .query("groups")
-      .withIndex("by_user_provided_id", (q) =>
+      .withIndex("by_userProvidedId_and_isPublic", (q) =>
         q.eq("userProvidedId", args.userId),
       )
-      .collect();
+      .take(MAX_BOOKMARKS_PER_QUERY);
 
     const counts: Record<string, number> = {};
     for (const group of groups) {
-      const groupBookmarks = await ctx.db
-        .query("bookmarks")
-        .withIndex("groupId", (q) => q.eq("groupId", group._id))
-        .collect();
+      const groupBookmarks = await fetchGroupBookmarksByGroupId(ctx, group._id);
       counts[group._id] = groupBookmarks.length;
     }
     return counts;
-  },
-});
-
-export const deleteBookMark = mutation({
-  args: { bookmarkId: v.id("bookmarks"), userId: v.string() },
-  handler: async (ctx, args) => {
-    if (!args.userId) {
-      throw new Error("UserId is required");
-    }
-
-    await verifyBookmarkOwnership(ctx, args.bookmarkId, args.userId);
-
-    await ctx.db.delete(args.bookmarkId);
-    return { success: true, deletedId: args.bookmarkId };
-  },
-});
-
-export const renameBookMark = mutation({
-  args: {
-    bookmarkId: v.id("bookmarks"),
-    title: v.string(),
-    userId: v.string(),
-  },
-  handler: async (ctx, args) => {
-    if (!args.userId) {
-      throw new Error("UserId is required");
-    }
-
-    await verifyBookmarkOwnership(ctx, args.bookmarkId, args.userId);
-
-    await ctx.db.patch(args.bookmarkId, {
-      title: args.title,
-      updatedAt: Date.now(),
-    });
-    return { success: true };
-  },
-});
-
-export const markAsDone = mutation({
-  args: { bookmarkId: v.id("bookmarks"), userId: v.string() },
-  handler: async (ctx, args) => {
-    if (!args.userId) {
-      throw new Error("UserId is required");
-    }
-
-    await verifyBookmarkOwnership(ctx, args.bookmarkId, args.userId);
-
-    await ctx.db.patch(args.bookmarkId, {
-      doneReading: true,
-      updatedAt: Date.now(),
-    });
-    return { success: true };
-  },
-});
-
-export const toggleReadStatus = mutation({
-  args: { bookmarkId: v.id("bookmarks"), userId: v.string() },
-  handler: async (ctx, args) => {
-    if (!args.userId) {
-      throw new Error("UserId is required");
-    }
-
-    const bookmark = await ctx.db.get(args.bookmarkId);
-    if (!bookmark) {
-      throw new Error("Bookmark not found");
-    }
-
-    await verifyBookmarkOwnership(ctx, args.bookmarkId, args.userId);
-
-    const newDoneReading = !bookmark.doneReading;
-    await ctx.db.patch(args.bookmarkId, {
-      doneReading: newDoneReading,
-      updatedAt: Date.now(),
-    });
-    return { success: true, doneReading: newDoneReading };
-  },
-});
-
-export const moveBookMark = mutation({
-  args: {
-    bookmarkId: v.id("bookmarks"),
-    groupId: v.id("groups"),
-    userId: v.string(),
-  },
-  handler: async (ctx, args) => {
-    if (!args.userId) {
-      throw new Error("UserId is required");
-    }
-
-    await Promise.all([
-      verifyBookmarkOwnership(ctx, args.bookmarkId, args.userId),
-      verifyGroupOwnership(ctx, args.groupId, args.userId),
-    ]);
-
-    await ctx.db.patch(args.bookmarkId, {
-      groupId: args.groupId,
-      updatedAt: Date.now(),
-    });
-    return { success: true };
   },
 });
 
@@ -345,17 +328,14 @@ export const getAllUserBookmarks = query({
   handler: async (ctx, args) => {
     const groups = await ctx.db
       .query("groups")
-      .withIndex("by_user_provided_id", (q) =>
+      .withIndex("by_userProvidedId_and_isPublic", (q) =>
         q.eq("userProvidedId", args.userId),
       )
-      .collect();
+      .take(MAX_BOOKMARKS_PER_QUERY);
 
     const groupBookmarks = await Promise.all(
       groups.map(async (group) => {
-        const bookmarks = await ctx.db
-          .query("bookmarks")
-          .withIndex("groupId", (q) => q.eq("groupId", group._id))
-          .collect();
+        const bookmarks = await fetchGroupBookmarksByGroupId(ctx, group._id);
 
         return bookmarks.map((bookmark) => ({
           _id: bookmark._id,
@@ -375,6 +355,47 @@ export const getAllUserBookmarks = query({
   },
 });
 
+/** Build public bookmark list for a given set of groups */
+async function buildPublicBookmarkList(
+  ctx: GenericQueryCtx<DataModel>,
+  groups: Array<{ _id: Id<"groups">; title: string; color: string }>,
+) {
+  const bookmarks: {
+    _id: string;
+    title: string;
+    url: string;
+    description?: string;
+    imageUrl: string;
+    doneReading: boolean;
+    createdAt: number;
+    groupId: string;
+    groupTitle: string;
+    groupColor: string;
+  }[] = [];
+
+  for (const group of groups) {
+    const groupBookmarks = await fetchGroupBookmarksByGroupId(ctx, group._id);
+
+    for (const bookmark of groupBookmarks) {
+      bookmarks.push({
+        _id: bookmark._id,
+        title: bookmark.title,
+        url: bookmark.url,
+        description: bookmark.description,
+        imageUrl: bookmark.imageUrl,
+        doneReading: bookmark.doneReading,
+        createdAt: bookmark.createdAt,
+        groupId: group._id,
+        groupTitle: group.title,
+        groupColor: group.color,
+      });
+    }
+  }
+
+  bookmarks.sort((a, b) => b.createdAt - a.createdAt);
+  return bookmarks;
+}
+
 export const getPublicBookmarksByUsername = query({
   args: { username: v.string() },
   handler: async (ctx, args) => {
@@ -385,7 +406,7 @@ export const getPublicBookmarksByUsername = query({
     const profile = await ctx.db
       .query("userProfile")
       .withIndex("by_username", (q) => q.eq("username", args.username))
-      .first();
+      .unique();
 
     if (!profile || !profile.isPublic) {
       return [];
@@ -393,94 +414,11 @@ export const getPublicBookmarksByUsername = query({
 
     const groups = await ctx.db
       .query("groups")
-      .withIndex("by_user_public", (q) =>
+      .withIndex("by_userProvidedId_and_isPublic", (q) =>
         q.eq("userProvidedId", profile.userProvidedId).eq("isPublic", true),
       )
-      .collect();
+      .take(MAX_BOOKMARKS_PER_QUERY);
 
-    const bookmarks: {
-      _id: string;
-      title: string;
-      url: string;
-      description?: string;
-      imageUrl: string;
-      doneReading: boolean;
-      createdAt: number;
-      groupId: string;
-      groupTitle: string;
-      groupColor: string;
-    }[] = [];
-
-    for (const group of groups) {
-      const groupBookmarks = await ctx.db
-        .query("bookmarks")
-        .withIndex("groupId", (q) => q.eq("groupId", group._id))
-        .collect();
-
-      for (const bookmark of groupBookmarks) {
-        bookmarks.push({
-          _id: bookmark._id,
-          title: bookmark.title,
-          url: bookmark.url,
-          description: bookmark.description,
-          imageUrl: bookmark.imageUrl,
-          doneReading: bookmark.doneReading,
-          createdAt: bookmark.createdAt,
-          groupId: group._id,
-          groupTitle: group.title,
-          groupColor: group.color,
-        });
-      }
-    }
-
-    bookmarks.sort((a, b) => b.createdAt - a.createdAt);
-
-    return bookmarks;
-  },
-});
-
-export const updateBookmarkDetails = mutation({
-  args: {
-    bookmarkId: v.id("bookmarks"),
-    title: v.optional(v.string()),
-    url: v.optional(v.string()),
-    description: v.optional(v.string()),
-    userId: v.string(),
-  },
-  handler: async (ctx, args) => {
-    if (!args.userId) {
-      throw new Error("UserId is required");
-    }
-
-    // Verify ownership
-    await verifyBookmarkOwnership(ctx, args.bookmarkId, args.userId);
-
-    const updateData: {
-      title?: string;
-      url?: string;
-      description?: string;
-      updatedAt: number;
-    } = {
-      updatedAt: Date.now(),
-    };
-
-    if (args.title !== undefined) {
-      updateData.title = args.title;
-    }
-
-    if (args.url !== undefined) {
-      if (!isValidUrl(args.url)) {
-        throw new Error("Invalid URL format");
-      }
-      updateData.url = args.url;
-    }
-
-    if (args.description !== undefined) {
-      updateData.description = args.description;
-    }
-
-    await ctx.db.patch(args.bookmarkId, updateData);
-
-    return { success: true };
+    return await buildPublicBookmarkList(ctx, groups);
   },
 });

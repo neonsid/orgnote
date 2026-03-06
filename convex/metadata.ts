@@ -195,10 +195,12 @@ export const generateBookmarkDescription = action({
 
       if (urlType === 'twitter') {
         // Check Scira quota using internal query
+        const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD — safe in action
         const quotaResult = await ctx.runQuery(
           internal.metadata_internal.checkSciraQuotaInternal,
           {
             userId: args.userId,
+            today,
           }
         )
 
