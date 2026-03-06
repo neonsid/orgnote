@@ -1,22 +1,22 @@
-'use client'
+"use client";
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { type LandingBookmark } from '@/components/landing/bookmark-list'
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { type LandingBookmark } from "@/components/landing/bookmark-list";
 
 interface LandingRenameBookmarkDialogProps {
-  bookmark: LandingBookmark | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onConfirm: (bookmarkId: string, newTitle: string) => void
+  bookmark: LandingBookmark | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: (bookmarkId: string, newTitle: string) => void;
 }
 
 export function LandingRenameBookmarkDialog({
@@ -25,45 +25,62 @@ export function LandingRenameBookmarkDialog({
   onOpenChange,
   onConfirm,
 }: LandingRenameBookmarkDialogProps) {
-  const [newTitle, setNewTitle] = useState(() => bookmark?.title ?? '')
+  // Key-based reset - when bookmark changes, input resets via key prop
+  const [editedTitle, setEditedTitle] = useState(bookmark?.title ?? "");
 
-  // Sync the input when a new bookmark is selected
-  useEffect(() => {
-    if (bookmark) {
-      // Use requestAnimationFrame to avoid setState during render warning
-      requestAnimationFrame(() => {
-        setNewTitle(bookmark.title)
-      })
+  // Sync state when bookmark changes or dialog opens
+  const currentTitle = bookmark?.title ?? "";
+  const displayValue = editedTitle !== currentTitle && !open
+    ? currentTitle
+    : editedTitle;
+
+  const handleConfirm = () => {
+    if (!bookmark?.id || !displayValue.trim()) return;
+    onConfirm(bookmark.id, displayValue.trim());
+    onOpenChange(false);
+  };
+
+  const handleCancel = () => {
+    onOpenChange(false);
+    setEditedTitle(currentTitle);
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      setEditedTitle(currentTitle);
+    } else {
+      setEditedTitle(currentTitle);
     }
-  }, [bookmark])
+    onOpenChange(newOpen);
+  };
 
-  const handleConfirm = useCallback(() => {
-    if (!bookmark || !newTitle.trim()) return
-    onConfirm(bookmark.id, newTitle.trim())
-    onOpenChange(false)
-  }, [bookmark, newTitle, onConfirm, onOpenChange])
+  // Don't render when closed and no bookmark
+  if (!open && !bookmark) {
+    return null;
+  }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Rename Bookmark</DialogTitle>
         </DialogHeader>
         <div className="py-4">
           <Input
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
+            value={displayValue}
+            onChange={(e) => setEditedTitle(e.target.value)}
             placeholder="Bookmark title"
-            onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
+            onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
+            autoFocus={open}
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
           <Button onClick={handleConfirm}>Save</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

@@ -1,60 +1,38 @@
-'use client'
+"use client";
 
-import { motion } from 'motion/react'
-import { cn } from '@/lib/utils'
-import {
-  Bookmark,
-  Sparkles,
-  FolderOpen,
-  Search,
-  Keyboard,
-  Fingerprint,
-  LayoutList,
-} from 'lucide-react'
+import { motion } from "motion/react";
+import { Sparkles, FolderOpen, Share2, Zap } from "lucide-react";
 
 const features = [
   {
-    icon: Bookmark,
-    className: 'fill-black dark:fill-white',
-    title: 'Save in seconds',
-    description: 'Paste any URL, hit enter. Done. No friction, no extra steps.',
+    id: 1,
+    title: "Stop Forgetting Links",
+    icon: Zap,
+    description:
+      "Save any URL in seconds. No friction, no extra steps. Your bookmarks sync instantly across all your devices.",
   },
   {
+    id: 2,
+    title: "AI That Actually Gets It",
     icon: Sparkles,
-    title: 'Auto-fetch metadata',
     description:
-      'Titles, descriptions, and favicons are pulled automatically. Your links look great without any effort.',
+      "Auto-generated descriptions for every link. Know what a page is about without opening it. Even works with Twitter/X and GitHub.",
   },
   {
+    id: 3,
+    title: "Find Anything Instantly",
     icon: FolderOpen,
-    title: 'Organize with groups',
     description:
-      'Create collections to categorize your bookmarks. Keep work, personal, and inspiration separate.',
+      "Color-coded groups and powerful search. No more digging through endless folders. Mark read items to keep track of what matters.",
   },
   {
-    icon: Search,
-    title: 'Instant search',
+    id: 4,
+    title: "Share Your Knowledge",
+    icon: Share2,
     description:
-      'Find any bookmark by title, URL, or group. Results appear as you type.',
+      "Create a public profile with your best finds. Let others discover what you read. Export anytime—your data belongs to you.",
   },
-  {
-    icon: Keyboard,
-    title: 'Keyboard shortcuts',
-    description:
-      'Navigate, search, and manage everything without touching your mouse. Built for speed.',
-  },
-  {
-    icon: Fingerprint,
-    title: 'Private by default',
-    description: 'Your bookmarks are yours alone. No ads, no data selling.',
-  },
-  {
-    icon: LayoutList,
-    title: 'Minimal interface',
-    description:
-      'No clutter, no distractions. Just your bookmarks in a clean, focused layout.',
-  },
-]
+];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -62,57 +40,76 @@ const containerVariants = {
     opacity: 1,
     transition: {
       staggerChildren: 0.1,
-      delayChildren: 0.2,
+      delayChildren: 0.1,
     },
   },
-}
+};
 
 const itemVariants = {
-  hidden: { opacity: 0, x: -20 },
+  hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
-    x: 0,
+    y: 0,
     transition: {
       duration: 0.5,
       ease: [0.25, 0.1, 0.25, 1] as const,
     },
   },
-}
+};
 
 export function FeaturesSection() {
   return (
-    <section className="w-full max-w-2xl mx-auto">
+    <section className="w-full max-w-2xl mx-auto px-4 sm:px-6">
       <motion.div
-        className="space-y-4 sm:space-y-6"
+        className="text-center mb-10 sm:mb-12"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
+      >
+        <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3">
+          The bookmark manager that actually works
+        </h2>
+        <p className="text-muted-foreground">
+          No more lost links. No more messy folders.
+        </p>
+      </motion.div>
+
+      <motion.div
+        className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
         variants={containerVariants}
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, margin: '-50px' }}
+        viewport={{ once: true, margin: "-50px" }}
       >
         {features.map((feature) => (
           <motion.div
-            key={feature.title}
+            key={feature.id}
             variants={itemVariants}
-            className="flex items-start gap-4 sm:gap-5 py-3 px-3 -mx-3 rounded-lg transition-colors hover:bg-muted/30"
+            className="group relative overflow-hidden rounded-xl border border-border bg-card p-5 transition-all duration-300 hover:border-foreground/20 hover:shadow-md"
           >
-            <motion.div
-              className="shrink-0 mt-0.5"
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-            >
-              <feature.icon
-                className={cn(
-                  'size-5 sm:size-6 text-foreground/70',
-                  feature.className
-                )}
-                strokeWidth={1.5}
-              />
-            </motion.div>
-            <div className="space-y-1">
-              <h3 className="text-base sm:text-lg font-semibold text-foreground leading-tight">
+            {/* Gradient overlay on hover */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
+            <div className="relative">
+              {/* Header: Icon and Number aligned */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="inline-flex rounded-lg bg-muted p-2.5 transition-colors duration-300 group-hover:bg-primary/10">
+                  <feature.icon
+                    className="size-5 text-foreground/80 transition-colors duration-300 group-hover:text-primary"
+                    strokeWidth={1.5}
+                  />
+                </div>
+                <span className="text-4xl font-bold text-foreground/5 transition-colors duration-300 group-hover:text-primary/10">
+                  0{feature.id}
+                </span>
+              </div>
+
+              {/* Content */}
+              <h3 className="mb-1.5 text-base font-semibold text-foreground">
                 {feature.title}
               </h3>
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+              <p className="text-sm leading-relaxed text-muted-foreground">
                 {feature.description}
               </p>
             </div>
@@ -120,5 +117,5 @@ export function FeaturesSection() {
         ))}
       </motion.div>
     </section>
-  )
+  );
 }
