@@ -27,6 +27,7 @@ interface BookmarkItemProps {
   onPopoverOpenChange: (open: boolean) => void;
   onTouchStart: (e: React.TouchEvent) => void;
   onTouchEnd: () => void;
+  onContextMenu?: (e: React.MouseEvent) => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   onCopy: () => void;
@@ -47,6 +48,7 @@ export const BookmarkItem = memo(function BookmarkItem({
   onPopoverOpenChange,
   onTouchStart,
   onTouchEnd,
+  onContextMenu,
   onMouseEnter,
   onMouseLeave,
   onCopy,
@@ -90,9 +92,8 @@ export const BookmarkItem = memo(function BookmarkItem({
       <div className="flex-1 min-w-0 flex flex-col gap-0.5">
         <div className="flex items-baseline gap-2">
           <span
-            className={`font-medium text-sm truncate group-hover:text-primary transition-colors ${
-              bookmark.doneReading ? "text-muted-foreground" : "text-foreground"
-            }`}
+            className={`font-medium text-sm truncate group-hover:text-primary transition-colors ${bookmark.doneReading ? "text-muted-foreground" : "text-foreground"
+              }`}
           >
             {bookmark.title}
           </span>
@@ -143,6 +144,7 @@ export const BookmarkItem = memo(function BookmarkItem({
                 onTouchStart={onTouchStart}
                 onTouchEnd={onTouchEnd}
                 onTouchMove={onTouchEnd}
+                onContextMenu={onContextMenu}
                 onClick={(e) => {
                   if (isPopoverOpen) {
                     e.preventDefault();
