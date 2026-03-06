@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, memo } from 'react'
 import { Check, Plus, ChevronsUpDownIcon } from 'lucide-react'
 import { Popover as PopoverPrimitive } from 'radix-ui'
 import { type Group } from '@/lib/dummy-data'
@@ -34,7 +34,44 @@ interface LandingGroupSelectorProps {
   onCreateGroup: (group: Group) => void
 }
 
-export function LandingGroupSelector({
+// Memoized group item to prevent re-render of all items when one changes
+const GroupItem = memo(function GroupItem({
+  group,
+  isSelected,
+  onSelect,
+}: {
+  group: Group
+  isSelected: boolean
+  onSelect: (id: string) => void
+}) {
+  const handleClick = useCallback(() => {
+    onSelect(group.id)
+  }, [onSelect, group.id])
+
+  return (
+    <button
+      key={group.id}
+      id={`landing-group-option-${group.id}`}
+      onClick={handleClick}
+      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+    >
+      <span
+        className="size-2.5 rounded-full shrink-0"
+        style={{ backgroundColor: group.color }}
+      />
+      <span className="flex-1 text-left font-medium">{group.name}</span>
+      {isSelected ? (
+        <Check className="size-4 text-foreground" />
+      ) : (
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {group.bookmarkCount}
+        </span>
+      )}
+    </button>
+  )
+})
+
+export const LandingGroupSelector = memo(function LandingGroupSelector({
   groups,
   selectedGroupId,
   onSelect,
@@ -49,6 +86,15 @@ export function LandingGroupSelector({
 
   const selectedGroup = groups.find((g) => g.id === selectedGroupId)
 
+  // Stable callback for group selection
+  const handleSelect = useCallback(
+    (groupId: string) => {
+      onSelect(groupId)
+      setOpen(false)
+    },
+    [onSelect]
+  )
+
   const handleCreate = useCallback(() => {
     const trimmed = name.trim()
     if (!trimmed) return
@@ -61,13 +107,13 @@ export function LandingGroupSelector({
     }
 
     onCreateGroup(newGroup)
-    onSelect(newGroup.id)
+    handleSelect(newGroup.id)
 
     // Reset form
     setName('')
     setSelectedColor(LANDING_GROUP_COLORS[0].value)
     setDialogOpen(false)
-  }, [name, selectedColor, onCreateGroup, onSelect])
+  }, [name, selectedColor, onCreateGroup, handleSelect])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -78,6 +124,11 @@ export function LandingGroupSelector({
     },
     [handleCreate]
   )
+
+  const handleOpenCreateDialog = useCallback(() => {
+    setOpen(false)
+    setDialogOpen(true)
+  }, [])
 
   return (
     <>
@@ -106,40 +157,19 @@ export function LandingGroupSelector({
           >
             <div className="p-1.5">
               {groups.map((group) => (
-                <button
+                <GroupItem
                   key={group.id}
-                  id={`landing-group-option-${group.id}`}
-                  onClick={() => {
-                    onSelect(group.id)
-                    setOpen(false)
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                >
-                  <span
-                    className="size-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: group.color }}
-                  />
-                  <span className="flex-1 text-left font-medium">
-                    {group.name}
-                  </span>
-                  {group.id === selectedGroupId ? (
-                    <Check className="size-4 text-foreground" />
-                  ) : (
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {group.bookmarkCount}
-                    </span>
-                  )}
-                </button>
+                  group={group}
+                  isSelected={group.id === selectedGroupId}
+                  onSelect={handleSelect}
+                />
               ))}
 
               <div className="my-1 h-px bg-border" />
 
               <button
                 id="landing-create-group-button"
-                onClick={() => {
-                  setOpen(false)
-                  setDialogOpen(true)
-                }}
+                onClick={handleOpenCreateDialog}
                 className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground transition-colors"
               >
                 <Plus className="size-4" />
@@ -216,4 +246,4 @@ export function LandingGroupSelector({
       </Dialog>
     </>
   )
-}
+})
