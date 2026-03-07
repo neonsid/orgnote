@@ -22,7 +22,7 @@ import { toast } from 'sonner'
 
 interface RenameGroupDialogProps {
   groupId: Id<'groups'>
-  title: string | null
+  title: string | undefined
   open: boolean
   onOpenChange: (open: boolean) => void
   userId: string
