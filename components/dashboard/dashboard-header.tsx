@@ -6,7 +6,6 @@ import { GroupSelector } from "./group-selector";
 import { UserInfo } from "./user-info";
 import type { ConvexGroup } from "./group-selector";
 
-// Memoized logo - never rerenders
 const Logo = memo(function Logo() {
   return (
     <Link
@@ -30,8 +29,6 @@ interface DashboardHeaderProps {
   groups: ConvexGroup[];
   effectiveGroupId: string;
   onSelectGroup: (id: string) => void;
-  userId: string;
-  user: { id: string; name: string; email: string; image?: string | null };
   loading?: boolean;
 }
 
@@ -39,8 +36,6 @@ export const DashboardHeader = memo(function DashboardHeader({
   groups,
   effectiveGroupId,
   onSelectGroup,
-  userId,
-  user,
   loading = false,
 }: DashboardHeaderProps) {
   return (
@@ -53,18 +48,16 @@ export const DashboardHeader = memo(function DashboardHeader({
             groups={groups}
             selectedGroupId={effectiveGroupId}
             onSelect={onSelectGroup}
-            userId={userId}
             loading={loading}
           />
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Theme toggler — hidden on mobile, shown in UserInfo dropdown instead */}
           <AnimatedThemeToggler
             aria-label="Toggle theme"
             className="hidden sm:flex items-center justify-center rounded-md border border-input bg-background p-1.5 sm:p-2 hover:bg-accent hover:text-accent-foreground transition-colors"
           />
-          <UserInfo user={user} />
+          <UserInfo />
         </div>
       </div>
     </header>

@@ -12,6 +12,7 @@ import type * as bookmark_helpers from "../bookmark_helpers.js";
 import type * as bookmarks from "../bookmarks.js";
 import type * as groups from "../groups.js";
 import type * as http from "../http.js";
+import type * as lib_auth from "../lib/auth.js";
 import type * as lib_scira from "../lib/scira.js";
 import type * as lib_url_classifier from "../lib/url_classifier.js";
 import type * as metadata from "../metadata.js";
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   bookmarks: typeof bookmarks;
   groups: typeof groups;
   http: typeof http;
+  "lib/auth": typeof lib_auth;
   "lib/scira": typeof lib_scira;
   "lib/url_classifier": typeof lib_url_classifier;
   metadata: typeof metadata;

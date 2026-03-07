@@ -52,7 +52,6 @@ interface EditBookmarkDialogProps {
   bookmark: Bookmark | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  userId: string;
 }
 
 const INITIAL_FORM_STATE: FormState = {
@@ -104,7 +103,6 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
   bookmark,
   open,
   onOpenChange,
-  userId,
 }: EditBookmarkDialogProps) {
   const [state, dispatch] = useReducer(reducer, INITIAL_DIALOG_STATE);
 
@@ -164,7 +162,6 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
     try {
       const result = await generateDescription({
         url: state.form.url,
-        userId,
       });
 
       if (result.success && result.description) {
@@ -189,10 +186,10 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
     } finally {
       dispatch({ type: "setGenerating", isGenerating: false });
     }
-  }, [state.form.url, state.form.title, userId, generateDescription]);
+  }, [state.form.url, state.form.title, generateDescription]);
 
   const handleSave = useCallback(async () => {
-    if (!bookmark || !userId) return;
+    if (!bookmark) return;
 
     if (!state.form.title.trim()) {
       toast.error("Title is required");
@@ -215,7 +212,6 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
         title: state.form.title.trim(),
         url: state.form.url.trim(),
         description: state.form.description.trim() || undefined,
-        userId,
       });
 
       toast.success("Bookmark updated successfully");
@@ -224,7 +220,7 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
       console.error("Error updating bookmark:", error);
       toast.error("Failed to update bookmark");
     }
-  }, [bookmark, userId, state.form, updateBookmark, handleOpenChange]);
+  }, [bookmark, state.form, updateBookmark, handleOpenChange]);
 
   const handleDescriptionChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {

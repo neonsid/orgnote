@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
-import { authClient } from "@/lib/auth-client";
+import { useUser } from "@clerk/react";
 import {
   changePasswordSchema,
   type ChangePasswordFormData,
@@ -15,6 +15,7 @@ interface FieldErrors {
 
 export function usePasswordForm() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const { user } = useUser();
 
   const form = useForm({
     defaultValues: {
@@ -29,14 +30,21 @@ export function usePasswordForm() {
     onSubmit: async ({ value }) => {
       setFieldErrors({});
 
-      const result = await authClient.changePassword({
-        currentPassword: value.currentPassword,
-        newPassword: value.newPassword,
-        revokeOtherSessions: true,
-      });
+      if (!user) {
+        toast.error("You must be logged in to change your password.");
+        return;
+      }
 
-      if (result.error) {
-        const errorMessage = result.error.message || "";
+      try {
+        await user.updatePassword({
+          currentPassword: value.currentPassword,
+          newPassword: value.newPassword,
+        });
+        toast.success("Password changed successfully!");
+        form.reset();
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to change password";
         let userMessage = "Failed to change password.";
 
         if (
@@ -63,9 +71,6 @@ export function usePasswordForm() {
         toast.error(userMessage);
         throw new Error(userMessage);
       }
-
-      toast.success("Password changed successfully!");
-      form.reset();
     },
   });
 

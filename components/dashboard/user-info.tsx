@@ -9,7 +9,7 @@ import {
   User,
   Loader2,
 } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
+import { useUser, useClerk } from "@clerk/react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useIsSmallMobile } from "@/hooks/use-mobile";
@@ -33,16 +33,10 @@ const UserSettingsDialog = dynamic(
   { ssr: false },
 );
 
-interface UserInfoProps {
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    image?: string | null;
-  };
-}
+export const UserInfo = memo(function UserInfo() {
+  const { user } = useUser();
+  const { signOut } = useClerk();
 
-export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
   type UserInfoState = {
     open: boolean;
     shortcutsOpen: boolean;
@@ -99,14 +93,15 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
   const router = useRouter();
   const isSmallMobile = useIsSmallMobile();
 
-  const profile = useQuery(api.profile.getProfile, { userId: user.id });
+  const profile = useQuery(api.profile.getProfile);
   const hasPublicProfile = profile?.isPublic && profile?.username;
 
-  const initial = user.name?.charAt(0)?.toUpperCase() ?? "U";
+  const userName = user?.fullName ?? user?.firstName ?? "User";
+  const initial = userName.charAt(0)?.toUpperCase() ?? "U";
 
   const maxLen = 14;
   const displayName =
-    user.name.length > maxLen ? user.name.slice(0, maxLen) + "…" : user.name;
+    userName.length > maxLen ? userName.slice(0, maxLen) + "…" : userName;
 
   useEffect(() => {
     if (!state.open) return;
@@ -135,6 +130,13 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
     }
   };
 
+  const handleSignOut = () => {
+    dispatch({ type: "setSigningOut", signingOut: true });
+    signOut({ redirectUrl: "/" });
+  };
+
+  if (!user) return null;
+
   return (
     <>
       <div ref={containerRef} className="relative">
@@ -143,12 +145,12 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
           onClick={() => dispatch({ type: "toggleMenu" })}
           className="inline-flex items-center gap-1.5 sm:gap-2 rounded-lg px-1.5 sm:px-2.5 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
         >
-          {user.image ? (
+          {user.imageUrl ? (
             <Image
               width={24}
               height={24}
-              src={user.image}
-              alt={user.name}
+              src={user.imageUrl}
+              alt={userName}
               className="size-6 rounded-full object-cover"
             />
           ) : (
@@ -215,16 +217,7 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
               <button
                 id="user-signout-button"
                 disabled={state.isSigningOut}
-                onClick={() => {
-                  dispatch({ type: "setSigningOut", signingOut: true });
-                  authClient.signOut({
-                    fetchOptions: {
-                      onSuccess: () => {
-                        window.location.href = "/";
-                      },
-                    },
-                  });
-                }}
+                onClick={handleSignOut}
                 className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors disabled:pointer-events-none disabled:opacity-70"
               >
                 {state.isSigningOut ? "Signing out..." : "Sign out"}
@@ -249,7 +242,6 @@ export const UserInfo = memo(function UserInfo({ user }: UserInfoProps) {
         <UserSettingsDialog
           open={state.settingsOpen}
           onOpenChange={(open) => dispatch({ type: "setSettingsOpen", open })}
-          user={user}
         />
       )}
     </>

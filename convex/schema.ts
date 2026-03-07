@@ -4,9 +4,9 @@ import { v } from "convex/values";
 export default defineSchema({
   users: defineTable({
     name: v.string(),
-    userProvidedId: v.string(),
+    userId: v.string(),
     email: v.string(),
-  }).index("by_userProvidedId", ["userProvidedId"]),
+  }).index("by_userId", ["userId"]),
   userProfile: defineTable({
     isPublic: v.boolean(),
     username: v.optional(v.string()),
@@ -23,20 +23,18 @@ export default defineSchema({
         }),
       ),
     ),
-    userProvidedId: v.string(),
+    userId: v.string(),
   })
-    .index("by_userProvidedId", ["userProvidedId"])
+    .index("by_userId", ["userId"])
     .index("by_username", ["username"]),
   groups: defineTable({
     title: v.string(),
     color: v.string(),
-    userProvidedId: v.string(), // Denormalized for convenience
+    userId: v.string(),
     isPublic: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.optional(v.number()),
-  })
-    // Removed standalone by_userProvidedId — it's a prefix of by_userProvidedId_and_isPublic
-    .index("by_userProvidedId_and_isPublic", ["userProvidedId", "isPublic"]),
+  }).index("by_userId_and_isPublic", ["userId", "isPublic"]),
   bookmarks: defineTable({
     title: v.string(),
     description: v.optional(v.string()),
@@ -49,16 +47,14 @@ export default defineSchema({
   })
     .index("by_groupId", ["groupId"])
     .index("by_groupId_and_createdAt", ["groupId", "createdAt"]),
-  // Track Skyra API usage per user per day (20 requests/day limit)
   skyraUsage: defineTable({
-    userProvidedId: v.string(),
-    date: v.string(), // YYYY-MM-DD format
+    userId: v.string(),
+    date: v.string(),
     requestCount: v.number(),
-  }).index("by_userProvidedId_and_date", ["userProvidedId", "date"]),
-  // Track Scira API usage per user per day (20 requests/day limit)
+  }).index("by_userId_and_date", ["userId", "date"]),
   sciraUsage: defineTable({
-    userProvidedId: v.string(),
-    date: v.string(), // YYYY-MM-DD format
+    userId: v.string(),
+    date: v.string(),
     requestCount: v.number(),
-  }).index("by_userProvidedId_and_date", ["userProvidedId", "date"]),
+  }).index("by_userId_and_date", ["userId", "date"]),
 });

@@ -1,23 +1,22 @@
 import { useForm } from "@tanstack/react-form";
-import { authClient } from "@/lib/auth-client";
+import { useUser } from "@clerk/react";
 import { updateNameSchema, type UpdateNameFormData } from "@/lib/validation";
 
-interface UseNameFormOptions {
-  user: { name: string };
-}
+export function useNameForm() {
+  const { user } = useUser();
 
-export function useNameForm({ user }: UseNameFormOptions) {
   return useForm({
     defaultValues: {
-      name: user.name,
+      name: user?.fullName ?? user?.firstName ?? "",
     } as UpdateNameFormData,
     validators: {
       onChange: updateNameSchema,
       onSubmit: updateNameSchema,
     },
     onSubmit: async ({ value }) => {
-      if (value.name !== user.name) {
-        await authClient.updateUser({ name: value.name });
+      const currentName = user?.fullName ?? user?.firstName ?? "";
+      if (value.name !== currentName && user) {
+        await user.update({ firstName: value.name });
       }
     },
   });

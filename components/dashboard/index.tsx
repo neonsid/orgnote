@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { authClient } from "@/lib/auth-client";
+import { useUser } from "@clerk/react";
 import { DashboardHeader } from "./dashboard-header";
 import { BookmarkList, type Bookmark } from "./bookmark-list";
 import { FilterDropdown, type FilterType } from "./filter-dropdown";
@@ -40,13 +40,11 @@ const DeleteBookmarkDialog = dynamic(
 );
 
 export default function DashboardPage() {
-  const { data: session, isPending: isSessionLoading } =
-    authClient.useSession();
-  const userId = session?.user?.id ?? "";
+  const { user, isLoaded: isUserLoaded } = useUser();
+  const userId = user?.id ?? "";
 
-  // Unified dashboard data hook - single query for groups + bookmarks
   const { groups, bookmarks, effectiveGroupId, selectGroup, isLoading } =
-    useDashboardData(userId);
+    useDashboardData(!!user);
 
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
@@ -92,14 +90,12 @@ export default function DashboardPage() {
         imageUrl: isUrl
           ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
           : "",
-        userId,
       });
       setDebouncedQuery("");
     },
-    [createBookmark, effectiveGroupId, userId],
+    [createBookmark, effectiveGroupId],
   );
 
-  // Filter bookmarks client-side
   const filteredBookmarks = bookmarks.filter((b) => {
     if (debouncedQuery.trim()) {
       const q = debouncedQuery.toLowerCase();
@@ -113,7 +109,6 @@ export default function DashboardPage() {
     return true;
   });
 
-  // Context menu handlers
   const handleCopy = useCallback((bookmark: Bookmark) => {
     navigator.clipboard.writeText(bookmark.url);
     toast.success("URL copied to clipboard");
@@ -144,10 +139,9 @@ export default function DashboardPage() {
 
   const handleMove = useCallback(
     (bookmarkId: Id<"bookmarks">, newGroupId: Id<"groups">) => {
-      if (!userId) return;
-      moveBookmark({ bookmarkId: bookmarkId, groupId: newGroupId, userId });
+      moveBookmark({ bookmarkId: bookmarkId, groupId: newGroupId });
     },
-    [moveBookmark, userId],
+    [moveBookmark],
   );
 
   const handleDelete = useCallback(
@@ -163,23 +157,21 @@ export default function DashboardPage() {
 
   const handleToggleRead = useCallback(
     (bookmarkId: Id<"bookmarks">) => {
-      if (!userId) return;
-      toggleReadStatus({ bookmarkId, userId });
+      toggleReadStatus({ bookmarkId });
     },
-    [toggleReadStatus, userId],
+    [toggleReadStatus],
   );
 
-  if (!session?.user && !isSessionLoading) {
-    return null;
-  }
-
-  // Only block for session loading
-  if (isSessionLoading) {
+  if (!isUserLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="size-6 text-muted-foreground animate-spin" />
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return (
@@ -188,8 +180,6 @@ export default function DashboardPage() {
         groups={groups}
         effectiveGroupId={effectiveGroupId}
         onSelectGroup={selectGroup}
-        userId={userId}
-        user={session!.user}
         loading={isLoading}
       />
 
@@ -239,21 +229,18 @@ export default function DashboardPage() {
         bookmark={renameBookmark.bookmarkData}
         open={renameBookmark.open}
         onOpenChange={closeRenameDialog}
-        userId={userId}
       />
 
       <EditBookmarkDialog
         bookmark={editBookmark.bookmarkData}
         open={editBookmark.open}
         onOpenChange={closeEditBookmarkDialog}
-        userId={userId}
       />
 
       <DeleteBookmarkDialog
         bookmark={deleteBookmark.bookmarkData}
         open={deleteBookmark.open}
         onOpenChange={closeDeleteBookmarkDialog}
-        userId={userId}
       />
     </div>
   );

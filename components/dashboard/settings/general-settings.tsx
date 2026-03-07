@@ -4,27 +4,26 @@ import { useRef } from "react";
 import Image from "next/image";
 import Upload from "lucide-react/dist/esm/icons/upload";
 import { toast } from "sonner";
+import { useUser } from "@clerk/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordSection } from "./password-section";
-import type { UserSettingsUser } from "./types";
 
 interface GeneralSettingsProps {
-  user: UserSettingsUser;
   nameForm: ReturnType<typeof import("@/hooks/use-name-form").useNameForm>;
-  hasPassword: boolean | undefined;
   onExportClick: () => void;
 }
 
 export function GeneralSettings({
-  user,
   nameForm,
-  hasPassword,
   onExportClick,
 }: GeneralSettingsProps) {
+  const { user } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const initial = user.name?.charAt(0)?.toUpperCase() ?? "U";
+
+  const userName = user?.fullName ?? user?.firstName ?? "User";
+  const initial = userName.charAt(0)?.toUpperCase() ?? "U";
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -37,18 +36,20 @@ export function GeneralSettings({
     }
   };
 
+  if (!user) return null;
+
   return (
     <div className="space-y-6">
       {/* Profile Picture */}
       <div className="space-y-3">
         <Label>Profile Picture</Label>
         <div className="flex items-center gap-3">
-          {user.image ? (
+          {user.imageUrl ? (
             <Image
               width={48}
               height={48}
-              src={user.image}
-              alt={user.name}
+              src={user.imageUrl}
+              alt={userName}
               className="size-12 rounded-full object-cover"
             />
           ) : (
@@ -104,14 +105,14 @@ export function GeneralSettings({
         <Input
           id="email"
           type="email"
-          value={user.email}
+          value={user.primaryEmailAddress?.emailAddress ?? ""}
           disabled
           className="bg-muted"
         />
       </div>
 
-      {/* Password Section */}
-      {hasPassword && <PasswordSection />}
+      {/* Password Section - Clerk handles passwords differently, hide for now */}
+      {/* <PasswordSection /> */}
 
       {/* Data Section */}
       <div className="space-y-3">

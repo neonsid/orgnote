@@ -1,6 +1,6 @@
-'use client'
+"use client";
 
-import { useState, memo } from 'react'
+import { useState, memo } from "react";
 import {
   Check,
   Plus,
@@ -9,70 +9,67 @@ import {
   Globe,
   Lock,
   Pencil,
-} from 'lucide-react'
-import { Popover as PopoverPrimitive } from 'radix-ui'
-import { Id } from '@/convex/_generated/dataModel'
-import dynamic from 'next/dynamic'
-import { useDialogStore } from '@/stores/dialog-store'
-import { useMutation } from 'convex/react'
-import { api } from '@/convex/_generated/api'
-import { toast } from 'sonner'
-import { title } from 'process'
+} from "lucide-react";
+import { Popover as PopoverPrimitive } from "radix-ui";
+import { Id } from "@/convex/_generated/dataModel";
+import dynamic from "next/dynamic";
+import { useDialogStore } from "@/stores/dialog-store";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { toast } from "sonner";
 
 const CreateGroupDialog = dynamic(
   () =>
-    import('@/components/dashboard/dialog').then((m) => m.CreateGroupDialog),
-  { ssr: false }
-)
+    import("@/components/dashboard/dialog").then((m) => m.CreateGroupDialog),
+  { ssr: false },
+);
 
 const DeleteGroupDialog = dynamic(
   () =>
-    import('@/components/dashboard/dialog').then((m) => m.DeleteGroupDialog),
-  { ssr: false }
-)
+    import("@/components/dashboard/dialog").then((m) => m.DeleteGroupDialog),
+  { ssr: false },
+);
 
 const RenameGroupDialog = dynamic(
-  () => import('./dialog/rename-group').then((m) => m.RenameGroupDialog),
-  { ssr: false }
-)
+  () => import("./dialog/rename-group").then((m) => m.RenameGroupDialog),
+  { ssr: false },
+);
 /**
  * Convex group shape (from the database).
  */
 export interface ConvexGroup {
-  _id: Id<'groups'>
-  title: string
-  color: string
-  isPublic?: boolean
-  _creationTime: number
+  _id: Id<"groups">;
+  title: string;
+  color: string;
+  isPublic?: boolean;
+  _creationTime: number;
 }
 
 export const FALLBACK_COLORS = [
-  '#f59e0b',
-  '#3b82f6',
-  '#10b981',
-  '#ef4444',
-  '#8b5cf6',
-  '#ec4899',
-  '#06b6d4',
-  '#f97316',
-]
+  "#f59e0b",
+  "#3b82f6",
+  "#10b981",
+  "#ef4444",
+  "#8b5cf6",
+  "#ec4899",
+  "#06b6d4",
+  "#f97316",
+];
 
 interface GroupSelectorProps {
-  groups: ConvexGroup[]
-  selectedGroupId: string
-  onSelect: (groupId: string) => void
-  userId: string
-  loading?: boolean
+  groups: ConvexGroup[];
+  selectedGroupId: string;
+  onSelect: (groupId: string) => void;
+  loading?: boolean;
 }
 
 export const GroupSelector = memo(function GroupSelector({
   groups,
   selectedGroupId,
   onSelect,
-  userId,
   loading = false,
 }: GroupSelectorProps) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
   // Dialog state from Zustand store
   const {
@@ -85,26 +82,25 @@ export const GroupSelector = memo(function GroupSelector({
     closeDeleteGroupDialog,
     openGroupRenameDialog,
     closeGroupRenameDialog,
-  } = useDialogStore()
+  } = useDialogStore();
 
-  const toggleGroupPublic = useMutation(api.groups.toggleGroupPublic)
-  const selectedGroup = groups.find((g) => g._id === selectedGroupId)
+  const toggleGroupPublic = useMutation(api.groups.toggleGroupPublic);
+  const selectedGroup = groups.find((g) => g._id === selectedGroupId);
 
   const handleTogglePublic = async () => {
-    if (!selectedGroup) return
+    if (!selectedGroup) return;
 
     try {
       const result = await toggleGroupPublic({
         groupId: selectedGroup._id,
-        userId,
-      })
+      });
       toast.success(
-        result.isPublic ? 'Group is now public' : 'Group is now private'
-      )
+        result.isPublic ? "Group is now public" : "Group is now private",
+      );
     } catch {
-      toast.error('Failed to update group visibility')
+      toast.error("Failed to update group visibility");
     }
-  }
+  };
 
   return (
     <>
@@ -122,12 +118,12 @@ export const GroupSelector = memo(function GroupSelector({
             />
             <span className="truncate">
               {loading
-                ? 'Loading...'
+                ? "Loading..."
                 : (selectedGroup?.title ??
-                  (groups.length === 0 ? 'No groups' : 'Select Group'))}
+                  (groups.length === 0 ? "No groups" : "Select Group"))}
             </span>
             <ChevronsUpDown
-              className={`size-4 text-muted-foreground transition-transform duration-200 shrink-0 ${open ? 'rotate-180' : ''}`}
+              className={`size-4 text-muted-foreground transition-transform duration-200 shrink-0 ${open ? "rotate-180" : ""}`}
             />
           </button>
         </PopoverPrimitive.Trigger>
@@ -154,8 +150,8 @@ export const GroupSelector = memo(function GroupSelector({
                     key={group._id}
                     id={`group-option-${group._id}`}
                     onClick={() => {
-                      onSelect(group._id)
-                      setOpen(false)
+                      onSelect(group._id);
+                      setOpen(false);
                     }}
                     className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                   >
@@ -182,8 +178,8 @@ export const GroupSelector = memo(function GroupSelector({
               <button
                 id="create-group-button"
                 onClick={() => {
-                  setOpen(false)
-                  openCreateGroup()
+                  setOpen(false);
+                  openCreateGroup();
                 }}
                 className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground transition-colors"
               >
@@ -195,8 +191,8 @@ export const GroupSelector = memo(function GroupSelector({
                   <button
                     id="rename-group-button"
                     onClick={() => {
-                      setOpen(false)
-                      openGroupRenameDialog(selectedGroup._id)
+                      setOpen(false);
+                      openGroupRenameDialog(selectedGroup._id);
                     }}
                     className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground transition-colors"
                   >
@@ -206,7 +202,7 @@ export const GroupSelector = memo(function GroupSelector({
                   <button
                     id="toggle-group-public-button"
                     onClick={() => {
-                      handleTogglePublic()
+                      handleTogglePublic();
                     }}
                     className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground transition-colors"
                   >
@@ -226,8 +222,8 @@ export const GroupSelector = memo(function GroupSelector({
                   <button
                     id="delete-group-button"
                     onClick={() => {
-                      setOpen(false)
-                      openDeleteGroupDialog(selectedGroup._id)
+                      setOpen(false);
+                      openDeleteGroupDialog(selectedGroup._id);
                     }}
                     className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground transition-colors"
                   >
@@ -248,10 +244,9 @@ export const GroupSelector = memo(function GroupSelector({
         <CreateGroupDialog
           open={createGroup.open}
           onOpenChange={closeCreateGroup}
-          userId={userId}
           onCreated={(newGroupId) => {
-            onSelect(newGroupId)
-            closeCreateGroup()
+            onSelect(newGroupId);
+            closeCreateGroup();
           }}
         />
       )}
@@ -262,8 +257,7 @@ export const GroupSelector = memo(function GroupSelector({
           title={selectedGroup?.title}
           open={editGroup.open}
           onOpenChange={closeGroupRenameDialog}
-          userId={userId}
-          groupId={editGroup.groupId as Id<'groups'>}
+          groupId={editGroup.groupId as Id<"groups">}
         />
       )}
 
@@ -272,24 +266,23 @@ export const GroupSelector = memo(function GroupSelector({
         <DeleteGroupDialog
           open={deleteGroup.open}
           onOpenChange={closeDeleteGroupDialog}
-          userId={userId}
-          groupId={deleteGroup.groupId as Id<'groups'>}
+          groupId={deleteGroup.groupId as Id<"groups">}
           groupTitle={
-            groups.find((g) => g._id === deleteGroup.groupId)?.title || ''
+            groups.find((g) => g._id === deleteGroup.groupId)?.title || ""
           }
           groupColor={
             groups.find((g) => g._id === deleteGroup.groupId)?.color ||
             FALLBACK_COLORS[0]
           }
           onDeleted={(deletedId) => {
-            closeDeleteGroupDialog()
+            closeDeleteGroupDialog();
             if (deletedId === selectedGroupId && groups.length > 1) {
-              const nextGroup = groups.find((g) => g._id !== deletedId)
-              if (nextGroup) onSelect(nextGroup._id)
+              const nextGroup = groups.find((g) => g._id !== deletedId);
+              if (nextGroup) onSelect(nextGroup._id);
             }
           }}
         />
       )}
     </>
-  )
-})
+  );
+});

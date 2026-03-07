@@ -18,14 +18,13 @@ const CORS_HEADERS = {
 // Internal action with rate limiting for user sync
 export const syncUserWithRateLimit = internalAction({
   args: {
-    userProvidedId: v.string(),
+    userId: v.string(),
     name: v.string(),
     email: v.string(),
   },
   handler: async (ctx, args): Promise<Id<"users">> => {
-    // Check rate limit for sync operations
     const { ok, retryAfter } = await rateLimiter.limit(ctx, "syncUser", {
-      key: args.userProvidedId,
+      key: args.userId,
     });
 
     if (!ok) {
@@ -35,15 +34,11 @@ export const syncUserWithRateLimit = internalAction({
       });
     }
 
-    // Call the internal mutation to create or update user
-    const result = await ctx.runMutation(
-      internal.users.createOrUpdateUser,
-      {
-        userProvidedId: args.userProvidedId,
-        name: args.name,
-        email: args.email,
-      },
-    );
+    const result = await ctx.runMutation(internal.users.createOrUpdateUser, {
+      userId: args.userId,
+      name: args.name,
+      email: args.email,
+    });
 
     if (!result) {
       throw new ConvexError({
@@ -74,9 +69,9 @@ http.route({
   handler: httpAction(async (ctx, request) => {
     try {
       const body = await request.json();
-      const { userProvidedId, name, email } = body;
+      const { userId, name, email } = body;
 
-      if (!userProvidedId || !name || !email) {
+      if (!userId || !name || !email) {
         return new Response(
           JSON.stringify({ error: "Missing required fields" }),
           {
@@ -86,7 +81,6 @@ http.route({
         );
       }
 
-      // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         return new Response(JSON.stringify({ error: "Invalid email format" }), {
@@ -95,17 +89,15 @@ http.route({
         });
       }
 
-      // Validate userProvidedId format (should be a non-empty string)
-      if (typeof userProvidedId !== "string" || userProvidedId.length < 1) {
+      if (typeof userId !== "string" || userId.length < 1) {
         return new Response(JSON.stringify({ error: "Invalid user ID" }), {
           status: 400,
           headers: { "Content-Type": "application/json", ...CORS_HEADERS },
         });
       }
 
-      // Call the rate-limited action
       const result = await ctx.runAction(internal.http.syncUserWithRateLimit, {
-        userProvidedId,
+        userId,
         name,
         email,
       });
@@ -117,7 +109,6 @@ http.route({
     } catch (error) {
       console.error("Error syncing user:", error);
 
-      // Check if it's a rate limit error
       if (error instanceof Error && error.message.includes("Rate limit")) {
         return new Response(
           JSON.stringify({
