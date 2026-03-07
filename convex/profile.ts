@@ -42,14 +42,9 @@ export const getProfileByUsername = query({
       return null;
     }
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_userId", (q) => q.eq("userId", profile.userId))
-      .unique();
-
     return {
       ...profile,
-      name: user?.name || profile.username,
+      name: profile.username,
     };
   },
 });
@@ -69,11 +64,6 @@ export const getPublicProfileData = query({
     if (!profile || !profile.isPublic) {
       return null;
     }
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_userId", (q) => q.eq("userId", profile.userId))
-      .unique();
 
     const groups = await ctx.db
       .query("groups")
@@ -119,7 +109,7 @@ export const getPublicProfileData = query({
     return {
       profile: {
         ...profile,
-        name: user?.name || profile.username,
+        name: profile.username,
       },
       groups,
       bookmarks,

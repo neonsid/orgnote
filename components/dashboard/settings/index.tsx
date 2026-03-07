@@ -121,8 +121,20 @@ export function UserSettingsDialog({
 
       toast.success("Profile saved successfully!");
       handleClose();
-    } catch {
-      toast.error("Failed to save settings");
+    } catch (error) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "data" in error &&
+        error.data &&
+        typeof error.data === "object" &&
+        "code" in error.data &&
+        error.data.code === "CONFLICT"
+      ) {
+        toast.error("Username is already taken");
+      } else {
+        toast.error("Failed to save settings");
+      }
     } finally {
       dispatch({ type: "setSaving", saving: false });
     }

@@ -5,14 +5,30 @@ interface UseBookmarkShortcutsOptions {
   onRename: (bookmark: Bookmark) => void;
   onDelete: (bookmark: Bookmark) => void;
   onShowDescription?: (bookmark: Bookmark) => void;
+  onEdit?: (bookmark: Bookmark) => void;
+  onCopy?: (bookmark: Bookmark) => void;
 }
 
 export function useBookmarkShortcuts({
   onRename,
   onDelete,
   onShowDescription,
+  onEdit,
+  onCopy,
 }: UseBookmarkShortcutsOptions) {
   const hoveredBookmarkRef = useRef<Bookmark | null>(null);
+
+  const onRenameRef = useRef(onRename);
+  const onDeleteRef = useRef(onDelete);
+  const onShowDescriptionRef = useRef(onShowDescription);
+  const onEditRef = useRef(onEdit);
+  const onCopyRef = useRef(onCopy);
+
+  onRenameRef.current = onRename;
+  onDeleteRef.current = onDelete;
+  onShowDescriptionRef.current = onShowDescription;
+  onEditRef.current = onEdit;
+  onCopyRef.current = onCopy;
 
   const setHoveredBookmark = useCallback((bookmark: Bookmark | null) => {
     hoveredBookmarkRef.current = bookmark;
@@ -30,29 +46,41 @@ export function useBookmarkShortcuts({
           );
         }
       }
-      if ((e.metaKey || e.ctrlKey) && (e.key === "e" || e.key === "E")) {
+      if ((e.metaKey || e.ctrlKey) && (e.key === "r" || e.key === "R")) {
         e.preventDefault();
         if (hoveredBookmarkRef.current) {
-          onRename(hoveredBookmarkRef.current);
+          onRenameRef.current(hoveredBookmarkRef.current);
+        }
+      }
+      if ((e.metaKey || e.ctrlKey) && (e.key === "e" || e.key === "E")) {
+        e.preventDefault();
+        if (hoveredBookmarkRef.current && onEditRef.current) {
+          onEditRef.current(hoveredBookmarkRef.current);
+        }
+      }
+      if ((e.metaKey || e.ctrlKey) && (e.key === "c" || e.key === "C")) {
+        e.preventDefault();
+        if (hoveredBookmarkRef.current && onCopyRef.current) {
+          onCopyRef.current(hoveredBookmarkRef.current);
         }
       }
       if ((e.metaKey || e.ctrlKey) && e.key === "Backspace") {
         e.preventDefault();
         if (hoveredBookmarkRef.current) {
-          onDelete(hoveredBookmarkRef.current);
+          onDeleteRef.current(hoveredBookmarkRef.current);
         }
       }
       if ((e.metaKey || e.ctrlKey) && (e.key === "i" || e.key === "I")) {
         e.preventDefault();
-        if (hoveredBookmarkRef.current && onShowDescription) {
-          onShowDescription(hoveredBookmarkRef.current);
+        if (hoveredBookmarkRef.current && onShowDescriptionRef.current) {
+          onShowDescriptionRef.current(hoveredBookmarkRef.current);
         }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onRename, onDelete, onShowDescription]);
+  }, []);
 
   return { hoveredBookmarkRef, setHoveredBookmark };
 }

@@ -1,5 +1,5 @@
 export const KEYBOARD_SHORTCUTS = {
-  open: ["⊞", "Enter"],
+  open: ["⌘", "Enter"],
   copy: ["⌘", "C"],
   rename: ["⌘", "R"],
   edit: ["⌘", "E"],

@@ -35,12 +35,16 @@ export const BookmarkList = memo(function BookmarkList({
   type ListState = {
     openPopoverId: string | null;
     showDescriptionId: string | null;
+    selectedIndex: number;
   };
 
   type ListAction =
     | { type: "setOpenPopover"; id: string | null }
     | { type: "showDescription"; id: string }
-    | { type: "clearDescription" };
+    | { type: "clearDescription" }
+    | { type: "selectNext" }
+    | { type: "selectPrevious" }
+    | { type: "clearSelection" };
 
   function reducer(state: ListState, action: ListAction): ListState {
     switch (action.type) {
@@ -50,6 +54,21 @@ export const BookmarkList = memo(function BookmarkList({
         return { ...state, showDescriptionId: action.id };
       case "clearDescription":
         return { ...state, showDescriptionId: null };
+      case "selectNext":
+        return {
+          ...state,
+          selectedIndex: Math.min(
+            state.selectedIndex + 1,
+            bookmarks.length - 1,
+          ),
+        };
+      case "selectPrevious":
+        return {
+          ...state,
+          selectedIndex: Math.max(state.selectedIndex - 1, 0),
+        };
+      case "clearSelection":
+        return { ...state, selectedIndex: -1 };
       default:
         return state;
     }
@@ -59,16 +78,18 @@ export const BookmarkList = memo(function BookmarkList({
   const [state, dispatch] = useReducer(reducer, {
     openPopoverId: null,
     showDescriptionId: null,
+    selectedIndex: -1,
   });
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
   const { setHoveredBookmark } = useBookmarkShortcuts({
     onRename,
+    onEdit,
+    onCopy,
     onDelete,
     onShowDescription: useCallback((bookmark: Bookmark) => {
       if (bookmark.description) {
         dispatch({ type: "showDescription", id: bookmark.id });
-        // Auto-hide after 3 seconds
         setTimeout(() => dispatch({ type: "clearDescription" }), 3000);
       }
     }, []),
@@ -123,6 +144,26 @@ export const BookmarkList = memo(function BookmarkList({
     };
   }, [state.openPopoverId, isSmallMobile]);
 
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (!bookmarks.length) return;
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        dispatch({ type: "selectNext" });
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        dispatch({ type: "selectPrevious" });
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        dispatch({ type: "clearSelection" });
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [bookmarks.length]);
+
   if (loading && bookmarks.length === 0) {
     return (
       <motion.div
@@ -164,12 +205,13 @@ export const BookmarkList = memo(function BookmarkList({
   return (
     <div className="w-full">
       <AnimatePresence mode="popLayout">
-        {bookmarks.map((bookmark) => (
+        {bookmarks.map((bookmark, index) => (
           <BookmarkItem
             key={bookmark.id}
             bookmark={bookmark}
             groups={groups}
             isMobile={isSmallMobile}
+            isSelected={state.selectedIndex === index}
             isPopoverOpen={state.openPopoverId === bookmark.id}
             onPopoverOpenChange={(open) =>
               dispatch({

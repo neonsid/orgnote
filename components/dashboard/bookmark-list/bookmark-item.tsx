@@ -38,6 +38,7 @@ interface BookmarkItemProps {
   onToggleRead: () => void;
   onShowDescription?: () => void;
   showDescription?: boolean;
+  isSelected?: boolean;
 }
 
 export const BookmarkItem = memo(function BookmarkItem({
@@ -59,6 +60,7 @@ export const BookmarkItem = memo(function BookmarkItem({
   onToggleRead,
   onShowDescription,
   showDescription,
+  isSelected,
 }: BookmarkItemProps) {
   const [descriptionOpen, setDescriptionOpen] = useState(false);
   const hasDescription = !!bookmark.description;
@@ -92,8 +94,9 @@ export const BookmarkItem = memo(function BookmarkItem({
       <div className="flex-1 min-w-0 flex flex-col gap-0.5">
         <div className="flex items-baseline gap-2">
           <span
-            className={`font-medium text-sm truncate group-hover:text-primary transition-colors ${bookmark.doneReading ? "text-muted-foreground" : "text-foreground"
-              }`}
+            className={`font-medium text-sm truncate group-hover:text-primary transition-colors ${
+              bookmark.doneReading ? "text-muted-foreground" : "text-foreground"
+            }`}
           >
             {bookmark.title}
           </span>
@@ -125,6 +128,10 @@ export const BookmarkItem = memo(function BookmarkItem({
     </>
   );
 
+  const selectionClass = isSelected
+    ? "bg-ring/10 ring-2 ring-ring ring-inset"
+    : "";
+
   if (isMobile) {
     return (
       <>
@@ -152,7 +159,7 @@ export const BookmarkItem = memo(function BookmarkItem({
                 }}
                 onMouseEnter={onMouseEnter}
                 onMouseLeave={onMouseLeave}
-                className="flex items-start gap-3 py-2 px-3 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
+                className={`flex items-start gap-3 py-2 px-3 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer ${selectionClass}`}
               >
                 {mainContent}
               </a>
@@ -201,7 +208,7 @@ export const BookmarkItem = memo(function BookmarkItem({
       rel="noopener noreferrer"
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      className="flex items-start gap-3 p-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
+      className={`flex items-start gap-3 p-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer ${selectionClass}`}
     >
       {mainContent}
     </a>

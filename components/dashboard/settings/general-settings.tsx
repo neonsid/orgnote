@@ -1,42 +1,41 @@
-"use client";
+'use client'
 
-import { useRef } from "react";
-import Image from "next/image";
-import Upload from "lucide-react/dist/esm/icons/upload";
-import { toast } from "sonner";
-import { useUser } from "@clerk/react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { PasswordSection } from "./password-section";
+import { useRef } from 'react'
+import Image from 'next/image'
+import Upload from 'lucide-react/dist/esm/icons/upload'
+import { toast } from 'sonner'
+import { useUser } from '@clerk/react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 interface GeneralSettingsProps {
-  nameForm: ReturnType<typeof import("@/hooks/use-name-form").useNameForm>;
-  onExportClick: () => void;
+  nameForm: ReturnType<typeof import('@/hooks/use-name-form').useNameForm>
+  onExportClick: () => void
 }
 
 export function GeneralSettings({
   nameForm,
   onExportClick,
 }: GeneralSettingsProps) {
-  const { user } = useUser();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useUser()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const userName = user?.fullName ?? user?.firstName ?? "User";
-  const initial = userName.charAt(0)?.toUpperCase() ?? "U";
+  const userName = user?.fullName ?? user?.firstName ?? 'User'
+  const initial = userName.charAt(0)?.toUpperCase() ?? 'U'
 
   const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
+    fileInputRef.current?.click()
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0]
     if (file) {
-      toast.info("Profile picture upload coming soon!");
+      toast.info('Profile picture upload coming soon!')
     }
-  };
+  }
 
-  if (!user) return null;
+  if (!user) return null
 
   return (
     <div className="space-y-6">
@@ -105,14 +104,11 @@ export function GeneralSettings({
         <Input
           id="email"
           type="email"
-          value={user.primaryEmailAddress?.emailAddress ?? ""}
+          value={user.primaryEmailAddress?.emailAddress ?? ''}
           disabled
           className="bg-muted"
         />
       </div>
-
-      {/* Password Section - Clerk handles passwords differently, hide for now */}
-      {/* <PasswordSection /> */}
 
       {/* Data Section */}
       <div className="space-y-3">
@@ -129,5 +125,5 @@ export function GeneralSettings({
         </div>
       </div>
     </div>
-  );
+  )
 }

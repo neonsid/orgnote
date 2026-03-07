@@ -205,14 +205,16 @@ export const UserInfo = memo(function UserInfo() {
                   )}
                 </button>
               )}
-              <button
-                id="user-keyboard-shortcuts-button"
-                onClick={() => dispatch({ type: "openShortcuts" })}
-                className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-              >
-                Keyboard Shortcuts
-                <Keyboard className="size-4 text-muted-foreground" />
-              </button>
+              {!isSmallMobile && (
+                <button
+                  id="user-keyboard-shortcuts-button"
+                  onClick={() => dispatch({ type: "openShortcuts" })}
+                  className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                >
+                  Keyboard Shortcuts
+                  <Keyboard className="size-4 text-muted-foreground" />
+                </button>
+              )}
               <div className="my-1 h-px bg-border" />
               <button
                 id="user-signout-button"

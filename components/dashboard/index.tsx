@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Loader2 } from "lucide-react";
-import { useMutation } from "convex/react";
+import { useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/react";
 import { DashboardHeader } from "./dashboard-header";
@@ -16,6 +16,45 @@ import { extractDomain } from "@/lib/domain-utils";
 import { useDialogStore } from "@/stores/dialog-store";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { toast } from "sonner";
+
+function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
+  try {
+    const urlObj = new URL(url.startsWith("http") ? url : `https://${url}`);
+    if (
+      urlObj.hostname !== "github.com" &&
+      urlObj.hostname !== "www.github.com"
+    ) {
+      return null;
+    }
+    const parts = urlObj.pathname.split("/").filter(Boolean);
+    if (parts.length < 2) return null;
+    return { owner: parts[0], repo: parts[1] };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchGitHubRepoName(
+  owner: string,
+  repo: string,
+): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}`,
+      {
+        headers: {
+          Accept: "application/vnd.github.v3+json",
+          "User-Agent": "Orgnote-Bookmark-Manager",
+        },
+      },
+    );
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.name || null;
+  } catch {
+    return null;
+  }
+}
 
 const RenameBookmarkDialog = dynamic(
   () =>
@@ -42,12 +81,24 @@ const DeleteBookmarkDialog = dynamic(
 export default function DashboardPage() {
   const { user, isLoaded: isUserLoaded } = useUser();
   const userId = user?.id ?? "";
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const { groups, bookmarks, effectiveGroupId, selectGroup, isLoading } =
     useDashboardData(!!user);
 
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const {
     renameBookmark,
@@ -67,11 +118,20 @@ export default function DashboardPage() {
 
   const handleSubmitBookmark = useCallback(
     async (value: string) => {
+      if (!effectiveGroupId) {
+        toast("Please create a group first to add bookmarks", {
+          description:
+            "Click on the group selector in the header to create a new group",
+        });
+        return;
+      }
+
       const domain = extractDomain(value);
       const isUrl = domain.includes(".");
-      const domainName = isUrl ? domain.split(".")[0] : "";
-      const title = isUrl
-        ? domainName.charAt(0).toUpperCase() + domainName.slice(1)
+
+      let title = isUrl
+        ? domain.split(".")[0].charAt(0).toUpperCase() +
+          domain.split(".")[0].slice(1)
         : value;
 
       const url = isUrl
@@ -79,6 +139,20 @@ export default function DashboardPage() {
           ? value
           : `https://${value}`
         : "#";
+
+      // Check if it's a GitHub URL and fetch repo name
+      if (isUrl) {
+        const githubInfo = parseGitHubUrl(url);
+        if (githubInfo) {
+          const repoName = await fetchGitHubRepoName(
+            githubInfo.owner,
+            githubInfo.repo,
+          );
+          if (repoName) {
+            title = repoName;
+          }
+        }
+      }
 
       const currentGroupId = effectiveGroupId;
       if (!currentGroupId) return;
@@ -187,6 +261,7 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2 mb-8">
           <div className="flex-1">
             <BookmarkSearch
+              ref={searchInputRef}
               onSearch={setDebouncedQuery}
               onSubmit={handleSubmitBookmark}
             />

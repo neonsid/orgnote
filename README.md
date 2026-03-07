@@ -228,6 +228,11 @@ Make sure to set the `CONVEX_DEPLOY_KEY` environment variable in Vercel before d
 6. Push to the branch: `git push origin feature/my-feature`
 7. Submit a pull request
 
+## Thank You
+
+- **[minimal.so](https://minimal.so)** - This project was heavily inspired by minimal.so's bookmark manager. Their elegant design and functionality served as a great reference for building this application.
+- **[Kilo Code](https://kilo.ai)** - For providing free access to their Kimi K2.5 AI subscription, which was used to help build and develop this project.
+
 ## License
 
 [MIT License](LICENSE)
