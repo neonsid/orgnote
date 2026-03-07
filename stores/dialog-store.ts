@@ -1,105 +1,116 @@
-import { create } from "zustand";
+import { create } from 'zustand'
 
 interface BookmarkData {
-  id: string;
-  title: string;
-  url: string;
+  id: string
+  title: string
+  url: string
 }
 
 interface EditBookmarkData {
-  id: string;
-  title: string;
-  url: string;
-  description?: string;
+  id: string
+  title: string
+  url: string
+  description?: string
 }
 
 interface DialogState {
   // Rename bookmark dialog
   renameBookmark: {
-    open: boolean;
-    bookmarkId: string | null;
-    bookmarkData: BookmarkData | null;
-  };
+    open: boolean
+    bookmarkId: string | null
+    bookmarkData: BookmarkData | null
+  }
 
   // Edit bookmark dialog
   editBookmark: {
-    open: boolean;
-    bookmarkId: string | null;
-    bookmarkData: EditBookmarkData | null;
-  };
+    open: boolean
+    bookmarkId: string | null
+    bookmarkData: EditBookmarkData | null
+  }
 
+  editGroup: {
+    open: boolean
+    groupId: string | null
+  }
   // Delete bookmark dialog
   deleteBookmark: {
-    open: boolean;
-    bookmarkId: string | null;
-    bookmarkData: BookmarkData | null;
-  };
+    open: boolean
+    bookmarkId: string | null
+    bookmarkData: BookmarkData | null
+  }
 
   // Delete group dialog
   deleteGroup: {
-    open: boolean;
-    groupId: string | null;
-  };
+    open: boolean
+    groupId: string | null
+  }
 
   // User settings dialog
   userSettings: {
-    open: boolean;
-    activeTab: "general" | "public-profile";
-  };
+    open: boolean
+    activeTab: 'general' | 'public-profile'
+  }
 
   // Export bookmarks dialog
   exportBookmarks: {
-    open: boolean;
-  };
+    open: boolean
+  }
 
   // Create group dialog
   createGroup: {
-    open: boolean;
-  };
+    open: boolean
+  }
 
   // Actions
-  openRenameDialog: (bookmarkId: string, bookmarkData: BookmarkData) => void;
-  closeRenameDialog: () => void;
+  openRenameDialog: (bookmarkId: string, bookmarkData: BookmarkData) => void
+  openGroupRenameDialog: (groupId: string) => void
+  closeGroupRenameDialog: () => void
+  closeRenameDialog: () => void
 
   openEditBookmarkDialog: (
     bookmarkId: string,
-    bookmarkData: EditBookmarkData,
-  ) => void;
-  closeEditBookmarkDialog: () => void;
+    bookmarkData: EditBookmarkData
+  ) => void
+  closeEditBookmarkDialog: () => void
 
   openDeleteBookmarkDialog: (
     bookmarkId: string,
-    bookmarkData: BookmarkData,
-  ) => void;
-  closeDeleteBookmarkDialog: () => void;
+    bookmarkData: BookmarkData
+  ) => void
+  closeDeleteBookmarkDialog: () => void
 
-  openDeleteGroupDialog: (groupId: string) => void;
-  closeDeleteGroupDialog: () => void;
+  openDeleteGroupDialog: (groupId: string) => void
+  closeDeleteGroupDialog: () => void
 
-  openUserSettings: (tab?: "general" | "public-profile") => void;
-  closeUserSettings: () => void;
-  setUserSettingsTab: (tab: "general" | "public-profile") => void;
+  openUserSettings: (tab?: 'general' | 'public-profile') => void
+  closeUserSettings: () => void
+  setUserSettingsTab: (tab: 'general' | 'public-profile') => void
 
-  openExportBookmarks: () => void;
-  closeExportBookmarks: () => void;
+  openExportBookmarks: () => void
+  closeExportBookmarks: () => void
 
-  openCreateGroup: () => void;
-  closeCreateGroup: () => void;
+  openCreateGroup: () => void
+  closeCreateGroup: () => void
 }
 
 export const useDialogStore = create<DialogState>((set) => ({
   // Initial states
   renameBookmark: { open: false, bookmarkId: null, bookmarkData: null },
   editBookmark: { open: false, bookmarkId: null, bookmarkData: null },
+  editGroup: { open: false, groupId: null, title: null },
   deleteBookmark: { open: false, bookmarkId: null, bookmarkData: null },
   deleteGroup: { open: false, groupId: null },
-  userSettings: { open: false, activeTab: "general" },
+  userSettings: { open: false, activeTab: 'general' },
   exportBookmarks: { open: false },
   createGroup: { open: false },
 
   // Rename bookmark actions
   openRenameDialog: (bookmarkId: string, bookmarkData: BookmarkData) =>
     set({ renameBookmark: { open: true, bookmarkId, bookmarkData } }),
+  openGroupRenameDialog: (groupId: string) =>
+    set({ editGroup: { groupId: groupId, open: true } }),
+  closeGroupRenameDialog: () =>
+    set({ editGroup: { groupId: null, open: false } }),
   closeRenameDialog: () =>
     set({
       renameBookmark: { open: false, bookmarkId: null, bookmarkData: null },
@@ -108,7 +119,7 @@ export const useDialogStore = create<DialogState>((set) => ({
   // Edit bookmark actions
   openEditBookmarkDialog: (
     bookmarkId: string,
-    bookmarkData: EditBookmarkData,
+    bookmarkData: EditBookmarkData
   ) => set({ editBookmark: { open: true, bookmarkId, bookmarkData } }),
   closeEditBookmarkDialog: () =>
     set({
@@ -130,10 +141,10 @@ export const useDialogStore = create<DialogState>((set) => ({
     set({ deleteGroup: { open: false, groupId: null } }),
 
   // User settings actions
-  openUserSettings: (tab = "general") =>
+  openUserSettings: (tab = 'general') =>
     set({ userSettings: { open: true, activeTab: tab } }),
   closeUserSettings: () =>
-    set({ userSettings: { open: false, activeTab: "general" } }),
+    set({ userSettings: { open: false, activeTab: 'general' } }),
   setUserSettingsTab: (tab) =>
     set((state) => ({
       userSettings: { ...state.userSettings, activeTab: tab },
@@ -146,4 +157,4 @@ export const useDialogStore = create<DialogState>((set) => ({
   // Create group actions
   openCreateGroup: () => set({ createGroup: { open: true } }),
   closeCreateGroup: () => set({ createGroup: { open: false } }),
-}));
+}))

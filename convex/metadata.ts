@@ -134,7 +134,9 @@ Description:`
     )
 
     const { text, usage, finishReason } = await generateText({
-      model: openrouter('openai/gpt-oss-120b'),
+      model: openrouter('openai/gpt-oss-120b', {
+        reasoning: { enabled: true, effort: 'low' },
+      }),
       prompt,
       temperature: 0.7,
     })
@@ -154,7 +156,6 @@ Description:`
     if (description.length > MAX_DESCRIPTION_LENGTH) {
       description = description.slice(0, MAX_DESCRIPTION_LENGTH)
     }
-
     console.log('[OpenRouter] Final description:', description)
 
     return description
@@ -195,10 +196,12 @@ export const generateBookmarkDescription = action({
 
       if (urlType === 'twitter') {
         // Check Scira quota using internal query
+        const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD — safe in action
         const quotaResult = await ctx.runQuery(
           internal.metadata_internal.checkSciraQuotaInternal,
           {
             userId: args.userId,
+            today,
           }
         )
 
