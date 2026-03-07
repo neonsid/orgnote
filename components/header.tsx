@@ -2,16 +2,14 @@
 
 import { useState, useRef } from 'react'
 import Image from 'next/image'
+import { SignInButton, SignUpButton } from '@clerk/nextjs'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
 import { Button } from '@/components/ui/button'
-import { LoginDialog } from '@/components/login-dialog'
-import { SignupDialog } from '@/components/signup-dialog'
 import { LogInIcon, Menu, UserIcon, X } from 'lucide-react'
 import Link from 'next/link'
+import { dark } from '@clerk/themes'
 
 export function Header() {
-  const [loginOpen, setLoginOpen] = useState(false)
-  const [signupOpen, setSignupOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const themeToggleRef = useRef<{ toggle: () => void }>(null)
 
@@ -38,21 +36,23 @@ export function Header() {
             <div className="flex items-center justify-center rounded-md border border-input bg-background p-2 hover:bg-accent hover:text-accent-foreground">
               <AnimatedThemeToggler aria-label="Toggle theme" />
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLoginOpen(true)}
-              className="font-medium px-4 text-sm"
-            >
-              Login
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setSignupOpen(true)}
-              className="font-medium px-5 text-sm"
-            >
-              Sign up
-            </Button>
+            <SignInButton mode="modal">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="font-medium px-4 text-sm cursor-pointer"
+              >
+                Login
+              </Button>
+            </SignInButton>
+            <SignUpButton mode="modal" appearance={{ baseTheme: dark }}>
+              <Button
+                size="sm"
+                className="font-medium px-5 text-sm cursor-pointer"
+              >
+                Sign up
+              </Button>
+            </SignUpButton>
           </nav>
 
           {/* Mobile hamburger button — visible only on mobile */}
@@ -94,44 +94,31 @@ export function Header() {
                     />
                   </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLoginOpen(true)
-                    setMobileMenuOpen(false)
-                  }}
-                  className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors flex items-center justify-between"
-                >
-                  Login
-                  <LogInIcon className="size-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSignupOpen(true)
-                    setMobileMenuOpen(false)
-                  }}
-                  className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors flex items-center justify-between"
-                >
-                  Sign up
-                  <UserIcon className="size-4" />
-                </button>
+                <div className="flex flex-col gap-2">
+                  <SignInButton mode="modal">
+                    <button
+                      type="button"
+                      className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors flex items-center justify-between cursor-pointer"
+                    >
+                      Login
+                      <LogInIcon className="size-4" />
+                    </button>
+                  </SignInButton>
+                  <SignUpButton mode="modal">
+                    <button
+                      type="button"
+                      className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors flex items-center justify-between cursor-pointer"
+                    >
+                      Sign up
+                      <UserIcon className="size-4" />
+                    </button>
+                  </SignUpButton>
+                </div>
               </div>
             </div>
           </>
         )}
       </header>
-
-      <LoginDialog
-        open={loginOpen}
-        onOpenChange={setLoginOpen}
-        onSignupClick={() => setSignupOpen(true)}
-      />
-      <SignupDialog
-        open={signupOpen}
-        onOpenChange={setSignupOpen}
-        onLoginClick={() => setLoginOpen(true)}
-      />
     </>
   )
 }

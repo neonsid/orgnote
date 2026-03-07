@@ -31,7 +31,6 @@ interface ExportedBookmark {
 interface ExportBookmarksDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  userId: string;
 }
 
 type ExportFormat = "json" | "csv";
@@ -51,14 +50,9 @@ interface BookmarkWithGroup {
 export function ExportBookmarksDialog({
   open,
   onOpenChange,
-  userId,
 }: ExportBookmarksDialogProps) {
-  // Gate queries by open state to prevent background data fetching
-  const groups = useQuery(api.groups.list, open ? { userId } : "skip");
-  const allBookmarks = useQuery(
-    api.bookmarks.getAllUserBookmarks,
-    open ? { userId } : "skip",
-  );
+  const groups = useQuery(api.groups.list);
+  const allBookmarks = useQuery(api.bookmarks.getAllUserBookmarks);
   const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
   const [format, setFormat] = useState<ExportFormat>("json");
   const [isExporting, setIsExporting] = useState(false);

@@ -3,14 +3,10 @@ import { v } from "convex/values";
 
 const SCIRA_DAILY_LIMIT = 20;
 
-/**
- * Internal Query: Check Scira quota for a user
- * Requires `today` as an arg to keep the query deterministic.
- */
 export const checkSciraQuotaInternal = internalQuery({
   args: {
     userId: v.string(),
-    today: v.string(), // YYYY-MM-DD, passed from the calling action
+    today: v.string(),
   },
   returns: v.object({
     hasQuota: v.boolean(),
@@ -21,8 +17,8 @@ export const checkSciraQuotaInternal = internalQuery({
   handler: async (ctx, args) => {
     const usage = await ctx.db
       .query("sciraUsage")
-      .withIndex("by_userProvidedId_and_date", (q) =>
-        q.eq("userProvidedId", args.userId).eq("date", args.today),
+      .withIndex("by_userId_and_date", (q) =>
+        q.eq("userId", args.userId).eq("date", args.today),
       )
       .unique();
 
@@ -38,9 +34,6 @@ export const checkSciraQuotaInternal = internalQuery({
   },
 });
 
-/**
- * Internal Mutation: Increment Scira quota for a user
- */
 export const incrementSciraQuotaInternal = internalMutation({
   args: {
     userId: v.string(),
@@ -48,7 +41,7 @@ export const incrementSciraQuotaInternal = internalMutation({
   },
   returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => {
-    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD — safe in mutation
+    const today = new Date().toISOString().split("T")[0];
 
     if (args.usageId) {
       const usage = await ctx.db.get(args.usageId);
@@ -59,7 +52,7 @@ export const incrementSciraQuotaInternal = internalMutation({
       }
     } else {
       await ctx.db.insert("sciraUsage", {
-        userProvidedId: args.userId,
+        userId: args.userId,
         date: today,
         requestCount: 1,
       });

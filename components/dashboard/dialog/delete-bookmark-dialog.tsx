@@ -21,22 +21,19 @@ interface DeleteBookmarkDialogProps {
   bookmark: Bookmark | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  userId: string;
 }
 
 export function DeleteBookmarkDialog({
   bookmark,
   open,
   onOpenChange,
-  userId,
 }: DeleteBookmarkDialogProps) {
   const deleteBookmark = useMutation(api.bookmarks.deleteBookMark);
 
   async function handleConfirm() {
-    if (!bookmark || !userId) return;
+    if (!bookmark) return;
     await deleteBookmark({
       bookmarkId: bookmark.id as Id<"bookmarks">,
-      userId,
     });
     onOpenChange(false);
   }

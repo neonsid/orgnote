@@ -3,30 +3,18 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { Button } from "@/components/ui/button";
-import { LoginDialog } from "@/components/login-dialog";
-import { SignupDialog } from "@/components/signup-dialog";
 import { Menu, X } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
+import { useUser } from "@clerk/react";
 import { motion, AnimatePresence } from "motion/react";
 
-interface PublicProfileHeaderProps {
-  onLoginClick?: () => void;
-  onSignupClick?: () => void;
-}
-
-export function PublicProfileHeader({
-  onLoginClick,
-  onSignupClick,
-}: PublicProfileHeaderProps) {
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [signupOpen, setSignupOpen] = useState(false);
+export function PublicProfileHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { data: session } = authClient.useSession();
-  const isLoggedIn = !!session;
+  const { user, isLoaded } = useUser();
+  const isLoggedIn = isLoaded && !!user;
 
-  // Lock body scroll when menu is open
   useEffect(() => {
     if (mobileMenuOpen) {
       document.body.style.overflow = "hidden";
@@ -37,24 +25,6 @@ export function PublicProfileHeader({
       document.body.style.overflow = "";
     };
   }, [mobileMenuOpen]);
-
-  const handleLoginClick = () => {
-    if (onLoginClick) {
-      onLoginClick();
-    } else {
-      setLoginOpen(true);
-    }
-    setMobileMenuOpen(false);
-  };
-
-  const handleSignupClick = () => {
-    if (onSignupClick) {
-      onSignupClick();
-    } else {
-      setSignupOpen(true);
-    }
-    setMobileMenuOpen(false);
-  };
 
   return (
     <>
@@ -81,21 +51,23 @@ export function PublicProfileHeader({
             </div>
             {!isLoggedIn && (
               <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLoginClick}
-                  className="font-medium px-4 text-sm"
-                >
-                  Login
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleSignupClick}
-                  className="font-medium px-5 text-sm"
-                >
-                  Sign up
-                </Button>
+                <SignInButton mode="modal">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="font-medium px-4 text-sm cursor-pointer"
+                  >
+                    Login
+                  </Button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <Button
+                    size="sm"
+                    className="font-medium px-5 text-sm cursor-pointer"
+                  >
+                    Sign up
+                  </Button>
+                </SignUpButton>
               </>
             )}
           </nav>
@@ -108,7 +80,7 @@ export function PublicProfileHeader({
           ) : (
             <button
               type="button"
-              onClick={() => setMobileMenuOpen((v) => !v)}
+              onClick={() => setMobileMenuOpen((v: boolean) => !v)}
               className="md:hidden flex items-center justify-center rounded-md p-2 text-foreground hover:bg-accent transition-colors"
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             >
@@ -158,21 +130,23 @@ export function PublicProfileHeader({
                   <>
                     <div className="border-t border-border my-2" />
                     <div className="flex flex-col gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleLoginClick}
-                        className="justify-center font-medium text-sm h-11"
-                      >
-                        Login
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={handleSignupClick}
-                        className="font-medium text-sm h-11"
-                      >
-                        Sign up
-                      </Button>
+                      <SignInButton mode="modal">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="justify-center font-medium text-sm h-11 cursor-pointer"
+                        >
+                          Login
+                        </Button>
+                      </SignInButton>
+                      <SignUpButton mode="modal">
+                        <Button
+                          size="sm"
+                          className="font-medium text-sm h-11 cursor-pointer"
+                        >
+                          Sign up
+                        </Button>
+                      </SignUpButton>
                     </div>
                   </>
                 )}
@@ -181,23 +155,6 @@ export function PublicProfileHeader({
           </>
         )}
       </AnimatePresence>
-
-      <LoginDialog
-        open={loginOpen}
-        onOpenChange={setLoginOpen}
-        onSignupClick={() => {
-          setLoginOpen(false);
-          setSignupOpen(true);
-        }}
-      />
-      <SignupDialog
-        open={signupOpen}
-        onOpenChange={setSignupOpen}
-        onLoginClick={() => {
-          setSignupOpen(false);
-          setLoginOpen(true);
-        }}
-      />
     </>
   );
 }

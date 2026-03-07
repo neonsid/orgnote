@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button";
 interface DeleteGroupDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  userId: string;
   groupId: string;
   groupTitle: string;
   groupColor: string;
@@ -28,7 +27,6 @@ interface DeleteGroupDialogProps {
 export function DeleteGroupDialog({
   open,
   onOpenChange,
-  userId,
   groupId,
   groupTitle,
   groupColor,
@@ -45,7 +43,6 @@ export function DeleteGroupDialog({
     try {
       await deleteGroup({
         groupId: groupId as Id<"groups">,
-        userId,
       });
       onOpenChange(false);
       onDeleted?.(groupId);

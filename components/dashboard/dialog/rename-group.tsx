@@ -1,31 +1,30 @@
-'use client'
+"use client";
 
-import { useEffect } from 'react'
-import { useMutation } from 'convex/react'
-import { api } from '@/convex/_generated/api'
-import { type Id } from '@/convex/_generated/dataModel'
-import { useForm } from '@tanstack/react-form'
+import { useEffect } from "react";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { type Id } from "@/convex/_generated/dataModel";
+import { useForm } from "@tanstack/react-form";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   renameBookmarkSchema,
   type RenameBookmarkFormData,
-} from '@/lib/validation'
-import { toast } from 'sonner'
+} from "@/lib/validation";
+import { toast } from "sonner";
 
 interface RenameGroupDialogProps {
-  groupId: Id<'groups'>
-  title: string | undefined
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  userId: string
+  groupId: Id<"groups">;
+  title: string | undefined;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export function RenameGroupDialog({
@@ -33,42 +32,41 @@ export function RenameGroupDialog({
   open,
   title,
   onOpenChange,
-  userId,
 }: RenameGroupDialogProps) {
-  const renameGroup = useMutation(api.groups.renameGroup)
+  const renameGroup = useMutation(api.groups.renameGroup);
 
   const form = useForm({
     defaultValues: {
-      title: '',
+      title: "",
     } as RenameBookmarkFormData,
     validators: {
       onChange: renameBookmarkSchema,
       onSubmit: renameBookmarkSchema,
     },
     onSubmit: async ({ value }) => {
-      if (!groupId || !userId) return
+      if (!groupId) return;
       await renameGroup({
         groupId: groupId,
         title: value.title,
-      })
-      toast.success('Bookmark renamed successfully')
-      onOpenChange(false)
+      });
+      toast.success("Bookmark renamed successfully");
+      onOpenChange(false);
     },
-  })
+  });
 
   // Sync the input when a new bookmark is selected
   useEffect(() => {
     if (groupId) {
-      form.setFieldValue('title', title || '')
+      form.setFieldValue("title", title || "");
     }
-  }, [groupId, form])
+  }, [groupId, form]);
 
   // Reset form when dialog closes
   useEffect(() => {
     if (!open) {
-      form.reset()
+      form.reset();
     }
-  }, [open, form])
+  }, [open, form]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -78,8 +76,8 @@ export function RenameGroupDialog({
         </DialogHeader>
         <form
           onSubmit={(e) => {
-            e.preventDefault()
-            form.handleSubmit()
+            e.preventDefault();
+            form.handleSubmit();
           }}
         >
           <div className="py-4">
@@ -123,5 +121,5 @@ export function RenameGroupDialog({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

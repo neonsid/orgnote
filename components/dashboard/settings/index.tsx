@@ -2,6 +2,7 @@
 
 import { useReducer } from "react";
 import { useQuery } from "convex/react";
+import { useUser } from "@clerk/react";
 import { api } from "@/convex/_generated/api";
 import {
   Dialog,
@@ -11,18 +12,16 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ExportBookmarksDialog } from "@/components/dashboard/dialog";
-import { useHasPassword } from "@/hooks/use-has-password";
 import { useNameForm } from "@/hooks/use-name-form";
 import { usePublicProfileForm } from "@/hooks/use-public-profile-form";
 import { GeneralSettings } from "./general-settings";
 import { PublicProfileSettings } from "./public-profile-settings";
 import { toast } from "sonner";
-import type { UserSettingsUser, SettingsTab } from "./types";
+import type { SettingsTab } from "./types";
 
 interface UserSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  user: UserSettingsUser;
 }
 
 function SettingsTabs({
@@ -61,8 +60,9 @@ function SettingsTabs({
 export function UserSettingsDialog({
   open,
   onOpenChange,
-  user,
 }: UserSettingsDialogProps) {
+  const { user } = useUser();
+
   type SettingsState = {
     activeTab: SettingsTab;
     isSaving: boolean;
@@ -99,12 +99,10 @@ export function UserSettingsDialog({
     exportOpen: false,
   });
 
-  const { data: hasPassword } = useHasPassword(open);
-  const existingProfile = useQuery(api.profile.getProfile, { userId: user.id });
+  const existingProfile = useQuery(api.profile.getProfile);
 
-  const nameForm = useNameForm({ user });
+  const nameForm = useNameForm();
   const profileForm = usePublicProfileForm({
-    userId: user.id,
     existingProfile,
   });
 
@@ -118,10 +116,7 @@ export function UserSettingsDialog({
   const handleSave = async () => {
     dispatch({ type: "setSaving", saving: true });
     try {
-      // Submit name form
       await nameForm.handleSubmit();
-
-      // Submit profile form
       await profileForm.handleSubmit();
 
       toast.success("Profile saved successfully!");
@@ -132,6 +127,8 @@ export function UserSettingsDialog({
       dispatch({ type: "setSaving", saving: false });
     }
   };
+
+  if (!user) return null;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -152,9 +149,7 @@ export function UserSettingsDialog({
           <div className="mt-6">
             {state.activeTab === "general" && (
               <GeneralSettings
-                user={user}
                 nameForm={nameForm}
-                hasPassword={hasPassword}
                 onExportClick={() =>
                   dispatch({ type: "setExportOpen", open: true })
                 }
@@ -180,7 +175,6 @@ export function UserSettingsDialog({
       <ExportBookmarksDialog
         open={state.exportOpen}
         onOpenChange={(open) => dispatch({ type: "setExportOpen", open })}
-        userId={user.id}
       />
     </Dialog>
   );

@@ -35,14 +35,12 @@ const GROUP_COLORS = [
 interface CreateGroupDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  userId: string;
   onCreated?: (groupId: string) => void;
 }
 
 export function CreateGroupDialog({
   open,
   onOpenChange,
-  userId,
   onCreated,
 }: CreateGroupDialogProps) {
   const createGroup = useMutation(api.groups.create);
@@ -60,7 +58,6 @@ export function CreateGroupDialog({
       const newGroupId = await createGroup({
         title: value.name,
         color: value.color,
-        userId,
       });
       form.reset();
       onOpenChange(false);

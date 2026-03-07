@@ -18,13 +18,12 @@ interface Bookmark {
   description?: string;
 }
 
-export function useDashboardData(userId: string) {
+export function useDashboardData(isAuthenticated: boolean = true) {
   const { selectedGroupId, setSelectedGroupId } = useDashboardStore();
 
-  // Single unified query for initial load
   const dashboardData = useQuery(
     api.bookmarks.getDashboardData,
-    userId ? { userId } : "skip",
+    isAuthenticated ? {} : "skip",
   );
 
   const isLoading = dashboardData === undefined;
