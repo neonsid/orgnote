@@ -16,12 +16,14 @@ interface Shortcut {
 }
 
 const shortcuts: Shortcut[] = [
-  { label: "Focus search", keys: ["Ctrl", "F"] },
-  { label: "Navigate bookmarks", keys: ["↑", "/", "↓"] },
-  { label: "Open bookmark", keys: ["Ctrl", "Enter"] },
-  { label: "Rename", keys: ["Ctrl", "E"] },
-  { label: "Delete", keys: ["Ctrl", "⌫"] },
-  { label: "Show Description", keys: ["Ctrl", "I"] },
+  { label: "Focus search", keys: ["⌘", "F"] },
+  { label: "Navigate bookmarks", keys: ["↑", "↓"] },
+  { label: "Open bookmark", keys: ["⌘", "Enter"] },
+  { label: "Rename", keys: ["⌘", "R"] },
+  { label: "Edit", keys: ["⌘", "E"] },
+  { label: "Copy", keys: ["⌘", "C"] },
+  { label: "Delete", keys: ["⌘", "⌫"] },
+  { label: "Show Description", keys: ["⌘", "I"] },
   { label: "Exit selection", keys: ["Esc"] },
 ];
 
