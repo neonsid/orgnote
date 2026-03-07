@@ -6,7 +6,7 @@ export default defineSchema({
     name: v.string(),
     userProvidedId: v.string(),
     email: v.string(),
-  }).index("by_user_provided_id", ["userProvidedId"]),
+  }).index("by_userProvidedId", ["userProvidedId"]),
   userProfile: defineTable({
     isPublic: v.boolean(),
     username: v.optional(v.string()),
@@ -25,7 +25,7 @@ export default defineSchema({
     ),
     userProvidedId: v.string(),
   })
-    .index("by_user_provided_id", ["userProvidedId"])
+    .index("by_userProvidedId", ["userProvidedId"])
     .index("by_username", ["username"]),
   groups: defineTable({
     title: v.string(),
@@ -35,8 +35,8 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.optional(v.number()),
   })
-    .index("by_user_provided_id", ["userProvidedId"])
-    .index("by_user_public", ["userProvidedId", "isPublic"]),
+    // Removed standalone by_userProvidedId — it's a prefix of by_userProvidedId_and_isPublic
+    .index("by_userProvidedId_and_isPublic", ["userProvidedId", "isPublic"]),
   bookmarks: defineTable({
     title: v.string(),
     description: v.optional(v.string()),
@@ -47,18 +47,18 @@ export default defineSchema({
     updatedAt: v.optional(v.number()),
     groupId: v.id("groups"),
   })
-    .index("groupId", ["groupId"])
-    .index("by_group_created", ["groupId", "createdAt"]),
+    .index("by_groupId", ["groupId"])
+    .index("by_groupId_and_createdAt", ["groupId", "createdAt"]),
   // Track Skyra API usage per user per day (20 requests/day limit)
   skyraUsage: defineTable({
     userProvidedId: v.string(),
     date: v.string(), // YYYY-MM-DD format
     requestCount: v.number(),
-  }).index("by_user_date", ["userProvidedId", "date"]),
+  }).index("by_userProvidedId_and_date", ["userProvidedId", "date"]),
   // Track Scira API usage per user per day (20 requests/day limit)
   sciraUsage: defineTable({
     userProvidedId: v.string(),
     date: v.string(), // YYYY-MM-DD format
     requestCount: v.number(),
-  }).index("by_user_date", ["userProvidedId", "date"]),
+  }).index("by_userProvidedId_and_date", ["userProvidedId", "date"]),
 });

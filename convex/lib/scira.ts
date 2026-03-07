@@ -273,7 +273,7 @@ export async function checkSciraQuota(
 
   const usage = await ctx.db
     .query('sciraUsage')
-    .withIndex('by_user_date', (q) =>
+    .withIndex('by_userProvidedId_and_date', (q) =>
       q.eq('userProvidedId', userProvidedId).eq('date', today)
     )
     .first()
@@ -299,7 +299,7 @@ export async function incrementSciraQuota(
 
   const existing = await ctx.db
     .query('sciraUsage')
-    .withIndex('by_user_date', (q) =>
+    .withIndex('by_userProvidedId_and_date', (q) =>
       q.eq('userProvidedId', userProvidedId).eq('date', today)
     )
     .first()
