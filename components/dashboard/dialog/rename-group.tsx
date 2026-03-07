@@ -59,7 +59,7 @@ export function RenameGroupDialog({
   // Sync the input when a new bookmark is selected
   useEffect(() => {
     if (groupId) {
-      form.setFieldValue('title', title)
+      form.setFieldValue('title', title || '')
     }
   }, [groupId, form])
 
