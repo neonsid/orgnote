@@ -1,5 +1,5 @@
 "use node";
-import { action, type ActionCtx } from "./_generated/server";
+import { action, internalAction, type ActionCtx } from "./_generated/server";
 import { v, type Infer } from "convex/values";
 import { ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
@@ -58,6 +58,46 @@ async function fetchGitHubReadme(
     return null;
   }
 }
+
+export const fetchGitHubRepoInfoInternal = internalAction({
+  args: {
+    owner: v.string(),
+    repo: v.string(),
+  },
+  returns: v.object({
+    name: v.string(),
+    description: v.optional(v.string()),
+  }),
+  handler: async (_, args) => {
+    const result = await fetchGitHubRepoTitle(args.owner, args.repo);
+    return {
+      name: result.name,
+      description: result.description ?? undefined,
+    };
+  },
+});
+
+export const updateBookmarkGitHubMetadata = internalAction({
+  args: {
+    bookmarkId: v.id("bookmarks"),
+    owner: v.string(),
+    repo: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    try {
+      const repoMeta = await fetchGitHubRepoTitle(args.owner, args.repo);
+
+      await ctx.runMutation(internal.bookmarks.updateBookmarkInternal, {
+        bookmarkId: args.bookmarkId,
+        title: repoMeta.name,
+        description: repoMeta.description ?? "",
+      });
+    } catch (error) {
+      console.error("Failed to update bookmark GitHub metadata:", error);
+    }
+  },
+});
 
 /**
  * Fetch the actual repository title and description from the GitHub API.

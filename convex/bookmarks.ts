@@ -51,6 +51,30 @@ export const insertBookmarkInternal = internalMutation({
   },
 });
 
+export const updateBookmarkInternal = internalMutation({
+  args: {
+    bookmarkId: v.id("bookmarks"),
+    title: v.optional(v.string()),
+    description: v.optional(v.string()),
+    imageUrl: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const updateData: {
+      title?: string;
+      description?: string;
+      imageUrl?: string;
+    } = {};
+
+    if (args.title !== undefined) updateData.title = args.title;
+    if (args.description !== undefined)
+      updateData.description = args.description;
+    if (args.imageUrl !== undefined) updateData.imageUrl = args.imageUrl;
+
+    await ctx.db.patch(args.bookmarkId, updateData);
+  },
+});
+
 export const getGroupForInsert = internalQuery({
   args: { groupId: v.id("groups") },
   returns: v.union(
@@ -107,44 +131,33 @@ export const createBookMark = mutation({
     await verifyGroupOwnership(ctx, args.groupId, userId);
 
     const currentTime = Date.now();
-    let finalTitle = args.title;
-    let finalDescription = args.description || "";
-
-    // For GitHub URLs, fetch metadata synchronously (fast)
     const urlType = classifyUrl(args.url);
-    if (urlType === "github" && !args.description) {
-      const repoInfo = parseGitHubRepo(args.url);
-      if (repoInfo) {
-        try {
-          const response = await fetch(
-            `https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo}`,
-            {
-              headers: {
-                Accept: "application/vnd.github.v3+json",
-                "User-Agent": "Orgnote-Bookmark-Manager",
-              },
-            },
-          );
-          if (response.ok) {
-            const data = await response.json();
-            finalTitle = data.name || args.title;
-            finalDescription = data.description || "";
-          }
-        } catch (error) {
-          console.error("Failed to fetch GitHub repo info:", error);
-        }
-      }
-    }
 
     const bookmarkId = await ctx.db.insert("bookmarks", {
-      title: finalTitle,
-      description: finalDescription,
+      title: args.title,
+      description: args.description || "",
       groupId: args.groupId,
       url: args.url,
       imageUrl: args.imageUrl,
       doneReading: false,
       createdAt: currentTime,
     });
+
+    // For GitHub URLs, fetch metadata in background via scheduler
+    if (urlType === "github" && !args.description) {
+      const repoInfo = parseGitHubRepo(args.url);
+      if (repoInfo) {
+        await ctx.scheduler.runAfter(
+          0,
+          internal.metadata.updateBookmarkGitHubMetadata,
+          {
+            bookmarkId,
+            owner: repoInfo.owner,
+            repo: repoInfo.repo,
+          },
+        );
+      }
+    }
 
     // For non-GitHub URLs, generate description in background via AI
     if (!args.description && urlType !== "github") {
