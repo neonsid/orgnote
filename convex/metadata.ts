@@ -1,6 +1,7 @@
 "use node";
 import { action, type ActionCtx } from "./_generated/server";
 import { v, type Infer } from "convex/values";
+import { ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
 import { classifyUrl, parseGitHubRepo } from "./lib/url_classifier";
 import { fetchTweetContentWithScira, getSciraApiKey } from "./lib/scira";
@@ -216,10 +217,22 @@ Description:`;
 export const generateBookmarkDescription = action({
   args: {
     url: v.string(),
+    userId: v.optional(v.string()),
   },
   returns: returnsValidator,
   handler: async (ctx, args): Promise<ReturnType> => {
-    const userId = await requireAuth(ctx);
+    // Use provided userId or authenticate
+    let userId = args.userId;
+    if (!userId) {
+      const identity = await ctx.auth.getUserIdentity();
+      if (!identity) {
+        throw new ConvexError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
+      }
+      userId = identity.subject;
+    }
 
     try {
       const urlType = classifyUrl(args.url);
@@ -305,7 +318,10 @@ export const generateBookmarkDescription = action({
         }
 
         // Fetch the actual repo title from GitHub API
-        const repoMeta = await fetchGitHubRepoTitle(repoInfo.owner, repoInfo.repo);
+        const repoMeta = await fetchGitHubRepoTitle(
+          repoInfo.owner,
+          repoInfo.repo,
+        );
         title = repoMeta.name;
 
         const readme = await fetchGitHubReadme(repoInfo.owner, repoInfo.repo);
