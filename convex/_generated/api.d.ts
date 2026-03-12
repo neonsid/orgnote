@@ -18,6 +18,7 @@ import type * as metadata from "../metadata.js";
 import type * as metadata_internal from "../metadata_internal.js";
 import type * as profile from "../profile.js";
 import type * as rate_limit from "../rate_limit.js";
+import type * as todos from "../todos.js";
 
 import type {
   ApiFromModules,
@@ -36,6 +37,7 @@ declare const fullApi: ApiFromModules<{
   metadata_internal: typeof metadata_internal;
   profile: typeof profile;
   rate_limit: typeof rate_limit;
+  todos: typeof todos;
 }>;
 
 /**

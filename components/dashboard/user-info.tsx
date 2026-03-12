@@ -8,9 +8,10 @@ import {
   Keyboard,
   User,
   Loader2,
+  ListTodo,
 } from "lucide-react";
 import { useUser, useClerk } from "@clerk/react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useIsSmallMobile } from "@/hooks/use-mobile";
 import Image from "next/image";
@@ -41,7 +42,8 @@ export const UserInfo = memo(function UserInfo() {
     open: boolean;
     shortcutsOpen: boolean;
     settingsOpen: boolean;
-    isRedirecting: boolean;
+    isRedirectingToProfile: boolean;
+    isRedirectingToTodos: boolean;
     isSigningOut: boolean;
   };
 
@@ -52,7 +54,8 @@ export const UserInfo = memo(function UserInfo() {
     | { type: "setShortcutsOpen"; open: boolean }
     | { type: "openSettings" }
     | { type: "setSettingsOpen"; open: boolean }
-    | { type: "setRedirecting"; redirecting: boolean }
+    | { type: "setRedirectingToProfile"; redirecting: boolean }
+    | { type: "setRedirectingToTodos"; redirecting: boolean }
     | { type: "setSigningOut"; signingOut: boolean };
 
   function reducer(
@@ -63,7 +66,12 @@ export const UserInfo = memo(function UserInfo() {
       case "toggleMenu":
         return { ...state, open: !state.open };
       case "setMenuOpen":
-        return { ...state, open: action.open, isRedirecting: false };
+        return {
+          ...state,
+          open: action.open,
+          isRedirectingToProfile: false,
+          isRedirectingToTodos: false,
+        };
       case "openShortcuts":
         return { ...state, open: false, shortcutsOpen: true };
       case "setShortcutsOpen":
@@ -72,8 +80,10 @@ export const UserInfo = memo(function UserInfo() {
         return { ...state, open: false, settingsOpen: true };
       case "setSettingsOpen":
         return { ...state, settingsOpen: action.open };
-      case "setRedirecting":
-        return { ...state, isRedirecting: action.redirecting };
+      case "setRedirectingToProfile":
+        return { ...state, isRedirectingToProfile: action.redirecting };
+      case "setRedirectingToTodos":
+        return { ...state, isRedirectingToTodos: action.redirecting };
       case "setSigningOut":
         return { ...state, isSigningOut: action.signingOut };
       default:
@@ -85,13 +95,16 @@ export const UserInfo = memo(function UserInfo() {
     open: false,
     shortcutsOpen: false,
     settingsOpen: false,
-    isRedirecting: false,
+    isRedirectingToProfile: false,
+    isRedirectingToTodos: false,
     isSigningOut: false,
   });
 
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
   const isSmallMobile = useIsSmallMobile();
+  const isTodosPage = pathname === "/dashboard/todos";
 
   const profile = useQuery(api.profile.getProfile);
   const hasPublicProfile = profile?.isPublic && profile?.username;
@@ -123,11 +136,18 @@ export const UserInfo = memo(function UserInfo() {
 
   const handlePublicProfileClick = () => {
     if (profile?.username) {
-      dispatch({ type: "setRedirecting", redirecting: true });
+      dispatch({ type: "setRedirectingToProfile", redirecting: true });
       window.setTimeout(() => {
         router.push(`/u/${profile.username}`);
       }, 150);
     }
+  };
+
+  const handleTodosClick = () => {
+    dispatch({ type: "setRedirectingToTodos", redirecting: true });
+    window.setTimeout(() => {
+      router.push("/dashboard/todos");
+    }, 150);
   };
 
   const handleSignOut = () => {
@@ -194,18 +214,37 @@ export const UserInfo = memo(function UserInfo() {
                 <button
                   id="public-profile"
                   onClick={handlePublicProfileClick}
-                  disabled={state.isRedirecting}
+                  disabled={state.isRedirectingToProfile}
                   className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors disabled:opacity-70 disabled:pointer-events-none"
                 >
-                  {state.isRedirecting ? "Redirecting..." : "Public Profile"}
-                  {state.isRedirecting ? (
+                  {state.isRedirectingToProfile
+                    ? "Redirecting..."
+                    : "Public Profile"}
+                  {state.isRedirectingToProfile ? (
                     <Loader2 className="size-4 text-muted-foreground animate-spin" />
                   ) : (
                     <User className="size-4 text-muted-foreground" />
                   )}
                 </button>
               )}
-              {!isSmallMobile && (
+              {!isTodosPage && (
+                <button
+                  id="todos-button"
+                  onClick={handleTodosClick}
+                  disabled={state.isRedirectingToTodos}
+                  className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors disabled:opacity-70 disabled:pointer-events-none"
+                >
+                  {state.isRedirectingToTodos
+                    ? "Redirecting..."
+                    : "Daily Activities"}
+                  {state.isRedirectingToTodos ? (
+                    <Loader2 className="size-4 text-muted-foreground animate-spin" />
+                  ) : (
+                    <ListTodo className="size-4 text-muted-foreground" />
+                  )}
+                </button>
+              )}
+              {!isSmallMobile && !isTodosPage && (
                 <button
                   id="user-keyboard-shortcuts-button"
                   onClick={() => dispatch({ type: "openShortcuts" })}
