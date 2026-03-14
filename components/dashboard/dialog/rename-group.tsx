@@ -1,72 +1,83 @@
-"use client";
+'use client'
 
-import { useEffect } from "react";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { type Id } from "@/convex/_generated/dataModel";
-import { useForm } from "@tanstack/react-form";
+import { useEffect } from 'react'
+import { useMutation } from 'convex/react'
+import { api } from '@/convex/_generated/api'
+import { type Id } from '@/convex/_generated/dataModel'
+import { useForm } from '@tanstack/react-form'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   renameBookmarkSchema,
+  RenameGroupFormData,
+  renameGroupSchema,
   type RenameBookmarkFormData,
-} from "@/lib/validation";
-import { toast } from "sonner";
+} from '@/lib/validation'
+import { toast } from 'sonner'
+import { GROUP_COLORS } from './create-group-dialog'
+import { Check } from 'lucide-react'
 
 interface RenameGroupDialogProps {
-  groupId: Id<"groups">;
-  title: string | undefined;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  groupId: Id<'groups'>
+  title: string | undefined
+  color: string | undefined
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
 export function RenameGroupDialog({
   groupId,
   open,
   title,
+  color,
   onOpenChange,
 }: RenameGroupDialogProps) {
-  const renameGroup = useMutation(api.groups.renameGroup);
+  const renameGroup = useMutation(api.groups.renameGroup)
 
   const form = useForm({
     defaultValues: {
-      title: "",
-    } as RenameBookmarkFormData,
+      title: title,
+      color: color || GROUP_COLORS[0].value,
+    } as RenameGroupFormData,
     validators: {
-      onChange: renameBookmarkSchema,
-      onSubmit: renameBookmarkSchema,
+      onChange: renameGroupSchema,
+      onSubmit: renameGroupSchema,
     },
     onSubmit: async ({ value }) => {
-      if (!groupId) return;
+      if (!groupId) return
       await renameGroup({
         groupId: groupId,
         title: value.title,
-      });
-      toast.success("Bookmark renamed successfully");
-      onOpenChange(false);
+        color: value.color,
+      })
+      toast.success('Bookmark renamed successfully')
+      onOpenChange(false)
     },
-  });
+  })
 
   // Sync the input when a new bookmark is selected
-  useEffect(() => {
-    if (groupId) {
-      form.setFieldValue("title", title || "");
-    }
-  }, [groupId, form]);
+  // useEffect(() => {
+  //   if (groupId) {
+  //     form.setFieldValue('title', title || '')
+  //   }
+  //   if (color) {
+  //     form.setFieldValue('color', color || '')
+  //   }
+  // }, [groupId, form])
 
   // Reset form when dialog closes
   useEffect(() => {
     if (!open) {
-      form.reset();
+      form.reset()
     }
-  }, [open, form]);
+  }, [open, form])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -76,11 +87,11 @@ export function RenameGroupDialog({
         </DialogHeader>
         <form
           onSubmit={(e) => {
-            e.preventDefault();
-            form.handleSubmit();
+            e.preventDefault()
+            form.handleSubmit()
           }}
         >
-          <div className="py-4">
+          <div className="py-4 flex flex-col gap-6">
             <form.Field
               name="title"
               children={(field) => (
@@ -98,6 +109,32 @@ export function RenameGroupDialog({
                     </p>
                   )}
                 </>
+              )}
+            />
+            <form.Field
+              name="color"
+              children={(field) => (
+                <div className="grid gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    {GROUP_COLORS.map((color) => (
+                      <button
+                        key={color.value}
+                        type="button"
+                        title={color.label}
+                        onClick={() => field.handleChange(color.value)}
+                        className="relative size-8 rounded-full transition-all duration-150 hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        style={{ backgroundColor: color.value }}
+                      >
+                        {field.state.value === color.value && (
+                          <Check className="absolute inset-0 m-auto size-4 text-white drop-shadow-sm" />
+                        )}
+                        {field.state.value === color.value && (
+                          <span className="absolute inset-0 rounded-full ring-2 ring-foreground/30 ring-offset-2 ring-offset-background" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
             />
           </div>
@@ -121,5 +158,5 @@ export function RenameGroupDialog({
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
