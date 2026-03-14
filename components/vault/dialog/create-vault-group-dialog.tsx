@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import { Loader2, Check } from 'lucide-react'
-import { useMutation } from 'convex/react'
-import { api } from '@/convex/_generated/api'
+import { Loader2, Check } from "lucide-react";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import {
   Dialog,
   DialogContent,
@@ -10,44 +10,44 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { useForm } from '@tanstack/react-form'
-import { createGroupSchema, type CreateGroupFormData } from '@/lib/validation'
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useForm } from "@tanstack/react-form";
+import { createGroupSchema, type CreateGroupFormData } from "@/lib/validation";
 
-export const GROUP_COLORS = [
-  { value: '#f59e0b', label: 'Amber' },
-  { value: '#3b82f6', label: 'Blue' },
-  { value: '#10b981', label: 'Emerald' },
-  { value: '#ef4444', label: 'Red' },
-  { value: '#8b5cf6', label: 'Violet' },
-  { value: '#ec4899', label: 'Pink' },
-  { value: '#06b6d4', label: 'Cyan' },
-  { value: '#f97316', label: 'Orange' },
-  { value: '#84cc16', label: 'Lime' },
-  { value: '#6366f1', label: 'Indigo' },
-  { value: '#14b8a6', label: 'Teal' },
-  { value: '#a855f7', label: 'Purple' },
-]
+const GROUP_COLORS = [
+  { value: "#f59e0b", label: "Amber" },
+  { value: "#3b82f6", label: "Blue" },
+  { value: "#10b981", label: "Emerald" },
+  { value: "#ef4444", label: "Red" },
+  { value: "#8b5cf6", label: "Violet" },
+  { value: "#ec4899", label: "Pink" },
+  { value: "#06b6d4", label: "Cyan" },
+  { value: "#f97316", label: "Orange" },
+  { value: "#84cc16", label: "Lime" },
+  { value: "#6366f1", label: "Indigo" },
+  { value: "#14b8a6", label: "Teal" },
+  { value: "#a855f7", label: "Purple" },
+];
 
-interface CreateGroupDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onCreated?: (groupId: string) => void
+interface CreateVaultGroupDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCreated?: (groupId: string) => void;
 }
 
-export function CreateGroupDialog({
+export function CreateVaultGroupDialog({
   open,
   onOpenChange,
   onCreated,
-}: CreateGroupDialogProps) {
-  const createGroup = useMutation(api.groups.create)
+}: CreateVaultGroupDialogProps) {
+  const createVaultGroup = useMutation(api.vault.createVaultGroup);
 
   const form = useForm({
     defaultValues: {
-      name: '',
+      name: "",
       color: GROUP_COLORS[0].value,
     } as CreateGroupFormData,
     validators: {
@@ -55,15 +55,15 @@ export function CreateGroupDialog({
       onSubmit: createGroupSchema,
     },
     onSubmit: async ({ value }) => {
-      const newGroupId = await createGroup({
+      const newGroupId = await createVaultGroup({
         title: value.name,
         color: value.color,
-      })
-      form.reset()
-      onOpenChange(false)
-      onCreated?.(newGroupId)
+      });
+      form.reset();
+      onOpenChange(false);
+      onCreated?.(newGroupId);
     },
-  })
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -73,18 +73,17 @@ export function CreateGroupDialog({
             Create Group
           </DialogTitle>
           <DialogDescription>
-            Create a new group to organize your bookmarks.
+            Create a new group to organize your files.
           </DialogDescription>
         </DialogHeader>
 
         <form
           onSubmit={(e) => {
-            e.preventDefault()
-            form.handleSubmit()
+            e.preventDefault();
+            form.handleSubmit();
           }}
           className="flex flex-col gap-5 pt-1"
         >
-          {/* Name field */}
           <form.Field
             name="name"
             children={(field) => (
@@ -111,7 +110,6 @@ export function CreateGroupDialog({
             )}
           />
 
-          {/* Color picker */}
           <form.Field
             name="color"
             children={(field) => (
@@ -159,7 +157,7 @@ export function CreateGroupDialog({
                       Creating…
                     </>
                   ) : (
-                    'Create'
+                    "Create"
                   )}
                 </Button>
               )}
@@ -168,5 +166,5 @@ export function CreateGroupDialog({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

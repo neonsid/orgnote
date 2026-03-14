@@ -240,3 +240,7 @@ Make sure to set the `CONVEX_DEPLOY_KEY` environment variable in Vercel before d
 ## Support
 
 For issues and feature requests, please use the [GitHub issue tracker](https://github.com/yourusername/orgnote/issues).
+
+
+- [x] Add file upload for articles
+- [x] Clean the vibecoded mess
