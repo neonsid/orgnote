@@ -34,6 +34,7 @@ interface DashboardHeaderProps {
   loading?: boolean
   createGroup: (args: { title: string; color: string }) => Promise<string>
   showPublicButton: boolean
+  variant?: 'dashboard' | 'vault'
 }
 
 export const DashboardHeader = memo(function DashboardHeader({
@@ -43,6 +44,7 @@ export const DashboardHeader = memo(function DashboardHeader({
   loading = false,
   createGroup,
   showPublicButton,
+  variant,
 }: DashboardHeaderProps) {
   return (
     <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
@@ -65,7 +67,7 @@ export const DashboardHeader = memo(function DashboardHeader({
             aria-label="Toggle theme"
             className="hidden sm:flex items-center justify-center rounded-md border border-input bg-background p-1.5 sm:p-2 hover:bg-accent hover:text-accent-foreground transition-colors"
           />
-          <UserInfo />
+          <UserInfo variant={variant} />
         </div>
       </div>
     </header>

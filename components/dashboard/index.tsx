@@ -198,6 +198,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
       <DashboardHeader
+        variant="dashboard"
         showPublicButton={true}
         createGroup={createGroup}
         groups={groups}

@@ -63,6 +63,7 @@ export default function VaultPage() {
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader
+        variant="vault"
         showPublicButton={false}
         createGroup={createVaultGroup}
         groups={groups}
