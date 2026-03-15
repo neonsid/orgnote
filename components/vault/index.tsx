@@ -11,29 +11,30 @@ import dynamic from 'next/dynamic'
 import { useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { DashboardHeader } from '../dashboard/dashboard-header'
+import { VaultFile } from '../dashboard/bookmark-list/types'
 
-const DeleteVaultFileDialog = dynamic(
+const DeleteBookmarkDialog = dynamic(
   () =>
-    import('./dialog/delete-vault-file-dialog').then(
-      (m) => m.DeleteVaultFileDialog
+    import('../dashboard/dialog/delete-bookmark-dialog').then(
+      (m) => m.DeleteBookmarkDialog
     ),
   { ssr: false }
 )
-
 export default function VaultPage() {
   const { user, isLoaded } = useUser()
   const hasAutoSelected = useRef(false)
 
   const {
-    deleteVaultFile,
-    openDeleteVaultFileDialog,
-    closeDeleteVaultFileDialog,
+    deleteBookmarkOrItem,
+    openDeleteBookmarkDialog,
+    closeDeleteBookmarkDialog,
   } = useDialogStore()
 
   const { groups, files, effectiveGroupId, selectGroup, isLoading } =
     useVaultData(!!user)
 
   const createVaultGroup = useMutation(api.vault.createVaultGroup)
+  const deleteFile = useMutation(api.vault.deleteFile)
   useEffect(() => {
     if (
       groups &&
@@ -50,10 +51,10 @@ export default function VaultPage() {
   }, [groups, effectiveGroupId, selectGroup])
 
   const handleDeleteFile = useCallback(
-    (fileId: Id<'vaultFiles'>, fileName: string) => {
-      openDeleteVaultFileDialog(fileId, fileName)
+    (file: VaultFile) => {
+      openDeleteBookmarkDialog(file._id as Id<'vaultFiles'>, file.name)
     },
-    [openDeleteVaultFileDialog]
+    [openDeleteBookmarkDialog]
   )
 
   if (!isLoaded) {
@@ -85,12 +86,18 @@ export default function VaultPage() {
           isLoading={isLoading}
         />
       </main>
-
-      <DeleteVaultFileDialog
-        fileId={deleteVaultFile.fileId}
-        fileName={deleteVaultFile.fileName}
-        open={deleteVaultFile.open}
-        onOpenChange={closeDeleteVaultFileDialog}
+      <DeleteBookmarkDialog
+        bookmarkOrFileId={deleteBookmarkOrItem.bookmarkOrFileId}
+        title={deleteBookmarkOrItem.title}
+        variant="File"
+        open={deleteBookmarkOrItem.open}
+        onOpenChange={closeDeleteBookmarkDialog}
+        onDelete={async () => {
+          if (!deleteBookmarkOrItem.bookmarkOrFileId) return
+          await deleteFile({
+            fileId: deleteBookmarkOrItem.bookmarkOrFileId as Id<'vaultFiles'>,
+          })
+        }}
       />
     </div>
   )

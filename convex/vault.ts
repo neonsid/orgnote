@@ -26,6 +26,7 @@ export const getFiles = query({
 
 export const deleteFile = mutation({
   args: { fileId: v.id('vaultFiles') },
+  returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => {
     const userId = await requireAuth(ctx)
 
@@ -44,7 +45,7 @@ export const deleteFile = mutation({
       fileId: args.fileId,
     })
 
-    return true
+    return { success: true }
   },
 })
 
@@ -74,7 +75,6 @@ export const saveFileMetadata = mutation({
 })
 
 export const getVaultGroups = query({
-  args: {},
   handler: async (ctx) => {
     const userId = await requireAuth(ctx)
     return await ctx.db
@@ -85,10 +85,8 @@ export const getVaultGroups = query({
 })
 
 export const getVaultData = query({
-  args: {},
   handler: async (ctx) => {
     const userId = await requireAuth(ctx)
-
     const [groups, files] = await Promise.all([
       ctx.db
         .query('vaultGroups')

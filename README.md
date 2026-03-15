@@ -244,3 +244,7 @@ For issues and feature requests, please use the [GitHub issue tracker](https://g
 
 - [x] Add file upload for articles
 - [x] Clean the vibecoded mess
+- [] Remove createdAt from all fields because convex already has it
+- [] Complete all todos
+- [] Clean the codebase and make the dialog which are common in components/dialog
+- [] Clean the file upload component as well

@@ -1,64 +1,61 @@
-"use client";
+'use client'
 
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { type Id } from "@/convex/_generated/dataModel";
+import { type Id } from '@/convex/_generated/dataModel'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-
-interface Bookmark {
-  id: string;
-  title: string;
-}
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 interface DeleteBookmarkDialogProps {
-  bookmark: Bookmark | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  bookmarkOrFileId: Id<'bookmarks'> | Id<'vaultFiles'> | null
+  title: string | null
+  variant: 'Bookmark' | 'File'
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onDelete: () => Promise<void>
 }
 
 export function DeleteBookmarkDialog({
-  bookmark,
+  bookmarkOrFileId,
+  title,
   open,
+  variant,
   onOpenChange,
+  onDelete,
 }: DeleteBookmarkDialogProps) {
-  const deleteBookmark = useMutation(api.bookmarks.deleteBookMark);
-
   async function handleConfirm() {
-    if (!bookmark) return;
-    await deleteBookmark({
-      bookmarkId: bookmark.id as Id<"bookmarks">,
-    });
-    onOpenChange(false);
+    if (!bookmarkOrFileId) return
+    await onDelete()
+    onOpenChange(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md gap-4">
         <DialogHeader className="space-y-2">
-          <DialogTitle>Delete Bookmark</DialogTitle>
+          <DialogTitle>Delete {variant}</DialogTitle>
         </DialogHeader>
-        <div className="px-1">
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Are you sure you want to delete &quot;{bookmark?.title}&quot;? This
-            action cannot be undone.
-          </p>
-        </div>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Are you sure you want to delete &quot;{title}&quot;? This action
+          cannot be undone.
+        </p>
         <DialogFooter className="gap-2 sm:gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button variant="destructive" onClick={handleConfirm}>
+          <Button
+            variant="destructive"
+            onClick={handleConfirm}
+            className="cursor-pointer"
+          >
             Delete
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

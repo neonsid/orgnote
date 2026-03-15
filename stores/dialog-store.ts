@@ -1,3 +1,4 @@
+import { Id } from '@/convex/_generated/dataModel'
 import { create } from 'zustand'
 
 interface BookmarkData {
@@ -5,6 +6,8 @@ interface BookmarkData {
   title: string
   url: string
 }
+
+// TODO: Make all string Id to convexIDs
 
 interface EditBookmarkData {
   id: string
@@ -33,10 +36,10 @@ interface DialogState {
     groupId: string | null
   }
   // Delete bookmark dialog
-  deleteBookmark: {
+  deleteBookmarkOrItem: {
     open: boolean
-    bookmarkId: string | null
-    bookmarkData: BookmarkData | null
+    bookmarkOrFileId: Id<'bookmarks'> | Id<'vaultFiles'> | null
+    title: string | null
   }
 
   // Delete group dialog
@@ -81,8 +84,8 @@ interface DialogState {
   closeEditBookmarkDialog: () => void
 
   openDeleteBookmarkDialog: (
-    bookmarkId: string,
-    bookmarkData: BookmarkData
+    bookmarkOrFileId: Id<'bookmarks'> | Id<'vaultFiles'>,
+    title: string
   ) => void
   closeDeleteBookmarkDialog: () => void
 
@@ -114,6 +117,11 @@ export const useDialogStore = create<DialogState>((set) => ({
   exportBookmarks: { open: false },
   createGroup: { open: false },
   deleteVaultFile: { open: false, fileId: null, fileName: null },
+  deleteBookmarkOrItem: {
+    open: false,
+    bookmarkOrFileId: null as unknown as Id<'bookmarks'> | Id<'vaultFiles'>,
+    title: null,
+  },
 
   // Rename bookmark actions
   openRenameDialog: (bookmarkId: string, bookmarkData: BookmarkData) =>
@@ -138,13 +146,26 @@ export const useDialogStore = create<DialogState>((set) => ({
     }),
 
   // Delete bookmark actions
-  openDeleteBookmarkDialog: (bookmarkId: string, bookmarkData: BookmarkData) =>
-    set({ deleteBookmark: { open: true, bookmarkId, bookmarkData } }),
-  closeDeleteBookmarkDialog: () =>
+  openDeleteBookmarkDialog: (
+    bookmarkOrFileId: Id<'bookmarks'> | Id<'vaultFiles'>,
+    title: string
+  ) =>
     set({
-      deleteBookmark: { open: false, bookmarkId: null, bookmarkData: null },
+      deleteBookmarkOrItem: {
+        open: true,
+        bookmarkOrFileId,
+        title,
+      },
     }),
 
+  closeDeleteBookmarkDialog: () =>
+    set({
+      deleteBookmarkOrItem: {
+        open: false,
+        bookmarkOrFileId: null as unknown as Id<'bookmarks'> | Id<'vaultFiles'>, // or use undefined
+        title: null,
+      },
+    }),
   // Delete group actions
   openDeleteGroupDialog: (groupId: string) =>
     set({ deleteGroup: { open: true, groupId } }),
