@@ -1,10 +1,10 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { Loader2, Trash2 } from "lucide-react";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
+import { useState } from 'react'
+import { Loader2, Trash2 } from 'lucide-react'
+import { useMutation } from 'convex/react'
+import { api } from '@/convex/_generated/api'
+import { Id } from '@/convex/_generated/dataModel'
 import {
   Dialog,
   DialogContent,
@@ -12,16 +12,16 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 interface DeleteGroupDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  groupId: string;
-  groupTitle: string;
-  groupColor: string;
-  onDeleted?: (deletedGroupId: string) => void;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  groupId: string
+  groupTitle: string
+  groupColor: string
+  onDeleted?: (deletedGroupId: string) => void
 }
 
 export function DeleteGroupDialog({
@@ -32,24 +32,23 @@ export function DeleteGroupDialog({
   groupColor,
   onDeleted,
 }: DeleteGroupDialogProps) {
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const deleteGroup = useMutation(api.groups.deleteGroup);
+  const [isDeleting, setIsDeleting] = useState(false)
+  const deleteGroup = useMutation(api.groups.deleteGroup)
 
   async function handleDelete() {
-    if (isDeleting) return;
+    if (isDeleting) return
 
-    setIsDeleting(true);
+    setIsDeleting(true)
     try {
       await deleteGroup({
-        groupId: groupId as Id<"groups">,
-      });
-      onOpenChange(false);
-      onDeleted?.(groupId);
+        groupId: groupId as Id<'groups'>,
+      })
+      onOpenChange(false)
+      onDeleted?.(groupId)
     } catch (err) {
-      console.error("Failed to delete group:", err);
+      console.error('Failed to delete group:', err)
     } finally {
-      setIsDeleting(false);
+      setIsDeleting(false)
     }
   }
 
@@ -102,5 +101,5 @@ export function DeleteGroupDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

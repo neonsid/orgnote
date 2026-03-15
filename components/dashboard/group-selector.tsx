@@ -38,7 +38,7 @@ const RenameGroupDialog = dynamic(
  * Convex group shape (from the database).
  */
 export interface ConvexGroup {
-  _id: Id<'groups'>
+  _id: Id<'groups'> | Id<'vaultGroups'>
   title: string
   color: string
   isPublic?: boolean
@@ -61,6 +61,8 @@ interface GroupSelectorProps {
   selectedGroupId: string
   onSelect: (groupId: string) => void
   loading?: boolean
+  createNewGroup: (args: { title: string; color: string }) => Promise<string>
+  showPublicButtonOrNot: boolean
 }
 
 export const GroupSelector = memo(function GroupSelector({
@@ -68,10 +70,11 @@ export const GroupSelector = memo(function GroupSelector({
   selectedGroupId,
   onSelect,
   loading = false,
+  createNewGroup,
+  showPublicButtonOrNot,
 }: GroupSelectorProps) {
   const [open, setOpen] = useState(false)
 
-  // Dialog state from Zustand store
   const {
     createGroup,
     editGroup,
@@ -92,7 +95,7 @@ export const GroupSelector = memo(function GroupSelector({
 
     try {
       const result = await toggleGroupPublic({
-        groupId: selectedGroup._id,
+        groupId: selectedGroup._id as Id<'groups'>,
       })
       toast.success(
         result.isPublic ? 'Group is now public' : 'Group is now private'
@@ -174,7 +177,6 @@ export const GroupSelector = memo(function GroupSelector({
               )}
 
               <div className="my-1 h-px bg-border" />
-
               <button
                 id="create-group-button"
                 onClick={() => {
@@ -199,26 +201,28 @@ export const GroupSelector = memo(function GroupSelector({
                     <Pencil className="size-4 text-muted-foreground" />
                     <span className="font-medium">Rename</span>
                   </button>
-                  <button
-                    id="toggle-group-public-button"
-                    onClick={() => {
-                      handleTogglePublic()
-                    }}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground transition-colors"
-                  >
-                    {selectedGroup.isPublic === true ? (
-                      <>
-                        <Globe className="size-4 text-muted-foreground" />
-                        <span className="font-medium">Make Private</span>
-                        <Check className="size-4 text-foreground ml-auto" />
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="size-4 text-muted-foreground" />
-                        <span className="font-medium">Make Public</span>
-                      </>
-                    )}
-                  </button>
+                  {showPublicButtonOrNot && (
+                    <button
+                      id="toggle-group-public-button"
+                      onClick={() => {
+                        handleTogglePublic()
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted hover:text-foreground transition-colors"
+                    >
+                      {selectedGroup.isPublic === true ? (
+                        <>
+                          <Globe className="size-4 text-muted-foreground" />
+                          <span className="font-medium">Make Private</span>
+                          <Check className="size-4 text-foreground ml-auto" />
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="size-4 text-muted-foreground" />
+                          <span className="font-medium">Make Public</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                   <button
                     id="delete-group-button"
                     onClick={() => {
@@ -242,6 +246,7 @@ export const GroupSelector = memo(function GroupSelector({
       {/* Create group dialog — only mount when open */}
       {createGroup.open && (
         <CreateGroupDialog
+          onCreate={createNewGroup}
           open={createGroup.open}
           onOpenChange={closeCreateGroup}
           onCreated={(newGroupId) => {
@@ -268,13 +273,8 @@ export const GroupSelector = memo(function GroupSelector({
           open={deleteGroup.open}
           onOpenChange={closeDeleteGroupDialog}
           groupId={deleteGroup.groupId as Id<'groups'>}
-          groupTitle={
-            groups.find((g) => g._id === deleteGroup.groupId)?.title || ''
-          }
-          groupColor={
-            groups.find((g) => g._id === deleteGroup.groupId)?.color ||
-            FALLBACK_COLORS[0]
-          }
+          groupTitle={selectedGroup?.title || ''}
+          groupColor={selectedGroup?.color || FALLBACK_COLORS[0]}
           onDeleted={(deletedId) => {
             closeDeleteGroupDialog()
             if (deletedId === selectedGroupId && groups.length > 1) {

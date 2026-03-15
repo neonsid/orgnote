@@ -1,64 +1,64 @@
-"use client";
+'use client'
 
-import { useState, useCallback, useRef, useEffect } from "react";
-import { Loader2 } from "lucide-react";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { useUser } from "@clerk/react";
-import { DashboardHeader } from "./dashboard-header";
-import { BookmarkList, type Bookmark } from "./bookmark-list";
-import { FilterDropdown, type FilterType } from "./filter-dropdown";
-import { BookmarkSearch } from "./bookmark-search";
-import { motion } from "motion/react";
-import dynamic from "next/dynamic";
-import { type Id } from "@/convex/_generated/dataModel";
-import { extractDomain } from "@/lib/domain-utils";
-import { useDialogStore } from "@/stores/dialog-store";
-import { useDashboardData } from "@/hooks/use-dashboard-data";
-import { toast } from "sonner";
+import { useState, useCallback, useRef, useEffect } from 'react'
+import { Loader2 } from 'lucide-react'
+import { useMutation } from 'convex/react'
+import { api } from '@/convex/_generated/api'
+import { useUser } from '@clerk/react'
+import { DashboardHeader } from './dashboard-header'
+import { BookmarkList, type Bookmark } from './bookmark-list'
+import { FilterDropdown, type FilterType } from './filter-dropdown'
+import { BookmarkSearch } from './bookmark-search'
+import { motion } from 'motion/react'
+import dynamic from 'next/dynamic'
+import { type Id } from '@/convex/_generated/dataModel'
+import { extractDomain } from '@/lib/domain-utils'
+import { useDialogStore } from '@/stores/dialog-store'
+import { useDashboardData } from '@/hooks/use-dashboard-data'
+import { toast } from 'sonner'
 
 const RenameBookmarkDialog = dynamic(
   () =>
-    import("./dialog/rename-bookmark-dialog").then(
-      (m) => m.RenameBookmarkDialog,
+    import('./dialog/rename-bookmark-dialog').then(
+      (m) => m.RenameBookmarkDialog
     ),
-  { ssr: false },
-);
+  { ssr: false }
+)
 
 const EditBookmarkDialog = dynamic(
   () =>
-    import("./dialog/edit-bookmark-dialog").then((m) => m.EditBookmarkDialog),
-  { ssr: false },
-);
+    import('./dialog/edit-bookmark-dialog').then((m) => m.EditBookmarkDialog),
+  { ssr: false }
+)
 
 const DeleteBookmarkDialog = dynamic(
   () =>
-    import("./dialog/delete-bookmark-dialog").then(
-      (m) => m.DeleteBookmarkDialog,
+    import('./dialog/delete-bookmark-dialog').then(
+      (m) => m.DeleteBookmarkDialog
     ),
-  { ssr: false },
-);
+  { ssr: false }
+)
 
 export default function DashboardPage() {
-  const { user, isLoaded: isUserLoaded } = useUser();
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const { user, isLoaded: isUserLoaded } = useUser()
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   const { groups, bookmarks, effectiveGroupId, selectGroup, isLoading } =
-    useDashboardData(!!user);
+    useDashboardData(!!user)
 
-  const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [filter, setFilter] = useState<FilterType>("all");
+  const [debouncedQuery, setDebouncedQuery] = useState('')
+  const [filter, setFilter] = useState<FilterType>('all')
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
-        e.preventDefault();
-        searchInputRef.current?.focus();
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault()
+        searchInputRef.current?.focus()
       }
     }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const {
     renameBookmark,
@@ -70,69 +70,70 @@ export default function DashboardPage() {
     closeEditBookmarkDialog,
     openDeleteBookmarkDialog,
     closeDeleteBookmarkDialog,
-  } = useDialogStore();
+  } = useDialogStore()
 
-  const createBookmark = useMutation(api.bookmarks.createBookMark);
-  const moveBookmark = useMutation(api.bookmarks.moveBookMark);
-  const toggleReadStatus = useMutation(api.bookmarks.toggleReadStatus);
+  const createBookmark = useMutation(api.bookmarks.createBookMark)
+  const moveBookmark = useMutation(api.bookmarks.moveBookMark)
+  const toggleReadStatus = useMutation(api.bookmarks.toggleReadStatus)
+  const createGroup = useMutation(api.groups.create)
 
   const handleSubmitBookmark = useCallback(
     async (value: string) => {
       if (!effectiveGroupId) {
-        toast("Please create a group first to add bookmarks", {
+        toast('Please create a group first to add bookmarks', {
           description:
-            "Click on the group selector in the header to create a new group",
-        });
-        return;
+            'Click on the group selector in the header to create a new group',
+        })
+        return
       }
 
-      const domain = extractDomain(value);
-      const isUrl = domain.includes(".");
+      const domain = extractDomain(value)
+      const isUrl = domain.includes('.')
 
       let title = isUrl
-        ? domain.split(".")[0].charAt(0).toUpperCase() +
-          domain.split(".")[0].slice(1)
-        : value;
+        ? domain.split('.')[0].charAt(0).toUpperCase() +
+          domain.split('.')[0].slice(1)
+        : value
 
       const url = isUrl
-        ? value.startsWith("http")
+        ? value.startsWith('http')
           ? value
           : `https://${value}`
-        : "#";
+        : '#'
 
-      const currentGroupId = effectiveGroupId;
-      if (!currentGroupId) return;
+      const currentGroupId = effectiveGroupId
+      if (!currentGroupId) return
 
       await createBookmark({
         title,
         url,
-        groupId: currentGroupId as Id<"groups">,
+        groupId: currentGroupId as Id<'groups'>,
         imageUrl: isUrl
           ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
-          : "",
-      });
-      setDebouncedQuery("");
+          : '',
+      })
+      setDebouncedQuery('')
     },
-    [createBookmark, effectiveGroupId],
-  );
+    [createBookmark, effectiveGroupId]
+  )
 
   const filteredBookmarks = bookmarks.filter((b) => {
     if (debouncedQuery.trim()) {
-      const q = debouncedQuery.toLowerCase();
+      const q = debouncedQuery.toLowerCase()
       const matchesSearch =
-        b.title.toLowerCase().includes(q) || b.domain.toLowerCase().includes(q);
-      if (!matchesSearch) return false;
+        b.title.toLowerCase().includes(q) || b.domain.toLowerCase().includes(q)
+      if (!matchesSearch) return false
     }
 
-    if (filter === "read") return b.doneReading;
-    if (filter === "unread") return !b.doneReading;
-    return true;
-  });
+    if (filter === 'read') return b.doneReading
+    if (filter === 'unread') return !b.doneReading
+    return true
+  })
 
   const handleCopy = useCallback((bookmark: Bookmark) => {
-    navigator.clipboard.writeText(bookmark.url);
-    toast.success("URL copied to clipboard");
-  }, []);
+    navigator.clipboard.writeText(bookmark.url)
+    toast.success('URL copied to clipboard')
+  }, [])
 
   const handleRename = useCallback(
     (bookmark: Bookmark) => {
@@ -140,10 +141,10 @@ export default function DashboardPage() {
         id: bookmark.id,
         title: bookmark.title,
         url: bookmark.url,
-      });
+      })
     },
-    [openRenameDialog],
-  );
+    [openRenameDialog]
+  )
 
   const handleEdit = useCallback(
     (bookmark: Bookmark) => {
@@ -152,17 +153,17 @@ export default function DashboardPage() {
         title: bookmark.title,
         url: bookmark.url,
         description: bookmark.description,
-      });
+      })
     },
-    [openEditBookmarkDialog],
-  );
+    [openEditBookmarkDialog]
+  )
 
   const handleMove = useCallback(
-    (bookmarkId: Id<"bookmarks">, newGroupId: Id<"groups">) => {
-      moveBookmark({ bookmarkId: bookmarkId, groupId: newGroupId });
+    (bookmarkId: Id<'bookmarks'>, newGroupId: Id<'groups'>) => {
+      moveBookmark({ bookmarkId: bookmarkId, groupId: newGroupId })
     },
-    [moveBookmark],
-  );
+    [moveBookmark]
+  )
 
   const handleDelete = useCallback(
     (bookmark: Bookmark) => {
@@ -170,33 +171,35 @@ export default function DashboardPage() {
         id: bookmark.id,
         title: bookmark.title,
         url: bookmark.url,
-      });
+      })
     },
-    [openDeleteBookmarkDialog],
-  );
+    [openDeleteBookmarkDialog]
+  )
 
   const handleToggleRead = useCallback(
-    (bookmarkId: Id<"bookmarks">) => {
-      toggleReadStatus({ bookmarkId });
+    (bookmarkId: Id<'bookmarks'>) => {
+      toggleReadStatus({ bookmarkId })
     },
-    [toggleReadStatus],
-  );
+    [toggleReadStatus]
+  )
 
   if (!isUserLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="size-6 text-muted-foreground animate-spin" />
       </div>
-    );
+    )
   }
 
   if (!user) {
-    return null;
+    return null
   }
 
   return (
     <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
       <DashboardHeader
+        showPublicButton={true}
+        createGroup={createGroup}
         groups={groups}
         effectiveGroupId={effectiveGroupId}
         onSelectGroup={selectGroup}
@@ -264,5 +267,5 @@ export default function DashboardPage() {
         onOpenChange={closeDeleteBookmarkDialog}
       />
     </div>
-  );
+  )
 }
