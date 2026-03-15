@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback } from 'react'
 import {
   ContextMenuContent,
   ContextMenuItem,
@@ -6,7 +6,7 @@ import {
   ContextMenuSub,
   ContextMenuSubTrigger,
   ContextMenuSubContent,
-} from "@/components/ui/context-menu";
+} from '@/components/ui/context-menu'
 import {
   Copy,
   Pencil,
@@ -16,23 +16,23 @@ import {
   CheckCircle2,
   Circle,
   Info,
-} from "lucide-react";
-import type { Bookmark } from "./types";
-import type { ConvexGroup } from "../group-selector";
-import { FALLBACK_COLORS } from "../group-selector";
-import { KEYBOARD_SHORTCUTS } from "./constants";
-import type { Id } from "@/convex/_generated/dataModel";
+} from 'lucide-react'
+import type { Bookmark } from './types'
+import type { ConvexGroup } from '../group-selector'
+import { FALLBACK_COLORS } from '../group-selector'
+import { KEYBOARD_SHORTCUTS } from './constants'
+import type { Id } from '@/convex/_generated/dataModel'
 
 interface DesktopMenuProps {
-  bookmark: Bookmark;
-  groups: ConvexGroup[];
-  onCopy: () => void;
-  onRename: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  onMove: (groupId: Id<"groups">) => void;
-  onToggleRead: () => void;
-  onShowDescription?: () => void;
+  bookmark: Bookmark
+  groups: ConvexGroup[]
+  onCopy: () => void
+  onRename: () => void
+  onEdit: () => void
+  onDelete: () => void
+  onMove: (groupId: Id<'groups'>) => void
+  onToggleRead: () => void
+  onShowDescription?: () => void
 }
 
 function KeyboardShortcut({ keys }: { keys: readonly string[] }) {
@@ -47,7 +47,7 @@ function KeyboardShortcut({ keys }: { keys: readonly string[] }) {
         </kbd>
       ))}
     </ContextMenuShortcut>
-  );
+  )
 }
 
 export function DesktopMenu({
@@ -69,8 +69,8 @@ export function DesktopMenu({
           group,
           fallbackColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length],
         })),
-    [groups, bookmark.groupId],
-  );
+    [groups, bookmark.groupId]
+  )
 
   return (
     <ContextMenuContent className="w-56">
@@ -125,7 +125,7 @@ export function DesktopMenu({
             {otherGroups.map(({ group, fallbackColor }) => (
               <ContextMenuItem
                 key={group._id}
-                onClick={() => onMove(group._id)}
+                onClick={() => onMove(group._id as Id<'groups'>)}
               >
                 <span
                   className="size-2.5 rounded-full mr-2"
@@ -146,20 +146,20 @@ export function DesktopMenu({
         <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.delete} />
       </ContextMenuItem>
     </ContextMenuContent>
-  );
+  )
 }
 
 interface MobileMenuProps {
-  bookmark: Bookmark;
-  groups: ConvexGroup[];
-  onCopy: () => void;
-  onRename: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  onMove: (groupId: Id<"groups">) => void;
-  onToggleRead: () => void;
-  onShowDescription?: () => void;
-  onClose: () => void;
+  bookmark: Bookmark
+  groups: ConvexGroup[]
+  onCopy: () => void
+  onRename: () => void
+  onEdit: () => void
+  onDelete: () => void
+  onMove: (groupId: Id<'groups'>) => void
+  onToggleRead: () => void
+  onShowDescription?: () => void
+  onClose: () => void
 }
 
 export function MobileMenu({
@@ -182,16 +182,16 @@ export function MobileMenu({
           group,
           fallbackColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length],
         })),
-    [groups, bookmark.groupId],
-  );
+    [groups, bookmark.groupId]
+  )
 
   const handleAction = useCallback(
     (action: () => void) => {
-      action();
-      onClose();
+      action()
+      onClose()
     },
-    [onClose],
-  );
+    [onClose]
+  )
 
   return (
     <div className="w-56 py-1">
@@ -258,7 +258,9 @@ export function MobileMenu({
             {otherGroups.map(({ group, fallbackColor }) => (
               <button
                 key={group._id}
-                onClick={() => handleAction(() => onMove(group._id))}
+                onClick={() =>
+                  handleAction(() => onMove(group._id as Id<'groups'>))
+                }
                 className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
               >
                 <span
@@ -284,5 +286,5 @@ export function MobileMenu({
         Delete
       </button>
     </div>
-  );
+  )
 }
