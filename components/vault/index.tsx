@@ -1,40 +1,39 @@
-"use client";
+'use client'
 
-import { useCallback, useEffect, useRef } from "react";
-import { useUser } from "@clerk/react";
-import { Id } from "@/convex/_generated/dataModel";
-import { VaultHeader } from "./vault-header";
-import { VaultUpload } from "./vault-upload";
-import { VaultFileList } from "./vault-file-list";
-import { useDialogStore } from "@/stores/dialog-store";
-import {
-  useVaultData,
-  type VaultFile,
-  type VaultGroup,
-} from "@/hooks/use-vault-data";
-import dynamic from "next/dynamic";
+import { useCallback, useEffect, useRef } from 'react'
+import { useUser } from '@clerk/react'
+import { Id } from '@/convex/_generated/dataModel'
+import { VaultUpload } from './vault-upload'
+import { VaultFileList } from './vault-file-list'
+import { useDialogStore } from '@/stores/dialog-store'
+import { useVaultData } from '@/hooks/use-vault-data'
+import dynamic from 'next/dynamic'
+import { useMutation } from 'convex/react'
+import { api } from '@/convex/_generated/api'
+import { DashboardHeader } from '../dashboard/dashboard-header'
 
 const DeleteVaultFileDialog = dynamic(
   () =>
-    import("./dialog/delete-vault-file-dialog").then(
-      (m) => m.DeleteVaultFileDialog,
+    import('./dialog/delete-vault-file-dialog').then(
+      (m) => m.DeleteVaultFileDialog
     ),
-  { ssr: false },
-);
+  { ssr: false }
+)
 
 export default function VaultPage() {
-  const { user, isLoaded } = useUser();
-  const hasAutoSelected = useRef(false);
+  const { user, isLoaded } = useUser()
+  const hasAutoSelected = useRef(false)
 
   const {
     deleteVaultFile,
     openDeleteVaultFileDialog,
     closeDeleteVaultFileDialog,
-  } = useDialogStore();
+  } = useDialogStore()
 
   const { groups, files, effectiveGroupId, selectGroup, isLoading } =
-    useVaultData(!!user);
+    useVaultData(!!user)
 
+  const createVaultGroup = useMutation(api.vault.createVaultGroup)
   useEffect(() => {
     if (
       groups &&
@@ -43,48 +42,33 @@ export default function VaultPage() {
       !hasAutoSelected.current
     ) {
       const latestGroup = [...groups].sort(
-        (a, b) => b.createdAt - a.createdAt,
-      )[0];
-      selectGroup(latestGroup._id);
-      hasAutoSelected.current = true;
+        (a, b) => b.createdAt - a.createdAt
+      )[0]
+      selectGroup(latestGroup._id)
+      hasAutoSelected.current = true
     }
-  }, [groups, effectiveGroupId, selectGroup]);
+  }, [groups, effectiveGroupId, selectGroup])
 
   const handleDeleteFile = useCallback(
-    (fileId: Id<"vaultFiles">, fileName: string) => {
-      openDeleteVaultFileDialog(fileId, fileName);
+    (fileId: Id<'vaultFiles'>, fileName: string) => {
+      openDeleteVaultFileDialog(fileId, fileName)
     },
-    [openDeleteVaultFileDialog],
-  );
-
-  const handleSelectGroup = useCallback(
-    (groupId: string | null) => {
-      if (groupId) {
-        selectGroup(groupId);
-      }
-    },
-    [selectGroup],
-  );
-
-  const handleCreated = useCallback(
-    (groupId: string) => {
-      selectGroup(groupId);
-    },
-    [selectGroup],
-  );
+    [openDeleteVaultFileDialog]
+  )
 
   if (!isLoaded) {
-    return null;
+    return null
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <VaultHeader
+      <DashboardHeader
+        showPublicButton={false}
+        createGroup={createVaultGroup}
         groups={groups}
-        selectedGroupId={effectiveGroupId || null}
-        onSelectGroup={handleSelectGroup}
-        onCreated={handleCreated}
-        isLoading={isLoading}
+        effectiveGroupId={effectiveGroupId}
+        onSelectGroup={selectGroup}
+        loading={isLoading}
       />
 
       <main className="container mx-auto max-w-4xl p-4 space-y-6">
@@ -108,5 +92,5 @@ export default function VaultPage() {
         onOpenChange={closeDeleteVaultFileDialog}
       />
     </div>
-  );
+  )
 }

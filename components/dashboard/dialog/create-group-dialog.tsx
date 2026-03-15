@@ -36,15 +36,15 @@ interface CreateGroupDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onCreated?: (groupId: string) => void
+  onCreate: (args: { title: string; color: string }) => Promise<string>
 }
 
 export function CreateGroupDialog({
   open,
   onOpenChange,
   onCreated,
+  onCreate,
 }: CreateGroupDialogProps) {
-  const createGroup = useMutation(api.groups.create)
-
   const form = useForm({
     defaultValues: {
       name: '',
@@ -55,7 +55,7 @@ export function CreateGroupDialog({
       onSubmit: createGroupSchema,
     },
     onSubmit: async ({ value }) => {
-      const newGroupId = await createGroup({
+      const newGroupId = await onCreate({
         title: value.name,
         color: value.color,
       })
