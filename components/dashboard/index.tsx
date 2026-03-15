@@ -63,7 +63,7 @@ export default function DashboardPage() {
   const {
     renameBookmark,
     editBookmark,
-    deleteBookmark,
+    deleteBookmarkOrItem,
     openRenameDialog,
     openEditBookmarkDialog,
     closeRenameDialog,
@@ -73,6 +73,7 @@ export default function DashboardPage() {
   } = useDialogStore()
 
   const createBookmark = useMutation(api.bookmarks.createBookMark)
+  const deleteBookmark = useMutation(api.bookmarks.deleteBookMark)
   const moveBookmark = useMutation(api.bookmarks.moveBookMark)
   const toggleReadStatus = useMutation(api.bookmarks.toggleReadStatus)
   const createGroup = useMutation(api.groups.create)
@@ -167,11 +168,7 @@ export default function DashboardPage() {
 
   const handleDelete = useCallback(
     (bookmark: Bookmark) => {
-      openDeleteBookmarkDialog(bookmark.id, {
-        id: bookmark.id,
-        title: bookmark.title,
-        url: bookmark.url,
-      })
+      openDeleteBookmarkDialog(bookmark.id as Id<'bookmarks'>, bookmark.title)
     },
     [openDeleteBookmarkDialog]
   )
@@ -263,9 +260,18 @@ export default function DashboardPage() {
       />
 
       <DeleteBookmarkDialog
-        bookmark={deleteBookmark.bookmarkData}
-        open={deleteBookmark.open}
+        bookmarkOrFileId={deleteBookmarkOrItem.bookmarkOrFileId}
+        title={deleteBookmarkOrItem.title}
+        variant="Bookmark"
+        open={deleteBookmarkOrItem.open}
         onOpenChange={closeDeleteBookmarkDialog}
+        onDelete={async () => {
+          if (!deleteBookmarkOrItem.bookmarkOrFileId) return
+          await deleteBookmark({
+            bookmarkId:
+              deleteBookmarkOrItem.bookmarkOrFileId as Id<'bookmarks'>,
+          })
+        }}
       />
     </div>
   )

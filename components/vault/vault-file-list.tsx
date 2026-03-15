@@ -1,9 +1,9 @@
-"use client";
+'use client'
 
-import { memo, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Id } from "@/convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
+import { memo, useState } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
+import { Id } from '@/convex/_generated/dataModel'
+import { Button } from '@/components/ui/button'
 import {
   Table,
   TableBody,
@@ -11,7 +11,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table'
 import {
   ImageIcon,
   VideoIcon,
@@ -22,32 +22,22 @@ import {
   Trash2 as Trash2Icon,
   Copy,
   Check,
-} from "lucide-react";
-import { formatBytes } from "@/hooks/use-file-upload";
-
-interface VaultFile {
-  _id: Id<"vaultFiles">;
-  name: string;
-  type: string;
-  size: number;
-  url: string;
-  groupId?: Id<"vaultGroups">;
-  ownerId: string;
-  createdAt: number;
-}
+} from 'lucide-react'
+import { formatBytes } from '@/hooks/use-file-upload'
+import { VaultFile } from '../dashboard/bookmark-list/types'
 
 interface VaultFileListProps {
-  files: VaultFile[];
-  onDeleteFile: (fileId: Id<"vaultFiles">, fileName: string) => void;
-  isLoading?: boolean;
+  files: VaultFile[]
+  onDeleteFile: (file: VaultFile) => void
+  isLoading?: boolean
 }
 
 function formatDate(timestamp: number): string {
-  return new Date(timestamp).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  return new Date(timestamp).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
 }
 
 export const VaultFileList = memo(function VaultFileList({
@@ -55,41 +45,41 @@ export const VaultFileList = memo(function VaultFileList({
   onDeleteFile,
   isLoading,
 }: VaultFileListProps) {
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
 
   const getFileIcon = (type: string) => {
-    if (type.startsWith("image/")) return <ImageIcon className="size-4" />;
-    if (type.startsWith("video/")) return <VideoIcon className="size-4" />;
-    if (type.startsWith("audio/")) return <HeadphonesIcon className="size-4" />;
-    if (type.includes("pdf")) return <FileTextIcon className="size-4" />;
-    if (type.includes("word") || type.includes("doc"))
-      return <FileTextIcon className="size-4" />;
-    if (type.includes("excel") || type.includes("sheet"))
-      return <FileSpreadsheetIcon className="size-4" />;
-    if (type.includes("zip") || type.includes("rar"))
-      return <FileArchiveIcon className="size-4" />;
-    return <FileTextIcon className="size-4" />;
-  };
+    if (type.startsWith('image/')) return <ImageIcon className="size-4" />
+    if (type.startsWith('video/')) return <VideoIcon className="size-4" />
+    if (type.startsWith('audio/')) return <HeadphonesIcon className="size-4" />
+    if (type.includes('pdf')) return <FileTextIcon className="size-4" />
+    if (type.includes('word') || type.includes('doc'))
+      return <FileTextIcon className="size-4" />
+    if (type.includes('excel') || type.includes('sheet'))
+      return <FileSpreadsheetIcon className="size-4" />
+    if (type.includes('zip') || type.includes('rar'))
+      return <FileArchiveIcon className="size-4" />
+    return <FileTextIcon className="size-4" />
+  }
 
   const getFileTypeLabel = (type: string) => {
-    if (type.startsWith("image/")) return "Image";
-    if (type.startsWith("video/")) return "Video";
-    if (type.startsWith("audio/")) return "Audio";
-    if (type.includes("pdf")) return "PDF";
-    if (type.includes("word") || type.includes("doc")) return "Word";
-    if (type.includes("excel") || type.includes("sheet")) return "Excel";
-    if (type.includes("zip") || type.includes("rar")) return "Archive";
-    if (type.includes("json")) return "JSON";
-    if (type.includes("text")) return "Text";
-    return "File";
-  };
+    if (type.startsWith('image/')) return 'Image'
+    if (type.startsWith('video/')) return 'Video'
+    if (type.startsWith('audio/')) return 'Audio'
+    if (type.includes('pdf')) return 'PDF'
+    if (type.includes('word') || type.includes('doc')) return 'Word'
+    if (type.includes('excel') || type.includes('sheet')) return 'Excel'
+    if (type.includes('zip') || type.includes('rar')) return 'Archive'
+    if (type.includes('json')) return 'JSON'
+    if (type.includes('text')) return 'Text'
+    return 'File'
+  }
 
   const handleCopyLink = (url: string, fileId: string) => {
-    navigator.clipboard.writeText(url);
-    setCopiedId(fileId);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
+    navigator.clipboard.writeText(url)
+    setCopiedId(fileId)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
 
   if (files.length === 0) {
     if (isLoading) {
@@ -112,7 +102,7 @@ export const VaultFileList = memo(function VaultFileList({
             </div>
           ))}
         </motion.div>
-      );
+      )
     }
 
     return (
@@ -125,7 +115,7 @@ export const VaultFileList = memo(function VaultFileList({
         <p className="text-sm font-medium">No files uploaded yet</p>
         <p className="text-xs mt-1">Upload files using the dropzone above</p>
       </motion.div>
-    );
+    )
   }
 
   return (
@@ -154,7 +144,7 @@ export const VaultFileList = memo(function VaultFileList({
                   transition: { duration: 0.2 },
                 }}
                 transition={{
-                  type: "spring",
+                  type: 'spring',
                   stiffness: 300,
                   damping: 25,
                 }}
@@ -163,7 +153,7 @@ export const VaultFileList = memo(function VaultFileList({
                 <TableCell className="py-2 ps-1.5">
                   <div className="flex items-center gap-2">
                     <div className="text-muted-foreground/80 flex size-8 shrink-0 items-center justify-center">
-                      {file.type.startsWith("image/") &&
+                      {file.type.startsWith('image/') &&
                       file.url &&
                       !failedImages.has(file._id) ? (
                         <img
@@ -172,8 +162,8 @@ export const VaultFileList = memo(function VaultFileList({
                           className="size-8 rounded object-cover"
                           onError={() => {
                             setFailedImages((prev) =>
-                              new Set(prev).add(file._id),
-                            );
+                              new Set(prev).add(file._id)
+                            )
                           }}
                         />
                       ) : (
@@ -214,7 +204,7 @@ export const VaultFileList = memo(function VaultFileList({
                       size="icon"
                       variant="ghost"
                       className="size-8 text-destructive/80 hover:text-destructive"
-                      onClick={() => onDeleteFile(file._id, file.name)}
+                      onClick={() => onDeleteFile(file)}
                     >
                       <Trash2Icon className="size-3.5" />
                     </Button>
@@ -226,5 +216,5 @@ export const VaultFileList = memo(function VaultFileList({
         </TableBody>
       </Table>
     </div>
-  );
-});
+  )
+})
