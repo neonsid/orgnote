@@ -153,6 +153,7 @@ export const renameBookmarkSchema = z.object({
 
 export const renameGroupSchema = z.object({
   title: groupTitleSchema,
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid color format'),
 })
 
 export const editBookmarkSchema = z.object({

@@ -47,4 +47,20 @@ export default defineSchema({
     date: v.string(),
     requestCount: v.number(),
   }).index('by_userId_and_date', ['userId', 'date']),
+  vaultFiles: defineTable({
+    name: v.string(),
+    type: v.string(),
+    size: v.number(),
+    url: v.string(),
+    groupId: v.optional(v.id('vaultGroups')),
+    ownerId: v.string(),
+    createdAt: v.number(),
+  }).index('by_owner', ['ownerId'])
+   .index('by_owner_group', ['ownerId', 'groupId']),
+  vaultGroups: defineTable({
+    title: v.string(),
+    color: v.string(),
+    userId: v.string(),
+    createdAt: v.number(),
+  }).index('by_userId', ['userId']),
 })

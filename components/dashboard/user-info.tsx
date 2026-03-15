@@ -8,6 +8,8 @@ import {
   Keyboard,
   User,
   Loader2,
+  Vault,
+  LayoutGrid,
 } from "lucide-react";
 import { useUser, useClerk } from "@clerk/react";
 import { useRouter } from "next/navigation";
@@ -33,7 +35,13 @@ const UserSettingsDialog = dynamic(
   { ssr: false },
 );
 
-export const UserInfo = memo(function UserInfo() {
+type UserInfoProps = {
+  variant?: "dashboard" | "vault";
+};
+
+export const UserInfo = memo(function UserInfo({
+  variant = "dashboard",
+}: UserInfoProps) {
   const { user } = useUser();
   const { signOut } = useClerk();
 
@@ -41,7 +49,8 @@ export const UserInfo = memo(function UserInfo() {
     open: boolean;
     shortcutsOpen: boolean;
     settingsOpen: boolean;
-    isRedirecting: boolean;
+    isRedirectingToVault: boolean;
+    isRedirectingToProfile: boolean;
     isSigningOut: boolean;
   };
 
@@ -52,7 +61,8 @@ export const UserInfo = memo(function UserInfo() {
     | { type: "setShortcutsOpen"; open: boolean }
     | { type: "openSettings" }
     | { type: "setSettingsOpen"; open: boolean }
-    | { type: "setRedirecting"; redirecting: boolean }
+    | { type: "setRedirectingToVault"; redirecting: boolean }
+    | { type: "setRedirectingToProfile"; redirecting: boolean }
     | { type: "setSigningOut"; signingOut: boolean };
 
   function reducer(
@@ -63,7 +73,12 @@ export const UserInfo = memo(function UserInfo() {
       case "toggleMenu":
         return { ...state, open: !state.open };
       case "setMenuOpen":
-        return { ...state, open: action.open, isRedirecting: false };
+        return {
+          ...state,
+          open: action.open,
+          isRedirectingToVault: false,
+          isRedirectingToProfile: false,
+        };
       case "openShortcuts":
         return { ...state, open: false, shortcutsOpen: true };
       case "setShortcutsOpen":
@@ -72,8 +87,10 @@ export const UserInfo = memo(function UserInfo() {
         return { ...state, open: false, settingsOpen: true };
       case "setSettingsOpen":
         return { ...state, settingsOpen: action.open };
-      case "setRedirecting":
-        return { ...state, isRedirecting: action.redirecting };
+      case "setRedirectingToVault":
+        return { ...state, isRedirectingToVault: action.redirecting };
+      case "setRedirectingToProfile":
+        return { ...state, isRedirectingToProfile: action.redirecting };
       case "setSigningOut":
         return { ...state, isSigningOut: action.signingOut };
       default:
@@ -85,7 +102,8 @@ export const UserInfo = memo(function UserInfo() {
     open: false,
     shortcutsOpen: false,
     settingsOpen: false,
-    isRedirecting: false,
+    isRedirectingToVault: false,
+    isRedirectingToProfile: false,
     isSigningOut: false,
   });
 
@@ -123,11 +141,25 @@ export const UserInfo = memo(function UserInfo() {
 
   const handlePublicProfileClick = () => {
     if (profile?.username) {
-      dispatch({ type: "setRedirecting", redirecting: true });
+      dispatch({ type: "setRedirectingToProfile", redirecting: true });
       window.setTimeout(() => {
         router.push(`/u/${profile.username}`);
       }, 150);
     }
+  };
+
+  const handleVaultClick = () => {
+    dispatch({ type: "setRedirectingToVault", redirecting: true });
+    window.setTimeout(() => {
+      router.push("/vault");
+    }, 150);
+  };
+
+  const handleDashboardClick = () => {
+    dispatch({ type: "setRedirectingToVault", redirecting: true });
+    window.setTimeout(() => {
+      router.push("/dashboard");
+    }, 150);
   };
 
   const handleSignOut = () => {
@@ -190,22 +222,24 @@ export const UserInfo = memo(function UserInfo() {
                 Settings
                 <Settings className="size-4 text-muted-foreground" />
               </button>
-              {hasPublicProfile && (
+              {hasPublicProfile && variant === "dashboard" && (
                 <button
                   id="public-profile"
                   onClick={handlePublicProfileClick}
-                  disabled={state.isRedirecting}
+                  disabled={state.isRedirectingToProfile}
                   className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors disabled:opacity-70 disabled:pointer-events-none"
                 >
-                  {state.isRedirecting ? "Redirecting..." : "Public Profile"}
-                  {state.isRedirecting ? (
+                  {state.isRedirectingToProfile
+                    ? "Redirecting..."
+                    : "Public Profile"}
+                  {state.isRedirectingToProfile ? (
                     <Loader2 className="size-4 text-muted-foreground animate-spin" />
                   ) : (
                     <User className="size-4 text-muted-foreground" />
                   )}
                 </button>
               )}
-              {!isSmallMobile && (
+              {!isSmallMobile && variant === "dashboard" && (
                 <button
                   id="user-keyboard-shortcuts-button"
                   onClick={() => dispatch({ type: "openShortcuts" })}
@@ -215,6 +249,31 @@ export const UserInfo = memo(function UserInfo() {
                   <Keyboard className="size-4 text-muted-foreground" />
                 </button>
               )}
+              <button
+                id={
+                  variant === "dashboard" ? "vault-button" : "dashboard-button"
+                }
+                onClick={
+                  variant === "dashboard"
+                    ? handleVaultClick
+                    : handleDashboardClick
+                }
+                disabled={state.isRedirectingToVault}
+                className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors disabled:opacity-70 disabled:pointer-events-none"
+              >
+                {state.isRedirectingToVault
+                  ? "Redirecting..."
+                  : variant === "dashboard"
+                    ? "My Vault"
+                    : "Dashboard"}
+                {state.isRedirectingToVault ? (
+                  <Loader2 className="size-4 text-muted-foreground animate-spin" />
+                ) : variant === "dashboard" ? (
+                  <Vault className="size-4 text-muted-foreground" />
+                ) : (
+                  <LayoutGrid className="size-4 text-muted-foreground" />
+                )}
+              </button>
               <div className="my-1 h-px bg-border" />
               <button
                 id="user-signout-button"

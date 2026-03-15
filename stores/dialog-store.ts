@@ -61,6 +61,13 @@ interface DialogState {
     open: boolean
   }
 
+  // Delete vault file dialog
+  deleteVaultFile: {
+    open: boolean
+    fileId: string | null
+    fileName: string | null
+  }
+
   // Actions
   openRenameDialog: (bookmarkId: string, bookmarkData: BookmarkData) => void
   openGroupRenameDialog: (groupId: string) => void
@@ -91,6 +98,9 @@ interface DialogState {
 
   openCreateGroup: () => void
   closeCreateGroup: () => void
+
+  openDeleteVaultFileDialog: (fileId: string, fileName: string) => void
+  closeDeleteVaultFileDialog: () => void
 }
 
 export const useDialogStore = create<DialogState>((set) => ({
@@ -103,6 +113,7 @@ export const useDialogStore = create<DialogState>((set) => ({
   userSettings: { open: false, activeTab: 'general' },
   exportBookmarks: { open: false },
   createGroup: { open: false },
+  deleteVaultFile: { open: false, fileId: null, fileName: null },
 
   // Rename bookmark actions
   openRenameDialog: (bookmarkId: string, bookmarkData: BookmarkData) =>
@@ -157,4 +168,10 @@ export const useDialogStore = create<DialogState>((set) => ({
   // Create group actions
   openCreateGroup: () => set({ createGroup: { open: true } }),
   closeCreateGroup: () => set({ createGroup: { open: false } }),
+
+  // Delete vault file actions
+  openDeleteVaultFileDialog: (fileId: string, fileName: string) =>
+    set({ deleteVaultFile: { open: true, fileId, fileName } }),
+  closeDeleteVaultFileDialog: () =>
+    set({ deleteVaultFile: { open: false, fileId: null, fileName: null } }),
 }))
