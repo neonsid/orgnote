@@ -1,31 +1,29 @@
-"use client";
+'use client'
 
-import { useReducer, useRef, useCallback, useEffect, memo } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { useIsSmallMobile } from "@/hooks/use-mobile";
-import { BookmarkItem } from "./bookmark-item";
-import { useBookmarkShortcuts } from "./use-bookmark-shortcuts";
-import type { Bookmark } from "./types";
-import type { ConvexGroup } from "../group-selector";
-import type { Id } from "@/convex/_generated/dataModel";
+import { useReducer, useRef, useCallback, useEffect, memo } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
+import { useIsSmallMobile } from '@/hooks/use-mobile'
+import { BookmarkItem } from './bookmark-item'
+import { useBookmarkShortcuts } from './use-bookmark-shortcuts'
+import type { Bookmark } from './types'
+import type { ConvexGroup } from '../group-selector'
+import type { Id } from '@/convex/_generated/dataModel'
 
 interface BookmarkListProps {
-  bookmarks: Bookmark[];
-  groups: ConvexGroup[];
-  loading: boolean;
-  onCopy: (bookmark: Bookmark) => void;
-  onRename: (bookmark: Bookmark) => void;
-  onEdit: (bookmark: Bookmark) => void;
-  onDelete: (bookmark: Bookmark) => void;
-  onMove: (bookmarkId: Id<"bookmarks">, newGroupId: Id<"groups">) => void;
-  onToggleRead: (bookmarkId: Id<"bookmarks">) => void;
+  bookmarks: Bookmark[]
+  groups: ConvexGroup[]
+  loading: boolean
+  onCopy: (bookmark: Bookmark) => void
+  onEdit: (bookmark: Bookmark) => void
+  onDelete: (bookmark: Bookmark) => void
+  onMove: (bookmarkId: Id<'bookmarks'>, newGroupId: Id<'groups'>) => void
+  onToggleRead: (bookmarkId: Id<'bookmarks'>) => void
 }
 
 export const BookmarkList = memo(function BookmarkList({
   bookmarks,
   groups,
   onCopy,
-  onRename,
   onEdit,
   onDelete,
   onMove,
@@ -33,136 +31,135 @@ export const BookmarkList = memo(function BookmarkList({
   loading,
 }: BookmarkListProps) {
   type ListState = {
-    openPopoverId: string | null;
-    showDescriptionId: string | null;
-    selectedIndex: number;
-  };
+    openPopoverId: string | null
+    showDescriptionId: string | null
+    selectedIndex: number
+  }
 
   type ListAction =
-    | { type: "setOpenPopover"; id: string | null }
-    | { type: "showDescription"; id: string }
-    | { type: "clearDescription" }
-    | { type: "selectNext" }
-    | { type: "selectPrevious" }
-    | { type: "clearSelection" };
+    | { type: 'setOpenPopover'; id: string | null }
+    | { type: 'showDescription'; id: string }
+    | { type: 'clearDescription' }
+    | { type: 'selectNext' }
+    | { type: 'selectPrevious' }
+    | { type: 'clearSelection' }
 
   function reducer(state: ListState, action: ListAction): ListState {
     switch (action.type) {
-      case "setOpenPopover":
-        return { ...state, openPopoverId: action.id };
-      case "showDescription":
-        return { ...state, showDescriptionId: action.id };
-      case "clearDescription":
-        return { ...state, showDescriptionId: null };
-      case "selectNext":
+      case 'setOpenPopover':
+        return { ...state, openPopoverId: action.id }
+      case 'showDescription':
+        return { ...state, showDescriptionId: action.id }
+      case 'clearDescription':
+        return { ...state, showDescriptionId: null }
+      case 'selectNext':
         return {
           ...state,
           selectedIndex: Math.min(
             state.selectedIndex + 1,
-            bookmarks.length - 1,
+            bookmarks.length - 1
           ),
-        };
-      case "selectPrevious":
+        }
+      case 'selectPrevious':
         return {
           ...state,
           selectedIndex: Math.max(state.selectedIndex - 1, 0),
-        };
-      case "clearSelection":
-        return { ...state, selectedIndex: -1 };
+        }
+      case 'clearSelection':
+        return { ...state, selectedIndex: -1 }
       default:
-        return state;
+        return state
     }
   }
 
-  const isSmallMobile = useIsSmallMobile();
+  const isSmallMobile = useIsSmallMobile()
   const [state, dispatch] = useReducer(reducer, {
     openPopoverId: null,
     showDescriptionId: null,
     selectedIndex: -1,
-  });
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  })
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null)
 
   const { setHoveredBookmark } = useBookmarkShortcuts({
-    onRename,
     onEdit,
     onCopy,
     onDelete,
     onShowDescription: useCallback((bookmark: Bookmark) => {
       if (bookmark.description) {
-        dispatch({ type: "showDescription", id: bookmark.id });
-        setTimeout(() => dispatch({ type: "clearDescription" }), 3000);
+        dispatch({ type: 'showDescription', id: bookmark.id })
+        setTimeout(() => dispatch({ type: 'clearDescription' }), 3000)
       }
     }, []),
-  });
+  })
 
-  const longPressTriggered = useRef(false);
+  const longPressTriggered = useRef(false)
 
   const handleTouchStart = useCallback(
     (e: React.TouchEvent, id: string) => {
-      if (!isSmallMobile) return;
-      longPressTriggered.current = false;
+      if (!isSmallMobile) return
+      longPressTriggered.current = false
 
       longPressTimer.current = setTimeout(() => {
-        longPressTriggered.current = true;
-        dispatch({ type: "setOpenPopover", id });
-      }, 500);
+        longPressTriggered.current = true
+        dispatch({ type: 'setOpenPopover', id })
+      }, 500)
     },
-    [isSmallMobile],
-  );
+    [isSmallMobile]
+  )
 
   const handleTouchEnd = useCallback(() => {
     if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
+      clearTimeout(longPressTimer.current)
     }
-  }, []);
+  }, [])
 
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
       if (isSmallMobile) {
-        e.preventDefault();
+        e.preventDefault()
       }
     },
-    [isSmallMobile],
-  );
+    [isSmallMobile]
+  )
 
   // Auto-close mobile popover after 4 seconds
-  const autoCloseTimer = useRef<NodeJS.Timeout | null>(null);
+  const autoCloseTimer = useRef<NodeJS.Timeout | null>(null)
   useEffect(() => {
     if (autoCloseTimer.current) {
-      clearTimeout(autoCloseTimer.current);
-      autoCloseTimer.current = null;
+      clearTimeout(autoCloseTimer.current)
+      autoCloseTimer.current = null
     }
     if (state.openPopoverId && isSmallMobile) {
       autoCloseTimer.current = setTimeout(() => {
-        dispatch({ type: "setOpenPopover", id: null });
-      }, 4000);
+        dispatch({ type: 'setOpenPopover', id: null })
+      }, 4000)
     }
     return () => {
       if (autoCloseTimer.current) {
-        clearTimeout(autoCloseTimer.current);
+        clearTimeout(autoCloseTimer.current)
       }
-    };
-  }, [state.openPopoverId, isSmallMobile]);
+    }
+  }, [state.openPopoverId, isSmallMobile])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (!bookmarks.length) return;
+      if (!bookmarks.length) return
 
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        dispatch({ type: "selectNext" });
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        dispatch({ type: "selectPrevious" });
-      } else if (e.key === "Escape") {
-        e.preventDefault();
-        dispatch({ type: "clearSelection" });
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        dispatch({ type: 'selectNext' })
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        dispatch({ type: 'selectPrevious' })
+      } else if (e.key === 'Escape') {
+        e.preventDefault()
+        dispatch({ type: 'clearSelection' })
       }
     }
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [bookmarks.length]);
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [bookmarks.length])
 
   if (loading && bookmarks.length === 0) {
     return (
@@ -183,7 +180,7 @@ export const BookmarkList = memo(function BookmarkList({
           </div>
         ))}
       </motion.div>
-    );
+    )
   }
 
   if (!loading && bookmarks.length === 0) {
@@ -199,7 +196,7 @@ export const BookmarkList = memo(function BookmarkList({
           Try a different search or press Enter to add
         </p>
       </motion.div>
-    );
+    )
   }
 
   return (
@@ -215,7 +212,7 @@ export const BookmarkList = memo(function BookmarkList({
             isPopoverOpen={state.openPopoverId === bookmark.id}
             onPopoverOpenChange={(open) =>
               dispatch({
-                type: "setOpenPopover",
+                type: 'setOpenPopover',
                 id: open ? bookmark.id : null,
               })
             }
@@ -225,15 +222,14 @@ export const BookmarkList = memo(function BookmarkList({
             onMouseEnter={() => setHoveredBookmark(bookmark)}
             onMouseLeave={() => setHoveredBookmark(null)}
             onCopy={() => onCopy(bookmark)}
-            onRename={() => onRename(bookmark)}
             onEdit={() => onEdit(bookmark)}
             onDelete={() => onDelete(bookmark)}
             onMove={(groupId) => onMove(bookmark.id, groupId)}
             onToggleRead={() => onToggleRead(bookmark.id)}
             onShowDescription={() => {
               if (bookmark.description) {
-                dispatch({ type: "showDescription", id: bookmark.id });
-                setTimeout(() => dispatch({ type: "clearDescription" }), 3000);
+                dispatch({ type: 'showDescription', id: bookmark.id })
+                setTimeout(() => dispatch({ type: 'clearDescription' }), 3000)
               }
             }}
             showDescription={state.showDescriptionId === bookmark.id}
@@ -241,8 +237,8 @@ export const BookmarkList = memo(function BookmarkList({
         ))}
       </AnimatePresence>
     </div>
-  );
-});
+  )
+})
 
 // Re-export types for backwards compatibility
-export type { Bookmark } from "./types";
+export type { Bookmark } from './types'
