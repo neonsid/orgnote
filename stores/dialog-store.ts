@@ -1,39 +1,24 @@
 import { Id } from '@/convex/_generated/dataModel'
 import { create } from 'zustand'
 
-interface BookmarkData {
-  id: string
-  title: string
-  url: string
-}
-
-// TODO: Make all string Id to convexIDs
-
 interface EditBookmarkData {
-  id: string
+  id: Id<'bookmarks'>
   title: string
   url: string
   description?: string
 }
 
 interface DialogState {
-  // Rename bookmark dialog
-  renameBookmark: {
-    open: boolean
-    bookmarkId: string | null
-    bookmarkData: BookmarkData | null
-  }
-
   // Edit bookmark dialog
   editBookmark: {
     open: boolean
-    bookmarkId: string | null
+    bookmarkId: Id<'bookmarks'> | null
     bookmarkData: EditBookmarkData | null
   }
 
   editGroup: {
     open: boolean
-    groupId: string | null
+    groupId: Id<'groups'> | null
   }
   // Delete bookmark dialog
   deleteBookmarkOrItem: {
@@ -45,7 +30,7 @@ interface DialogState {
   // Delete group dialog
   deleteGroup: {
     open: boolean
-    groupId: string | null
+    groupId: Id<'groups'> | null
   }
 
   // User settings dialog
@@ -67,18 +52,16 @@ interface DialogState {
   // Delete vault file dialog
   deleteVaultFile: {
     open: boolean
-    fileId: string | null
+    fileId: Id<'vaultFiles'> | null
     fileName: string | null
   }
 
   // Actions
-  openRenameDialog: (bookmarkId: string, bookmarkData: BookmarkData) => void
-  openGroupRenameDialog: (groupId: string) => void
+  openGroupRenameDialog: (groupId: Id<'groups'>) => void
   closeGroupRenameDialog: () => void
-  closeRenameDialog: () => void
 
   openEditBookmarkDialog: (
-    bookmarkId: string,
+    bookmarkId: Id<'bookmarks'>,
     bookmarkData: EditBookmarkData
   ) => void
   closeEditBookmarkDialog: () => void
@@ -89,7 +72,7 @@ interface DialogState {
   ) => void
   closeDeleteBookmarkDialog: () => void
 
-  openDeleteGroupDialog: (groupId: string) => void
+  openDeleteGroupDialog: (groupId: Id<'groups'>) => void
   closeDeleteGroupDialog: () => void
 
   openUserSettings: (tab?: 'general' | 'public-profile') => void
@@ -102,13 +85,14 @@ interface DialogState {
   openCreateGroup: () => void
   closeCreateGroup: () => void
 
-  openDeleteVaultFileDialog: (fileId: string, fileName: string) => void
+  openDeleteVaultFileDialog: (
+    fileId: Id<'vaultFiles'>,
+    fileName: string
+  ) => void
   closeDeleteVaultFileDialog: () => void
 }
 
 export const useDialogStore = create<DialogState>((set) => ({
-  // Initial states
-  renameBookmark: { open: false, bookmarkId: null, bookmarkData: null },
   editBookmark: { open: false, bookmarkId: null, bookmarkData: null },
   editGroup: { open: false, groupId: null, title: null },
   deleteBookmark: { open: false, bookmarkId: null, bookmarkData: null },
@@ -119,25 +103,19 @@ export const useDialogStore = create<DialogState>((set) => ({
   deleteVaultFile: { open: false, fileId: null, fileName: null },
   deleteBookmarkOrItem: {
     open: false,
-    bookmarkOrFileId: null as unknown as Id<'bookmarks'> | Id<'vaultFiles'>,
+    bookmarkOrFileId: null,
     title: null,
   },
 
   // Rename bookmark actions
-  openRenameDialog: (bookmarkId: string, bookmarkData: BookmarkData) =>
-    set({ renameBookmark: { open: true, bookmarkId, bookmarkData } }),
-  openGroupRenameDialog: (groupId: string) =>
+  openGroupRenameDialog: (groupId: Id<'groups'>) =>
     set({ editGroup: { groupId: groupId, open: true } }),
   closeGroupRenameDialog: () =>
     set({ editGroup: { groupId: null, open: false } }),
-  closeRenameDialog: () =>
-    set({
-      renameBookmark: { open: false, bookmarkId: null, bookmarkData: null },
-    }),
 
   // Edit bookmark actions
   openEditBookmarkDialog: (
-    bookmarkId: string,
+    bookmarkId: Id<'bookmarks'>,
     bookmarkData: EditBookmarkData
   ) => set({ editBookmark: { open: true, bookmarkId, bookmarkData } }),
   closeEditBookmarkDialog: () =>
@@ -162,12 +140,12 @@ export const useDialogStore = create<DialogState>((set) => ({
     set({
       deleteBookmarkOrItem: {
         open: false,
-        bookmarkOrFileId: null as unknown as Id<'bookmarks'> | Id<'vaultFiles'>, // or use undefined
+        bookmarkOrFileId: null,
         title: null,
       },
     }),
   // Delete group actions
-  openDeleteGroupDialog: (groupId: string) =>
+  openDeleteGroupDialog: (groupId: Id<'groups'>) =>
     set({ deleteGroup: { open: true, groupId } }),
   closeDeleteGroupDialog: () =>
     set({ deleteGroup: { open: false, groupId: null } }),
@@ -191,7 +169,7 @@ export const useDialogStore = create<DialogState>((set) => ({
   closeCreateGroup: () => set({ createGroup: { open: false } }),
 
   // Delete vault file actions
-  openDeleteVaultFileDialog: (fileId: string, fileName: string) =>
+  openDeleteVaultFileDialog: (fileId: Id<'vaultFiles'>, fileName: string) =>
     set({ deleteVaultFile: { open: true, fileId, fileName } }),
   closeDeleteVaultFileDialog: () =>
     set({ deleteVaultFile: { open: false, fileId: null, fileName: null } }),

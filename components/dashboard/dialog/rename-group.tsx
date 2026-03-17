@@ -35,7 +35,6 @@ export function RenameGroupDialog({
   onOpenChange,
 }: RenameGroupDialogProps) {
   const renameGroup = useMutation(api.groups.renameGroup)
-
   const form = useForm({
     defaultValues: {
       title: title,

@@ -55,7 +55,6 @@ export default function DashboardPage() {
   const {
     editBookmark,
     deleteBookmarkOrItem,
-    openRenameDialog,
     openEditBookmarkDialog,
     closeEditBookmarkDialog,
     openDeleteBookmarkDialog,
@@ -125,17 +124,6 @@ export default function DashboardPage() {
     navigator.clipboard.writeText(bookmark.url)
     toast.success('URL copied to clipboard')
   }, [])
-
-  const handleRename = useCallback(
-    (bookmark: Bookmark) => {
-      openRenameDialog(bookmark.id, {
-        id: bookmark.id,
-        title: bookmark.title,
-        url: bookmark.url,
-      })
-    },
-    [openRenameDialog]
-  )
 
   const handleEdit = useCallback(
     (bookmark: Bookmark) => {

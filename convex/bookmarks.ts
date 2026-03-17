@@ -14,14 +14,14 @@ import {
   isValidUrl,
   verifyBookmarkOwnership,
   verifyGroupOwnership,
-  fetchGroupBookmarks,
   fetchGroupBookmarksByGroupId,
-  MAX_BOOKMARKS_PER_QUERY,
 } from './bookmark_helpers'
+import { fetchGroupBookmarks } from './fetchGroupBookmarks'
 import { classifyUrl, parseGitHubRepo } from './lib/url_classifier'
 
 import { internal } from './_generated/api'
 import { api } from './_generated/api'
+import { MAX_BOOKMARKS_PER_QUERY } from './lib/constants'
 
 // ──────────────────────────────────────────────
 // Internal Mutations

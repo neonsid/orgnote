@@ -20,6 +20,7 @@ export interface VaultFile {
   type: string
   size: number
   url: string
+  thumbnailUrl?: string
   groupId?: Id<'vaultGroups'>
   ownerId: string
   createdAt: number
