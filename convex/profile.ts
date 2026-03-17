@@ -1,10 +1,8 @@
-import { v, ConvexError } from "convex/values";
-import { mutation, query } from "./_generated/server";
-import { requireAuth } from "./lib/auth";
-import {
-  fetchGroupBookmarksByGroupId,
-  MAX_BOOKMARKS_PER_QUERY,
-} from "./bookmark_helpers";
+import { v, ConvexError } from 'convex/values'
+import { mutation, query } from './_generated/server'
+import { requireAuth } from './lib/auth'
+import { fetchGroupBookmarksByGroupId } from './bookmark_helpers'
+import { MAX_BOOKMARKS_PER_QUERY } from './lib/constants'
 
 // ──────────────────────────────────────────────
 // Queries
@@ -13,16 +11,16 @@ import {
 export const getProfile = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await requireAuth(ctx);
+    const userId = await requireAuth(ctx)
 
     const profile = await ctx.db
-      .query("userProfile")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .unique();
+      .query('userProfile')
+      .withIndex('by_userId', (q) => q.eq('userId', userId))
+      .unique()
 
-    return profile;
+    return profile
   },
-});
+})
 
 export const getProfileByUsername = query({
   args: {
@@ -30,63 +28,63 @@ export const getProfileByUsername = query({
   },
   handler: async (ctx, args) => {
     if (!args.username) {
-      return null;
+      return null
     }
 
     const profile = await ctx.db
-      .query("userProfile")
-      .withIndex("by_username", (q) => q.eq("username", args.username))
-      .unique();
+      .query('userProfile')
+      .withIndex('by_username', (q) => q.eq('username', args.username))
+      .unique()
 
     if (!profile || !profile.isPublic) {
-      return null;
+      return null
     }
 
     return {
       ...profile,
       name: profile.username,
-    };
+    }
   },
-});
+})
 
 export const getPublicProfileData = query({
   args: { username: v.string() },
   handler: async (ctx, args) => {
     if (!args.username) {
-      return null;
+      return null
     }
 
     const profile = await ctx.db
-      .query("userProfile")
-      .withIndex("by_username", (q) => q.eq("username", args.username))
-      .unique();
+      .query('userProfile')
+      .withIndex('by_username', (q) => q.eq('username', args.username))
+      .unique()
 
     if (!profile || !profile.isPublic) {
-      return null;
+      return null
     }
 
     const groups = await ctx.db
-      .query("groups")
-      .withIndex("by_userId_and_isPublic", (q) =>
-        q.eq("userId", profile.userId).eq("isPublic", true),
+      .query('groups')
+      .withIndex('by_userId_and_isPublic', (q) =>
+        q.eq('userId', profile.userId).eq('isPublic', true)
       )
-      .take(MAX_BOOKMARKS_PER_QUERY);
+      .take(MAX_BOOKMARKS_PER_QUERY)
 
     const bookmarks: {
-      _id: string;
-      title: string;
-      url: string;
-      description?: string;
-      imageUrl: string;
-      doneReading: boolean;
-      createdAt: number;
-      groupId: string;
-      groupTitle: string;
-      groupColor: string;
-    }[] = [];
+      _id: string
+      title: string
+      url: string
+      description?: string
+      imageUrl: string
+      doneReading: boolean
+      createdAt: number
+      groupId: string
+      groupTitle: string
+      groupColor: string
+    }[] = []
 
     for (const group of groups) {
-      const groupBookmarks = await fetchGroupBookmarksByGroupId(ctx, group._id);
+      const groupBookmarks = await fetchGroupBookmarksByGroupId(ctx, group._id)
 
       for (const bookmark of groupBookmarks) {
         bookmarks.push({
@@ -100,11 +98,11 @@ export const getPublicProfileData = query({
           groupId: group._id,
           groupTitle: group.title,
           groupColor: group.color,
-        });
+        })
       }
     }
 
-    bookmarks.sort((a, b) => b.createdAt - a.createdAt);
+    bookmarks.sort((a, b) => b.createdAt - a.createdAt)
 
     return {
       profile: {
@@ -113,9 +111,9 @@ export const getPublicProfileData = query({
       },
       groups,
       bookmarks,
-    };
+    }
   },
-});
+})
 
 // ──────────────────────────────────────────────
 // Mutations
@@ -129,180 +127,180 @@ export const upsertProfile = mutation({
       v.array(
         v.object({
           label: v.union(
-            v.literal("GitHub"),
-            v.literal("Twitter"),
-            v.literal("Portfolio"),
+            v.literal('GitHub'),
+            v.literal('Twitter'),
+            v.literal('Portfolio')
           ),
           url: v.string(),
-        }),
-      ),
+        })
+      )
     ),
     isPublic: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx);
+    const userId = await requireAuth(ctx)
 
     if (args.username) {
       const existingUserWithUsername = await ctx.db
-        .query("userProfile")
-        .withIndex("by_username", (q) => q.eq("username", args.username))
-        .unique();
+        .query('userProfile')
+        .withIndex('by_username', (q) => q.eq('username', args.username))
+        .unique()
 
       if (
         existingUserWithUsername &&
         existingUserWithUsername.userId !== userId
       ) {
         throw new ConvexError({
-          code: "CONFLICT",
-          message: "Username is already taken",
-        });
+          code: 'CONFLICT',
+          message: 'Username is already taken',
+        })
       }
     }
 
     const existingProfile = await ctx.db
-      .query("userProfile")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .unique();
+      .query('userProfile')
+      .withIndex('by_userId', (q) => q.eq('userId', userId))
+      .unique()
 
     if (existingProfile) {
-      const updateData: Record<string, unknown> = {};
-      if (args.username !== undefined) updateData.username = args.username;
-      if (args.bio !== undefined) updateData.bio = args.bio;
-      if (args.links !== undefined) updateData.links = args.links;
-      if (args.isPublic !== undefined) updateData.isPublic = args.isPublic;
+      const updateData: Record<string, unknown> = {}
+      if (args.username !== undefined) updateData.username = args.username
+      if (args.bio !== undefined) updateData.bio = args.bio
+      if (args.links !== undefined) updateData.links = args.links
+      if (args.isPublic !== undefined) updateData.isPublic = args.isPublic
 
-      return await ctx.db.patch(existingProfile._id, updateData);
+      return await ctx.db.patch(existingProfile._id, updateData)
     } else {
-      return await ctx.db.insert("userProfile", {
+      return await ctx.db.insert('userProfile', {
         userId: userId,
         username: args.username,
         bio: args.bio,
         links: args.links,
         isPublic: args.isPublic ?? false,
-      });
+      })
     }
   },
-});
+})
 
 export const updateUsername = mutation({
   args: {
     username: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx);
+    const userId = await requireAuth(ctx)
 
     const existingUserWithUsername = await ctx.db
-      .query("userProfile")
-      .withIndex("by_username", (q) => q.eq("username", args.username))
-      .unique();
+      .query('userProfile')
+      .withIndex('by_username', (q) => q.eq('username', args.username))
+      .unique()
 
     if (
       existingUserWithUsername &&
       existingUserWithUsername.userId !== userId
     ) {
       throw new ConvexError({
-        code: "CONFLICT",
-        message: "Username is already taken",
-      });
+        code: 'CONFLICT',
+        message: 'Username is already taken',
+      })
     }
 
     const existingProfile = await ctx.db
-      .query("userProfile")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .unique();
+      .query('userProfile')
+      .withIndex('by_userId', (q) => q.eq('userId', userId))
+      .unique()
 
     if (existingProfile) {
       return await ctx.db.patch(existingProfile._id, {
         username: args.username,
-      });
+      })
     } else {
-      return await ctx.db.insert("userProfile", {
+      return await ctx.db.insert('userProfile', {
         userId: userId,
         username: args.username,
         isPublic: false,
-      });
+      })
     }
   },
-});
+})
 
 export const updateBio = mutation({
   args: {
     bio: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx);
+    const userId = await requireAuth(ctx)
 
     const existingProfile = await ctx.db
-      .query("userProfile")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .unique();
+      .query('userProfile')
+      .withIndex('by_userId', (q) => q.eq('userId', userId))
+      .unique()
 
     if (existingProfile) {
-      return await ctx.db.patch(existingProfile._id, { bio: args.bio });
+      return await ctx.db.patch(existingProfile._id, { bio: args.bio })
     } else {
-      return await ctx.db.insert("userProfile", {
+      return await ctx.db.insert('userProfile', {
         userId: userId,
         bio: args.bio,
         isPublic: false,
-      });
+      })
     }
   },
-});
+})
 
 export const updateSocialLinks = mutation({
   args: {
     links: v.array(
       v.object({
         label: v.union(
-          v.literal("GitHub"),
-          v.literal("Twitter"),
-          v.literal("Portfolio"),
+          v.literal('GitHub'),
+          v.literal('Twitter'),
+          v.literal('Portfolio')
         ),
         url: v.string(),
-      }),
+      })
     ),
   },
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx);
+    const userId = await requireAuth(ctx)
 
     const existingProfile = await ctx.db
-      .query("userProfile")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .unique();
+      .query('userProfile')
+      .withIndex('by_userId', (q) => q.eq('userId', userId))
+      .unique()
 
     if (existingProfile) {
-      return await ctx.db.patch(existingProfile._id, { links: args.links });
+      return await ctx.db.patch(existingProfile._id, { links: args.links })
     } else {
-      return await ctx.db.insert("userProfile", {
+      return await ctx.db.insert('userProfile', {
         userId: userId,
         links: args.links,
         isPublic: false,
-      });
+      })
     }
   },
-});
+})
 
 export const switchProfileStatus = mutation({
   args: {
     isPublic: v.boolean(),
   },
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx);
+    const userId = await requireAuth(ctx)
 
     const existingProfile = await ctx.db
-      .query("userProfile")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .unique();
+      .query('userProfile')
+      .withIndex('by_userId', (q) => q.eq('userId', userId))
+      .unique()
 
     if (existingProfile) {
       return await ctx.db.patch(existingProfile._id, {
         isPublic: args.isPublic,
-      });
+      })
     } else {
-      return await ctx.db.insert("userProfile", {
+      return await ctx.db.insert('userProfile', {
         userId: userId,
         isPublic: args.isPublic,
-      });
+      })
     }
   },
-});
+})

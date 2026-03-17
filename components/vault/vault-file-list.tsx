@@ -2,8 +2,9 @@
 
 import { memo, useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { Id } from '@/convex/_generated/dataModel'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
+import { downloadFile } from '@/lib/download-file'
 import {
   Table,
   TableBody,
@@ -12,18 +13,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  ImageIcon,
-  VideoIcon,
-  HeadphonesIcon,
-  FileTextIcon,
-  FileSpreadsheetIcon,
-  FileArchiveIcon,
-  Trash2 as Trash2Icon,
-  Copy,
-  Check,
-} from 'lucide-react'
+import { Trash2 as Trash2Icon, Download } from 'lucide-react'
 import { formatBytes } from '@/hooks/use-file-upload'
+import { getFileIcon, getFileTypeLabel } from './file-type-utils'
 import { VaultFile } from '../dashboard/bookmark-list/types'
 
 interface VaultFileListProps {
@@ -45,41 +37,8 @@ export const VaultFileList = memo(function VaultFileList({
   onDeleteFile,
   isLoading,
 }: VaultFileListProps) {
-  const [copiedId, setCopiedId] = useState<string | null>(null)
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
-
-  const getFileIcon = (type: string) => {
-    if (type.startsWith('image/')) return <ImageIcon className="size-4" />
-    if (type.startsWith('video/')) return <VideoIcon className="size-4" />
-    if (type.startsWith('audio/')) return <HeadphonesIcon className="size-4" />
-    if (type.includes('pdf')) return <FileTextIcon className="size-4" />
-    if (type.includes('word') || type.includes('doc'))
-      return <FileTextIcon className="size-4" />
-    if (type.includes('excel') || type.includes('sheet'))
-      return <FileSpreadsheetIcon className="size-4" />
-    if (type.includes('zip') || type.includes('rar'))
-      return <FileArchiveIcon className="size-4" />
-    return <FileTextIcon className="size-4" />
-  }
-
-  const getFileTypeLabel = (type: string) => {
-    if (type.startsWith('image/')) return 'Image'
-    if (type.startsWith('video/')) return 'Video'
-    if (type.startsWith('audio/')) return 'Audio'
-    if (type.includes('pdf')) return 'PDF'
-    if (type.includes('word') || type.includes('doc')) return 'Word'
-    if (type.includes('excel') || type.includes('sheet')) return 'Excel'
-    if (type.includes('zip') || type.includes('rar')) return 'Archive'
-    if (type.includes('json')) return 'JSON'
-    if (type.includes('text')) return 'Text'
-    return 'File'
-  }
-
-  const handleCopyLink = (url: string, fileId: string) => {
-    navigator.clipboard.writeText(url)
-    setCopiedId(fileId)
-    setTimeout(() => setCopiedId(null), 2000)
-  }
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
   if (files.length === 0) {
     if (isLoading) {
@@ -127,7 +86,7 @@ export const VaultFileList = memo(function VaultFileList({
             <TableHead className="h-9">Type</TableHead>
             <TableHead className="h-9">Size</TableHead>
             <TableHead className="h-9">Date</TableHead>
-            <TableHead className="h-9 w-[100px] ps-4">Actions</TableHead>
+            <TableHead className="h-9 w-[150px] ps-4">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -192,13 +151,19 @@ export const VaultFileList = memo(function VaultFileList({
                       size="icon"
                       variant="ghost"
                       className="size-8"
-                      onClick={() => handleCopyLink(file.url, file._id)}
+                      disabled={downloadingId === file._id}
+                      onClick={async () => {
+                        setDownloadingId(file._id)
+                        try {
+                          await downloadFile(file.url, file.name, file.type)
+                        } catch {
+                          toast.error('Download failed')
+                        } finally {
+                          setDownloadingId(null)
+                        }
+                      }}
                     >
-                      {copiedId === file._id ? (
-                        <Check className="size-3.5" />
-                      ) : (
-                        <Copy className="size-3.5" />
-                      )}
+                      <Download className="size-3.5" />
                     </Button>
                     <Button
                       size="icon"

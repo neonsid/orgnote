@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react'
 import type { Bookmark } from './types'
 
+// TODO: Fix this nonsense
 interface UseBookmarkShortcutsOptions {
   onDelete: (bookmark: Bookmark) => void
   onShowDescription?: (bookmark: Bookmark) => void

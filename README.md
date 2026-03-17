@@ -248,3 +248,5 @@ For issues and feature requests, please use the [GitHub issue tracker](https://g
 - [] Complete all todos
 - [] Clean the codebase and make the dialog which are common in components/dialog
 - [] Clean the file upload component as well
+- [] Clean the code
+

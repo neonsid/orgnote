@@ -52,6 +52,7 @@ export default defineSchema({
     type: v.string(),
     size: v.number(),
     url: v.string(),
+    thumbnailUrl: v.optional(v.string()),
     groupId: v.optional(v.id('vaultGroups')),
     ownerId: v.string(),
     createdAt: v.number(),

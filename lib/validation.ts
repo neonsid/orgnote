@@ -147,10 +147,6 @@ export const groupTitleSchema = z
   .max(200, 'Title must be at most 20 characters')
   .trim()
 
-export const renameBookmarkSchema = z.object({
-  title: bookmarkTitleSchema,
-})
-
 export const renameGroupSchema = z.object({
   title: groupTitleSchema,
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid color format'),
@@ -174,6 +170,5 @@ export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>
 export type UpdateNameFormData = z.infer<typeof updateNameSchema>
 export type PublicProfileFormData = z.infer<typeof publicProfileSchema>
 export type CreateGroupFormData = z.infer<typeof createGroupSchema>
-export type RenameBookmarkFormData = z.infer<typeof renameBookmarkSchema>
 export type EditBookmarkFormData = z.infer<typeof editBookmarkSchema>
 export type RenameGroupFormData = z.infer<typeof renameGroupSchema>

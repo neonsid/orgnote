@@ -2,7 +2,6 @@
 
 import { v } from 'convex/values'
 import { action, internalAction } from './_generated/server'
-import { api, internal } from './_generated/api'
 import { requireAuth } from './lib/auth'
 import {
   S3Client,
@@ -10,12 +9,15 @@ import {
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-
-const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID || ''
-const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || ''
-const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID || ''
-const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY || ''
-const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || ''
+import {
+  R2_ACCOUNT_ID,
+  R2_ACCESS_KEY_ID,
+  R2_SECRET_ACCESS_KEY,
+  MAX_FILENAME_LENGTH,
+  ALLOWED_FILE_TYPES,
+  R2_BUCKET_NAME,
+  R2_PUBLIC_URL,
+} from './lib/constants'
 
 const s3Client = new S3Client({
   region: 'auto',
@@ -28,10 +30,31 @@ const s3Client = new S3Client({
   },
 })
 
-function generateFileKey(ownerId: string, fileName: string): string {
+function validateFileInput(fileName: string, fileType: string): void {
+  if (fileName.length > MAX_FILENAME_LENGTH) {
+    throw new Error('Filename too long')
+  }
+
+  if (!fileName || fileName.trim() === '') {
+    throw new Error('Filename is required')
+  }
+
+  if (!fileType || fileType.trim() === '') {
+    throw new Error('File type is required')
+  }
+
+  const isAllowedType = ALLOWED_FILE_TYPES.some((type) =>
+    fileType.startsWith(type)
+  )
+  if (!isAllowedType) {
+    throw new Error('File type not allowed')
+  }
+}
+
+function generateFileKey(fileName: string): string {
   const uuid = crypto.randomUUID()
   const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_')
-  return `${ownerId}/${uuid}-${sanitizedFileName}`
+  return `${uuid}-${sanitizedFileName}`
 }
 
 export const getPresignedUploadUrl = action({
@@ -39,14 +62,9 @@ export const getPresignedUploadUrl = action({
   handler: async (ctx, args) => {
     const userId = await requireAuth(ctx)
 
-    console.log('R2 config:', {
-      accountId: R2_ACCOUNT_ID ? 'set' : 'missing',
-      bucket: R2_BUCKET_NAME ? 'set' : 'missing',
-      accessKeyId: R2_ACCESS_KEY_ID ? 'set' : 'missing',
-      secretKeySet: !!R2_SECRET_ACCESS_KEY,
-    })
+    validateFileInput(args.fileName, args.fileType)
 
-    const fileKey = generateFileKey(userId, args.fileName)
+    const fileKey = generateFileKey(userId)
     const contentType = args.fileType
 
     const command = new PutObjectCommand({
@@ -55,7 +73,9 @@ export const getPresignedUploadUrl = action({
       ContentType: contentType,
     })
 
-    const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 })
+    const signedUrl = await getSignedUrl(s3Client, command, {
+      expiresIn: 3600,
+    })
     const fileUrl = `${R2_PUBLIC_URL}/${fileKey}`
 
     return {
@@ -69,18 +89,36 @@ export const getPresignedUploadUrl = action({
 export const deleteFromR2 = internalAction({
   args: {
     fileKey: v.string(),
-    fileId: v.id('vaultFiles'),
+    thumbnailFileKey: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const command = new DeleteObjectCommand({
-      Bucket: R2_BUCKET_NAME,
-      Key: args.fileKey,
-    })
-    await s3Client.send(command)
+    const userId = await requireAuth(ctx)
 
-    // Now delete from DB using scheduler to call mutation
-    await ctx.scheduler.runAfter(0, internal.vault.deleteFileFromDb, {
-      fileId: args.fileId,
-    })
+    const [ownerId] = args.fileKey.split('/')
+
+    if (ownerId !== userId) {
+      throw new Error('Unauthorized: cannot delete files you do not own')
+    }
+
+    await s3Client.send(
+      new DeleteObjectCommand({
+        Bucket: R2_BUCKET_NAME,
+        Key: args.fileKey,
+      })
+    )
+
+    if (args.thumbnailFileKey) {
+      const [thumbOwnerId] = args.thumbnailFileKey.split('/')
+      if (thumbOwnerId !== userId) {
+        throw new Error('Unauthorized: cannot delete files you do not own')
+      }
+
+      await s3Client.send(
+        new DeleteObjectCommand({
+          Bucket: R2_BUCKET_NAME,
+          Key: args.thumbnailFileKey,
+        })
+      )
+    }
   },
 })
