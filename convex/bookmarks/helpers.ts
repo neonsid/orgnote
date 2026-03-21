@@ -1,11 +1,11 @@
 import { ConvexError } from 'convex/values'
 import { GenericMutationCtx, GenericQueryCtx } from 'convex/server'
-import { DataModel, Id } from './_generated/dataModel'
+import { DataModel, Id } from '../_generated/dataModel'
 import {
   ALLOWED_URL_PROTOCOLS,
   MAX_BOOKMARKS_PER_QUERY,
   MAX_URL_LENGTH,
-} from './lib/constants'
+} from '../lib/constants'
 
 export function isValidUrl(url: string): boolean {
   if (!url || url.length > MAX_URL_LENGTH) return false
@@ -75,5 +75,18 @@ export async function fetchGroupBookmarksByGroupId(
   return await ctx.db
     .query('bookmarks')
     .withIndex('by_groupId', (q) => q.eq('groupId', groupId))
+    .take(limit)
+}
+
+/** Fetch bookmarks for a group with proper ordering and limits */
+export async function fetchGroupBookmarks(
+  ctx: GenericQueryCtx<DataModel>,
+  groupId: Id<'groups'>,
+  limit: number = MAX_BOOKMARKS_PER_QUERY
+) {
+  return await ctx.db
+    .query('bookmarks')
+    .withIndex('by_groupId', (q) => q.eq('groupId', groupId))
+    .order('desc')
     .take(limit)
 }

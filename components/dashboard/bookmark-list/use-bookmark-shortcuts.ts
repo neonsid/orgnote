@@ -1,4 +1,5 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useRef, useCallback } from 'react'
+import { useMountEffect } from '@/hooks/use-mount-effect'
 import type { Bookmark } from './types'
 
 // TODO: Fix this nonsense
@@ -22,16 +23,20 @@ export function useBookmarkShortcuts({
   const onEditRef = useRef(onEdit)
   const onCopyRef = useRef(onCopy)
 
+  // eslint-disable-next-line react-hooks/refs -- latest handler refs for stable keydown listener
   onDeleteRef.current = onDelete
+  // eslint-disable-next-line react-hooks/refs
   onShowDescriptionRef.current = onShowDescription
+  // eslint-disable-next-line react-hooks/refs
   onEditRef.current = onEdit
+  // eslint-disable-next-line react-hooks/refs
   onCopyRef.current = onCopy
 
   const setHoveredBookmark = useCallback((bookmark: Bookmark | null) => {
     hoveredBookmarkRef.current = bookmark
   }, [])
 
-  useEffect(() => {
+  useMountEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault()
@@ -71,7 +76,7 @@ export function useBookmarkShortcuts({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  })
 
   return { hoveredBookmarkRef, setHoveredBookmark }
 }

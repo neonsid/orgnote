@@ -4,7 +4,7 @@ import { useState, useMemo, memo } from "react";
 import { motion } from "motion/react";
 import { extractDomain } from "@/lib/domain-utils";
 import Image from "next/image";
-import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right";
+import { ArrowUpRight } from "lucide-react";
 import type { Id } from "@/convex/_generated/dataModel";
 
 interface Group {
@@ -20,7 +20,7 @@ interface Bookmark {
   imageUrl: string;
   groupColor: string;
   groupId: string;
-  createdAt: number;
+  _creationTime: number;
 }
 
 interface PublicBookmarkListProps {
@@ -103,7 +103,7 @@ const BookmarkItem = memo(function BookmarkItem({
         </div>
         <div className="flex items-center gap-1 shrink-0 ml-4">
           <span className="text-xs text-muted-foreground tabular-nums transition-transform duration-200 group-hover:-translate-x-1">
-            {formatDate(bookmark.createdAt)}
+            {formatDate(bookmark._creationTime)}
           </span>
           <ArrowUpRight className="hidden size-4 text-muted-foreground group-hover:inline transition-all ease-in duration-400" />
         </div>

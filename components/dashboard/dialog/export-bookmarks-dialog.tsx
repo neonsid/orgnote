@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -42,7 +42,7 @@ interface BookmarkWithGroup {
   description?: string;
   imageUrl: string;
   doneReading: boolean;
-  createdAt: number;
+  _creationTime: number;
   groupId: string;
   groupTitle: string;
 }
@@ -51,8 +51,8 @@ export function ExportBookmarksDialog({
   open,
   onOpenChange,
 }: ExportBookmarksDialogProps) {
-  const groups = useQuery(api.groups.list);
-  const allBookmarks = useQuery(api.bookmarks.getAllUserBookmarks);
+  const groups = useQuery(api.groups.queries.list);
+  const allBookmarks = useQuery(api.bookmarks.queries.getAllUserBookmarks);
   const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
   const [format, setFormat] = useState<ExportFormat>("json");
   const [isExporting, setIsExporting] = useState(false);
@@ -62,11 +62,15 @@ export function ExportBookmarksDialog({
   const isAllSelected =
     selectedGroups.size === allGroupIds.size && allGroupIds.size > 0;
 
-  useEffect(() => {
-    if (groups && open) {
-      setSelectedGroups(new Set(groups.map((g) => g._id)));
-    }
-  }, [groups, open]);
+  const handleOpenChange = useCallback(
+    (next: boolean) => {
+      if (next && groups) {
+        setSelectedGroups(new Set(groups.map((g) => g._id)));
+      }
+      onOpenChange(next);
+    },
+    [groups, onOpenChange],
+  );
 
   const toggleGroup = (groupId: string) => {
     const newSelected = new Set(selectedGroups);
@@ -99,7 +103,7 @@ export function ExportBookmarksDialog({
     type: "link",
     color: null,
     groupName: bookmark.groupTitle,
-    createdAt: new Date(bookmark.createdAt).toISOString(),
+    createdAt: new Date(bookmark._creationTime).toISOString(),
   });
 
   const generateCSVExport = (bookmarks: BookmarkWithGroup[]) => {
@@ -181,7 +185,7 @@ export function ExportBookmarksDialog({
       URL.revokeObjectURL(url);
 
       toast.success(`Exported ${bookmarksToExport.length} bookmarks`);
-      onOpenChange(false);
+      handleOpenChange(false);
     } catch {
       toast.error("Failed to export bookmarks");
     } finally {
@@ -201,7 +205,7 @@ export function ExportBookmarksDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="space-y-2">
           <DialogTitle className="text-xl font-semibold">
@@ -314,7 +318,7 @@ export function ExportBookmarksDialog({
         </div>
 
         <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
             Cancel
           </Button>
           <Button

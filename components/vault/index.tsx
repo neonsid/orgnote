@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback } from "react";
 import { useUser } from "@clerk/react";
 import { Id } from "@/convex/_generated/dataModel";
 import { VaultUpload } from "./vault-upload";
@@ -21,7 +21,6 @@ const DeleteBookmarkDialog = dynamic(
 
 export default function VaultPage() {
   const { user, isLoaded } = useUser();
-  const hasAutoSelected = useRef(false);
 
   const {
     deleteBookmarkOrItem,
@@ -32,23 +31,8 @@ export default function VaultPage() {
   const { groups, files, effectiveGroupId, selectGroup, isLoading } =
     useVaultData(!!user);
 
-  const createVaultGroup = useMutation(api.vault.createVaultGroup);
-  const deleteFile = useMutation(api.vault.deleteFile);
-
-  useEffect(() => {
-    if (
-      groups &&
-      groups.length > 0 &&
-      !effectiveGroupId &&
-      !hasAutoSelected.current
-    ) {
-      const latestGroup = [...groups].sort(
-        (a, b) => b.createdAt - a.createdAt,
-      )[0];
-      selectGroup(latestGroup._id);
-      hasAutoSelected.current = true;
-    }
-  }, [groups, effectiveGroupId, selectGroup]);
+  const createVaultGroup = useMutation(api.vault.mutations.createVaultGroup);
+  const deleteFile = useMutation(api.vault.mutations.deleteFile);
 
   const handleDeleteFile = useCallback(
     (file: VaultFile) => {

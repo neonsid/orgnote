@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, memo, useRef, useCallback, useEffect, useMemo } from "react";
+import { useState, memo, useRef, useMemo } from "react";
+import { useMountEffect } from "@/hooks/use-mount-effect";
 import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -359,10 +360,12 @@ export const LandingBookmarkList = memo(function LandingBookmarkList({
 }: LandingBookmarkListProps) {
   const isSmallMobile = useIsSmallMobile();
   const hoveredBookmarkRef = useRef<LandingBookmark | null>(null);
+  const onRenameRef = useRef(onRename);
+  // eslint-disable-next-line react-hooks/refs -- latest onRename for stable keydown listener
+  onRenameRef.current = onRename;
 
-  // Stable keyboard handler using ref
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
+  useMountEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         e.preventDefault();
         if (hoveredBookmarkRef.current) {
@@ -376,20 +379,14 @@ export const LandingBookmarkList = memo(function LandingBookmarkList({
       if ((e.metaKey || e.ctrlKey) && (e.key === "e" || e.key === "E")) {
         e.preventDefault();
         if (hoveredBookmarkRef.current) {
-          onRename(hoveredBookmarkRef.current);
+          onRenameRef.current(hoveredBookmarkRef.current);
         }
       }
-    },
-    [onRename],
-  );
+    };
 
-  // Add keyboard listener
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.addEventListener("keydown", handleKeyDown, { passive: false });
-      return () => window.removeEventListener("keydown", handleKeyDown);
-    }
-  }, [handleKeyDown]);
+    window.addEventListener("keydown", handleKeyDown, { passive: false });
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  });
 
   // Precompute move targets once per group list
   const moveTargetGroupsMap = useMemo(() => {

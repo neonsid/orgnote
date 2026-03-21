@@ -1,5 +1,6 @@
 // hooks/use-mobile.ts
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useMountEffect } from '@/hooks/use-mount-effect'
 
 export function useIsSmallMobile() {
   const [isSmallMobile, setIsSmallMobile] = useState(() => {
@@ -8,13 +9,13 @@ export function useIsSmallMobile() {
     return mql.matches
   })
 
-  useEffect(() => {
+  useMountEffect(() => {
     const mql = window.matchMedia('(min-width: 320px) and (max-width: 767px)')
     const onChange = () => setIsSmallMobile(mql.matches)
 
     mql.addEventListener('change', onChange)
     return () => mql.removeEventListener('change', onChange)
-  }, [])
+  })
 
   return isSmallMobile
 }

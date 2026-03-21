@@ -1,6 +1,7 @@
 'use client'
 
-import { useReducer, useRef, useCallback, useEffect, memo } from 'react'
+import { useReducer, useRef, useCallback, memo } from 'react'
+import { useMountEffect } from '@/hooks/use-mount-effect'
 import { motion, AnimatePresence } from 'motion/react'
 import { useIsSmallMobile } from '@/hooks/use-mobile'
 import { BookmarkItem } from './bookmark-item'
@@ -79,6 +80,29 @@ export const BookmarkList = memo(function BookmarkList({
     selectedIndex: -1,
   })
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
+  const bookmarksLengthRef = useRef(bookmarks.length)
+  // Keep latest length for the global keydown listener (registered once in useMountEffect).
+  // eslint-disable-next-line react-hooks/refs -- sync latest value for event handler closure
+  bookmarksLengthRef.current = bookmarks.length
+
+  const autoCloseTimer = useRef<NodeJS.Timeout | null>(null)
+  const schedulePopoverAutoClose = useCallback((id: string | null) => {
+    if (autoCloseTimer.current) {
+      clearTimeout(autoCloseTimer.current)
+      autoCloseTimer.current = null
+    }
+    if (id && isSmallMobile) {
+      autoCloseTimer.current = setTimeout(() => {
+        dispatch({ type: 'setOpenPopover', id: null })
+      }, 4000)
+    }
+  }, [isSmallMobile])
+
+  useMountEffect(() => {
+    return () => {
+      if (autoCloseTimer.current) clearTimeout(autoCloseTimer.current)
+    }
+  })
 
   const { setHoveredBookmark } = useBookmarkShortcuts({
     onEdit,
@@ -102,9 +126,10 @@ export const BookmarkList = memo(function BookmarkList({
       longPressTimer.current = setTimeout(() => {
         longPressTriggered.current = true
         dispatch({ type: 'setOpenPopover', id })
+        schedulePopoverAutoClose(id)
       }, 500)
     },
-    [isSmallMobile]
+    [isSmallMobile, schedulePopoverAutoClose]
   )
 
   const handleTouchEnd = useCallback(() => {
@@ -122,28 +147,9 @@ export const BookmarkList = memo(function BookmarkList({
     [isSmallMobile]
   )
 
-  // Auto-close mobile popover after 4 seconds
-  const autoCloseTimer = useRef<NodeJS.Timeout | null>(null)
-  useEffect(() => {
-    if (autoCloseTimer.current) {
-      clearTimeout(autoCloseTimer.current)
-      autoCloseTimer.current = null
-    }
-    if (state.openPopoverId && isSmallMobile) {
-      autoCloseTimer.current = setTimeout(() => {
-        dispatch({ type: 'setOpenPopover', id: null })
-      }, 4000)
-    }
-    return () => {
-      if (autoCloseTimer.current) {
-        clearTimeout(autoCloseTimer.current)
-      }
-    }
-  }, [state.openPopoverId, isSmallMobile])
-
-  useEffect(() => {
+  useMountEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (!bookmarks.length) return
+      if (!bookmarksLengthRef.current) return
 
       if (e.key === 'ArrowDown') {
         e.preventDefault()
@@ -159,7 +165,7 @@ export const BookmarkList = memo(function BookmarkList({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [bookmarks.length])
+  })
 
   if (loading && bookmarks.length === 0) {
     return (
@@ -210,12 +216,14 @@ export const BookmarkList = memo(function BookmarkList({
             isMobile={isSmallMobile}
             isSelected={state.selectedIndex === index}
             isPopoverOpen={state.openPopoverId === bookmark.id}
-            onPopoverOpenChange={(open) =>
+            onPopoverOpenChange={(open) => {
               dispatch({
                 type: 'setOpenPopover',
                 id: open ? bookmark.id : null,
               })
-            }
+              if (open) schedulePopoverAutoClose(bookmark.id)
+              else schedulePopoverAutoClose(null)
+            }}
             onTouchStart={(e) => handleTouchStart(e, bookmark.id)}
             onTouchEnd={handleTouchEnd}
             onContextMenu={handleContextMenu}
@@ -233,6 +241,9 @@ export const BookmarkList = memo(function BookmarkList({
               }
             }}
             showDescription={state.showDescriptionId === bookmark.id}
+            onClearDescriptionRequest={() =>
+              dispatch({ type: 'clearDescription' })
+            }
           />
         ))}
       </AnimatePresence>

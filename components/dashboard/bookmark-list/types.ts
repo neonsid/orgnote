@@ -23,5 +23,5 @@ export interface VaultFile {
   thumbnailUrl?: string
   groupId?: Id<'vaultGroups'>
   ownerId: string
-  createdAt: number
+  _creationTime: number
 }

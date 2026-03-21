@@ -27,7 +27,6 @@ export default defineSchema({
     color: v.string(),
     userId: v.string(),
     isPublic: v.optional(v.boolean()),
-    createdAt: v.number(),
     updatedAt: v.optional(v.number()),
   }).index('by_userId_and_isPublic', ['userId', 'isPublic']),
   bookmarks: defineTable({
@@ -36,12 +35,10 @@ export default defineSchema({
     url: v.string(),
     imageUrl: v.string(),
     doneReading: v.boolean(),
-    createdAt: v.number(),
     updatedAt: v.optional(v.number()),
     groupId: v.id('groups'),
   })
-    .index('by_groupId', ['groupId'])
-    .index('by_groupId_and_createdAt', ['groupId', 'createdAt']),
+    .index('by_groupId', ['groupId']),
   sciraUsage: defineTable({
     userId: v.string(),
     date: v.string(),
@@ -55,13 +52,12 @@ export default defineSchema({
     thumbnailUrl: v.optional(v.string()),
     groupId: v.optional(v.id('vaultGroups')),
     ownerId: v.string(),
-    createdAt: v.number(),
-  }).index('by_owner', ['ownerId'])
-   .index('by_owner_group', ['ownerId', 'groupId']),
+  })
+    .index('by_owner', ['ownerId'])
+    .index('by_owner_group', ['ownerId', 'groupId']),
   vaultGroups: defineTable({
     title: v.string(),
     color: v.string(),
     userId: v.string(),
-    createdAt: v.number(),
   }).index('by_userId', ['userId']),
 })

@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer } from "react";
+import { useReducer, useRef } from "react";
 import { useQuery } from "convex/react";
 import { useUser } from "@clerk/react";
 import { api } from "@/convex/_generated/api";
@@ -18,6 +18,22 @@ import { GeneralSettings } from "./general-settings";
 import { PublicProfileSettings } from "./public-profile-settings";
 import { toast } from "sonner";
 import type { SettingsTab } from "./types";
+import type { Doc } from "@/convex/_generated/dataModel";
+
+function PublicProfileFormHost({
+  existingProfile,
+  formRef,
+}: {
+  existingProfile: Doc<"userProfile"> | undefined | null;
+  formRef: React.MutableRefObject<
+    ReturnType<typeof usePublicProfileForm> | null
+  >;
+}) {
+  const profileForm = usePublicProfileForm({ existingProfile });
+  // eslint-disable-next-line react-hooks/refs -- expose form to parent for save/reset
+  formRef.current = profileForm;
+  return <PublicProfileSettings profileForm={profileForm} />;
+}
 
 interface UserSettingsDialogProps {
   open: boolean;
@@ -99,16 +115,16 @@ export function UserSettingsDialog({
     exportOpen: false,
   });
 
-  const existingProfile = useQuery(api.profile.getProfile);
+  const existingProfile = useQuery(api.profile.queries.getProfile);
 
   const nameForm = useNameForm();
-  const profileForm = usePublicProfileForm({
-    existingProfile,
-  });
+  const profileFormRef = useRef<ReturnType<typeof usePublicProfileForm> | null>(
+    null,
+  );
 
   const handleClose = () => {
     nameForm.reset();
-    profileForm.reset();
+    profileFormRef.current?.reset();
     dispatch({ type: "reset" });
     onOpenChange(false);
   };
@@ -117,7 +133,7 @@ export function UserSettingsDialog({
     dispatch({ type: "setSaving", saving: true });
     try {
       await nameForm.handleSubmit();
-      await profileForm.handleSubmit();
+      await profileFormRef.current?.handleSubmit();
 
       toast.success("Profile saved successfully!");
       handleClose();
@@ -168,9 +184,23 @@ export function UserSettingsDialog({
               />
             )}
 
-            {state.activeTab === "public-profile" && (
-              <PublicProfileSettings profileForm={profileForm} />
-            )}
+            <div
+              className={
+                state.activeTab === "public-profile" ? "block" : "hidden"
+              }
+            >
+              <PublicProfileFormHost
+                key={
+                  existingProfile === undefined
+                    ? "loading"
+                    : existingProfile === null
+                      ? "empty"
+                      : existingProfile._id
+                }
+                existingProfile={existingProfile}
+                formRef={profileFormRef}
+              />
+            </div>
           </div>
         </div>
 

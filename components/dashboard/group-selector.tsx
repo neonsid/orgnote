@@ -85,7 +85,7 @@ export const GroupSelector = memo(function GroupSelector({
     closeGroupRenameDialog,
   } = useDialogStore();
 
-  const toggleGroupPublic = useMutation(api.groups.toggleGroupPublic);
+  const toggleGroupPublic = useMutation(api.groups.mutations.toggleGroupPublic);
   const selectedGroup = groups.find((g) => g._id === selectedGroupId);
 
   const handleTogglePublic = async () => {

@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useState, useEffect } from 'react'
 import {
   ContextMenuContent,
   ContextMenuItem,
@@ -150,6 +150,8 @@ interface MobileMenuProps {
   onToggleRead: () => void
   onShowDescription?: () => void
   onClose: () => void
+  /** When false, collapses "Move to" so reopening the menu starts fresh. */
+  isOpen: boolean
 }
 
 export function MobileMenu({
@@ -162,7 +164,14 @@ export function MobileMenu({
   onToggleRead,
   onShowDescription,
   onClose,
+  isOpen,
 }: MobileMenuProps) {
+  const [moveTargetsOpen, setMoveTargetsOpen] = useState(false)
+
+  useEffect(() => {
+    if (!isOpen) setMoveTargetsOpen(false)
+  }, [isOpen])
+
   const otherGroups = useMemo(
     () =>
       groups
@@ -180,6 +189,15 @@ export function MobileMenu({
       onClose()
     },
     [onClose]
+  )
+
+  const handleMoveToGroup = useCallback(
+    (groupId: Id<'groups'>) => {
+      onMove(groupId)
+      setMoveTargetsOpen(false)
+      onClose()
+    },
+    [onMove, onClose]
   )
 
   return (
@@ -230,30 +248,39 @@ export function MobileMenu({
       )}
 
       {otherGroups.length > 0 && (
-        <div className="relative group">
-          <button className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm">
-            <ChevronsRight className="size-4 mr-2" />
+        <div>
+          <button
+            type="button"
+            onClick={() => setMoveTargetsOpen((open) => !open)}
+            className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
+          >
+            <ChevronsRight
+              className={`size-4 mr-2 shrink-0 transition-transform ${moveTargetsOpen ? 'rotate-90' : ''}`}
+            />
             Move to
           </button>
-          <div className="absolute left-full top-0 ml-1 w-48 bg-popover border rounded-md shadow-lg py-1 hidden group-hover:block z-50">
-            {otherGroups.map(({ group, fallbackColor }) => (
-              <button
-                key={group._id}
-                onClick={() =>
-                  handleAction(() => onMove(group._id as Id<'groups'>))
-                }
-                className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
-              >
-                <span
-                  className="size-2.5 rounded-full mr-2"
-                  style={{
-                    backgroundColor: group.color || fallbackColor,
-                  }}
-                />
-                {group.title}
-              </button>
-            ))}
-          </div>
+          {moveTargetsOpen && (
+            <div className="mt-1 ml-2 pl-2 border-l border-border space-y-0.5">
+              {otherGroups.map(({ group, fallbackColor }) => (
+                <button
+                  key={group._id}
+                  type="button"
+                  onClick={() =>
+                    handleMoveToGroup(group._id as Id<'groups'>)
+                  }
+                  className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm text-left"
+                >
+                  <span
+                    className="size-2.5 rounded-full mr-2 shrink-0"
+                    style={{
+                      backgroundColor: group.color || fallbackColor,
+                    }}
+                  />
+                  <span className="min-w-0 truncate">{group.title}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

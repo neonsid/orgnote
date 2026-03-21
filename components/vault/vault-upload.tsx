@@ -1,6 +1,4 @@
 'use client'
-
-import { useEffect } from 'react'
 import {
   CloudUpload as CloudUploadIcon,
   Trash2 as Trash2Icon,
@@ -85,19 +83,6 @@ export function VaultUpload({
     maxFiles: MAX_FILES,
     maxSize: MAX_FILE_SIZE,
   })
-
-  useEffect(() => {
-    const fileUrls = new Set(files.map((f) => f.url))
-    for (const f of uploadFiles) {
-      if (
-        f.status === 'completed' &&
-        f.fileUrl &&
-        fileUrls.has(f.fileUrl)
-      ) {
-        removeFile(f.id)
-      }
-    }
-  }, [uploadFiles, files, removeFile])
 
   if (groups.length === 0 || !selectedGroupId) {
     return <EmptyState isLoading={isLoading} groupsLength={groups.length} />

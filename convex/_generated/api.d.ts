@@ -8,20 +8,25 @@
  * @module
  */
 
-import type * as bookmark_helpers from "../bookmark_helpers.js";
-import type * as bookmarks from "../bookmarks.js";
-import type * as fetchGroupBookmarks from "../fetchGroupBookmarks.js";
-import type * as groups from "../groups.js";
+import type * as bookmarks_helpers from "../bookmarks/helpers.js";
+import type * as bookmarks_internal from "../bookmarks/internal.js";
+import type * as bookmarks_mutations from "../bookmarks/mutations.js";
+import type * as bookmarks_queries from "../bookmarks/queries.js";
+import type * as groups_mutations from "../groups/mutations.js";
+import type * as groups_queries from "../groups/queries.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_constants from "../lib/constants.js";
 import type * as lib_prompt from "../lib/prompt.js";
 import type * as lib_scira from "../lib/scira.js";
 import type * as lib_url_classifier from "../lib/url_classifier.js";
 import type * as metadata from "../metadata.js";
-import type * as metadata_internal from "../metadata_internal.js";
-import type * as profile from "../profile.js";
+import type * as metadata_internal from "../metadata/internal.js";
+import type * as migrations from "../migrations.js";
+import type * as profile_mutations from "../profile/mutations.js";
+import type * as profile_queries from "../profile/queries.js";
 import type * as rate_limit from "../rate_limit.js";
-import type * as vault from "../vault.js";
+import type * as vault_mutations from "../vault/mutations.js";
+import type * as vault_queries from "../vault/queries.js";
 import type * as vault_node from "../vault_node.js";
 
 import type {
@@ -31,20 +36,25 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  bookmark_helpers: typeof bookmark_helpers;
-  bookmarks: typeof bookmarks;
-  fetchGroupBookmarks: typeof fetchGroupBookmarks;
-  groups: typeof groups;
+  "bookmarks/helpers": typeof bookmarks_helpers;
+  "bookmarks/internal": typeof bookmarks_internal;
+  "bookmarks/mutations": typeof bookmarks_mutations;
+  "bookmarks/queries": typeof bookmarks_queries;
+  "groups/mutations": typeof groups_mutations;
+  "groups/queries": typeof groups_queries;
   "lib/auth": typeof lib_auth;
   "lib/constants": typeof lib_constants;
   "lib/prompt": typeof lib_prompt;
   "lib/scira": typeof lib_scira;
   "lib/url_classifier": typeof lib_url_classifier;
   metadata: typeof metadata;
-  metadata_internal: typeof metadata_internal;
-  profile: typeof profile;
+  "metadata/internal": typeof metadata_internal;
+  migrations: typeof migrations;
+  "profile/mutations": typeof profile_mutations;
+  "profile/queries": typeof profile_queries;
   rate_limit: typeof rate_limit;
-  vault: typeof vault;
+  "vault/mutations": typeof vault_mutations;
+  "vault/queries": typeof vault_queries;
   vault_node: typeof vault_node;
 }>;
 

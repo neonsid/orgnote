@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer, useCallback, useMemo, useEffect, memo } from "react";
+import { useReducer, useCallback, useMemo, memo } from "react";
 import { useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { type Id } from "@/convex/_generated/dataModel";
@@ -38,7 +38,6 @@ interface DialogState {
 }
 
 type DialogAction =
-  | { type: "initialize"; form: FormState; hasExistingDescription: boolean }
   | { type: "reset" }
   | { type: "setGenerating"; isGenerating: boolean }
   | {
@@ -68,12 +67,6 @@ const INITIAL_DIALOG_STATE: DialogState = {
 
 function reducer(state: DialogState, action: DialogAction): DialogState {
   switch (action.type) {
-    case "initialize":
-      return {
-        form: action.form,
-        hasExistingDescription: action.hasExistingDescription,
-        isGenerating: false,
-      };
     case "reset":
       return INITIAL_DIALOG_STATE;
     case "setGenerating":
@@ -99,33 +92,31 @@ function validateUrl(url: string): boolean {
   }
 }
 
+function dialogStateFromBookmark(b: Bookmark | null): DialogState {
+  if (!b) return INITIAL_DIALOG_STATE;
+  const existingDesc = b.description || "";
+  return {
+    form: {
+      title: b.title,
+      url: b.url,
+      description: existingDesc,
+    },
+    isGenerating: false,
+    hasExistingDescription: !!existingDesc,
+  };
+}
+
 export const EditBookmarkDialog = memo(function EditBookmarkDialog({
   bookmark,
   open,
   onOpenChange,
 }: EditBookmarkDialogProps) {
-  const [state, dispatch] = useReducer(reducer, INITIAL_DIALOG_STATE);
+  const [state, dispatch] = useReducer(reducer, bookmark, dialogStateFromBookmark);
 
-  const updateBookmark = useMutation(api.bookmarks.updateBookmarkDetails);
+  const updateBookmark = useMutation(api.bookmarks.mutations.updateBookmarkDetails);
   const generateDescription = useAction(
     api.metadata.generateBookmarkDescription,
   );
-
-  // Sync form when dialog opens
-  useEffect(() => {
-    if (open && bookmark) {
-      const existingDesc = bookmark.description || "";
-      dispatch({
-        type: "initialize",
-        form: {
-          title: bookmark.title,
-          url: bookmark.url,
-          description: existingDesc,
-        },
-        hasExistingDescription: !!existingDesc,
-      });
-    }
-  }, [open, bookmark]);
 
   // Handle dialog close
   const handleOpenChange = useCallback(

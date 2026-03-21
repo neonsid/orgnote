@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
+import { useMountEffect } from "@/hooks/use-mount-effect";
 import Image from "next/image";
 import Link from "next/link";
 import { SignInButton, SignUpButton } from "@clerk/nextjs";
@@ -11,20 +12,20 @@ import { useUser } from "@clerk/react";
 import { motion, AnimatePresence } from "motion/react";
 
 export function PublicProfileHeader() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpenState] = useState(false);
   const { user, isLoaded } = useUser();
   const isLoggedIn = isLoaded && !!user;
 
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+  const setMobileMenuOpen = useCallback((next: boolean) => {
+    setMobileMenuOpenState(next);
+    document.body.style.overflow = next ? "hidden" : "";
+  }, []);
+
+  useMountEffect(() => {
     return () => {
       document.body.style.overflow = "";
     };
-  }, [mobileMenuOpen]);
+  });
 
   return (
     <>
@@ -80,7 +81,7 @@ export function PublicProfileHeader() {
           ) : (
             <button
               type="button"
-              onClick={() => setMobileMenuOpen((v: boolean) => !v)}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden flex items-center justify-center rounded-md p-2 text-foreground hover:bg-accent transition-colors"
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             >

@@ -86,20 +86,13 @@ export const getPresignedUploadUrl = action({
   },
 })
 
+/** R2 cleanup after DB delete. Internal actions have no user JWT; ownership is enforced in `vault.deleteFile`. */
 export const deleteFromR2 = internalAction({
   args: {
     fileKey: v.string(),
     thumbnailFileKey: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
-
-    const [ownerId] = args.fileKey.split('/')
-
-    if (ownerId !== userId) {
-      throw new Error('Unauthorized: cannot delete files you do not own')
-    }
-
+  handler: async (_ctx, args) => {
     await s3Client.send(
       new DeleteObjectCommand({
         Bucket: R2_BUCKET_NAME,
@@ -108,11 +101,6 @@ export const deleteFromR2 = internalAction({
     )
 
     if (args.thumbnailFileKey) {
-      const [thumbOwnerId] = args.thumbnailFileKey.split('/')
-      if (thumbOwnerId !== userId) {
-        throw new Error('Unauthorized: cannot delete files you do not own')
-      }
-
       await s3Client.send(
         new DeleteObjectCommand({
           Bucket: R2_BUCKET_NAME,

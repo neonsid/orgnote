@@ -1,6 +1,7 @@
 "use client";
 
-import { useReducer, useRef, useEffect, memo } from "react";
+import { useReducer, useRef, memo } from "react";
+import { useMountEffect } from "@/hooks/use-mount-effect";
 import {
   ChevronsUpDown,
   LogOut,
@@ -111,7 +112,7 @@ export const UserInfo = memo(function UserInfo({
   const router = useRouter();
   const isSmallMobile = useIsSmallMobile();
 
-  const profile = useQuery(api.profile.getProfile);
+  const profile = useQuery(api.profile.queries.getProfile);
   const hasPublicProfile = profile?.isPublic && profile?.username;
 
   const userName = user?.fullName ?? user?.firstName ?? "User";
@@ -121,10 +122,13 @@ export const UserInfo = memo(function UserInfo({
   const displayName =
     userName.length > maxLen ? userName.slice(0, maxLen) + "…" : userName;
 
-  useEffect(() => {
-    if (!state.open) return;
+  const menuOpenRef = useRef(state.open);
+  // eslint-disable-next-line react-hooks/refs -- latest open state for document listener
+  menuOpenRef.current = state.open;
 
+  useMountEffect(() => {
     function handleClickOutside(e: MouseEvent) {
+      if (!menuOpenRef.current) return;
       if (
         containerRef.current &&
         !containerRef.current.contains(e.target as Node)
@@ -135,7 +139,7 @@ export const UserInfo = memo(function UserInfo({
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [state.open]);
+  });
 
   const themeToggleRef = useRef<{ toggle: () => void }>(null);
 

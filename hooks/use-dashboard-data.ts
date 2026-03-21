@@ -22,7 +22,7 @@ export function useDashboardData(isAuthenticated: boolean = true) {
   const { selectedGroupId, setSelectedGroupId } = useDashboardStore();
 
   const dashboardData = useQuery(
-    api.bookmarks.getDashboardData,
+    api.bookmarks.queries.getDashboardData,
     isAuthenticated ? {} : "skip",
   );
 
@@ -51,7 +51,7 @@ export function useDashboardData(isAuthenticated: boolean = true) {
         url: b.url,
         favicon: `https://www.google.com/s2/favicons?domain=${extractDomain(b.url)}&sz=64`,
         fallbackColor: COLORS[b.title.charCodeAt(0) % COLORS.length],
-        createdAt: new Date(b.createdAt).toISOString().split("T")[0],
+        createdAt: new Date(b._creationTime).toISOString().split("T")[0],
         groupId: b.groupId,
         doneReading: b.doneReading,
         description: b.description,
