@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import ConvexClientProvider from "@/components/ConvexClientProvider";
-import { ThemeAwareClerkProvider } from "@/components/clerk-provider";
-import { ThemeProvider } from "@/components/theme-provider";
+import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
+import { ThemeAwareClerkProvider } from "@/components/providers/clerk-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";

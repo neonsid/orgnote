@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef } from "react";
 import { useUser } from "@clerk/react";
 import { Id } from "@/convex/_generated/dataModel";
 import { VaultUpload } from "./vault-upload";
-import { VaultFileGallery } from "./vault-file-gallery";
 import { useDialogStore } from "@/stores/dialog-store";
 import { useVaultData } from "@/hooks/use-vault-data";
 import dynamic from "next/dynamic";
@@ -16,9 +15,7 @@ import { toast } from "sonner";
 
 const DeleteBookmarkDialog = dynamic(
   () =>
-    import("../dashboard/dialog/delete-bookmark-dialog").then(
-      (m) => m.DeleteBookmarkDialog,
-    ),
+    import("@/components/dialogs").then((m) => m.DeleteBookmarkDialog),
   { ssr: false },
 );
 
@@ -98,7 +95,7 @@ export default function VaultPage() {
           groups={groups}
           files={files}
           isLoading={isLoading}
-          onDeleteFile={handleDeleteFile}
+          onDeleteFileAction={handleDeleteFile}
         />
       </main>
 
