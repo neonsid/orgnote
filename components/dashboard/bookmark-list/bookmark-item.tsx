@@ -1,44 +1,43 @@
-import { memo, useState, useCallback, useEffect } from "react";
-import { motion } from "motion/react";
+import { memo, useState, useCallback, useEffect } from 'react'
+import { motion } from 'motion/react'
 import {
   Popover,
   PopoverTrigger,
   PopoverContent,
-} from "@/components/ui/popover";
-import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
+} from '@/components/ui/popover'
+import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { FaviconIcon } from "./favicon-icon";
-import { DesktopMenu, MobileMenu } from "./menu";
-import { formatDate, KEYBOARD_SHORTCUTS } from "./constants";
-import type { Bookmark } from "./types";
-import type { ConvexGroup } from "../group-selector";
-import type { Id } from "@/convex/_generated/dataModel";
+} from '@/components/ui/dialog'
+import { FaviconIcon } from './favicon-icon'
+import { DesktopMenu, MobileMenu } from './menu'
+import { formatDate, KEYBOARD_SHORTCUTS } from './constants'
+import type { Bookmark } from './types'
+import type { ConvexGroup } from '../group-selector'
+import type { Id } from '@/convex/_generated/dataModel'
 
 interface BookmarkItemProps {
-  bookmark: Bookmark;
-  groups: ConvexGroup[];
-  isMobile: boolean;
-  isPopoverOpen: boolean;
-  onPopoverOpenChange: (open: boolean) => void;
-  onTouchStart: (e: React.TouchEvent) => void;
-  onTouchEnd: () => void;
-  onContextMenu?: (e: React.MouseEvent) => void;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
-  onCopy: () => void;
-  onRename: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  onMove: (groupId: Id<"groups">) => void;
-  onToggleRead: () => void;
-  onShowDescription?: () => void;
-  showDescription?: boolean;
-  isSelected?: boolean;
+  bookmark: Bookmark
+  groups: ConvexGroup[]
+  isMobile: boolean
+  isPopoverOpen: boolean
+  onPopoverOpenChange: (open: boolean) => void
+  onTouchStart: (e: React.TouchEvent) => void
+  onTouchEnd: () => void
+  onContextMenu?: (e: React.MouseEvent) => void
+  onMouseEnter: () => void
+  onMouseLeave: () => void
+  onCopy: () => void
+  onEdit: () => void
+  onDelete: () => void
+  onMove: (groupId: Id<'groups'>) => void
+  onToggleRead: () => void
+  onShowDescription?: () => void
+  showDescription?: boolean
+  isSelected?: boolean
 }
 
 export const BookmarkItem = memo(function BookmarkItem({
@@ -53,7 +52,6 @@ export const BookmarkItem = memo(function BookmarkItem({
   onMouseEnter,
   onMouseLeave,
   onCopy,
-  onRename,
   onEdit,
   onDelete,
   onMove,
@@ -62,30 +60,30 @@ export const BookmarkItem = memo(function BookmarkItem({
   showDescription,
   isSelected,
 }: BookmarkItemProps) {
-  const [descriptionOpen, setDescriptionOpen] = useState(false);
-  const hasDescription = !!bookmark.description;
+  const [descriptionOpen, setDescriptionOpen] = useState(false)
+  const hasDescription = !!bookmark.description
 
   // Open dialog when showDescription prop is triggered (from keyboard shortcut)
   useEffect(() => {
     if (showDescription && hasDescription) {
-      setDescriptionOpen(true);
+      setDescriptionOpen(true)
     }
-  }, [showDescription, hasDescription]);
+  }, [showDescription, hasDescription])
 
   // Handle external trigger to show description (from keyboard shortcut)
   const handleExternalShowDescription = useCallback(() => {
     if (hasDescription) {
-      setDescriptionOpen(true);
-      onShowDescription?.();
+      setDescriptionOpen(true)
+      onShowDescription?.()
     }
-  }, [hasDescription, onShowDescription]);
+  }, [hasDescription, onShowDescription])
 
   // Handle menu trigger to show description
   const handleMenuShowDescription = useCallback(() => {
     if (hasDescription) {
-      setDescriptionOpen(true);
+      setDescriptionOpen(true)
     }
-  }, [hasDescription]);
+  }, [hasDescription])
 
   const mainContent = (
     <>
@@ -95,7 +93,7 @@ export const BookmarkItem = memo(function BookmarkItem({
         <div className="flex items-baseline gap-2">
           <span
             className={`font-medium text-sm truncate group-hover:text-primary transition-colors ${
-              bookmark.doneReading ? "text-muted-foreground" : "text-foreground"
+              bookmark.doneReading ? 'text-muted-foreground' : 'text-foreground'
             }`}
           >
             {bookmark.title}
@@ -126,11 +124,11 @@ export const BookmarkItem = memo(function BookmarkItem({
         ))}
       </span>
     </>
-  );
+  )
 
   const selectionClass = isSelected
-    ? "bg-ring/10 ring-2 ring-ring ring-inset"
-    : "";
+    ? 'bg-ring/10 ring-2 ring-ring ring-inset'
+    : ''
 
   if (isMobile) {
     return (
@@ -140,7 +138,7 @@ export const BookmarkItem = memo(function BookmarkItem({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, height: 0, transition: { duration: 0.2 } }}
-          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         >
           <Popover open={isPopoverOpen} onOpenChange={onPopoverOpenChange}>
             <PopoverTrigger asChild>
@@ -154,7 +152,7 @@ export const BookmarkItem = memo(function BookmarkItem({
                 onContextMenu={onContextMenu}
                 onClick={(e) => {
                   if (isPopoverOpen) {
-                    e.preventDefault();
+                    e.preventDefault()
                   }
                 }}
                 onMouseEnter={onMouseEnter}
@@ -169,7 +167,6 @@ export const BookmarkItem = memo(function BookmarkItem({
                 bookmark={bookmark}
                 groups={groups}
                 onCopy={onCopy}
-                onRename={onRename}
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onMove={onMove}
@@ -198,7 +195,7 @@ export const BookmarkItem = memo(function BookmarkItem({
           </DialogContent>
         </Dialog>
       </>
-    );
+    )
   }
 
   const linkContent = (
@@ -212,7 +209,7 @@ export const BookmarkItem = memo(function BookmarkItem({
     >
       {mainContent}
     </a>
-  );
+  )
 
   return (
     <>
@@ -221,7 +218,7 @@ export const BookmarkItem = memo(function BookmarkItem({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, height: 0, transition: { duration: 0.4 } }}
-        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
       >
         <ContextMenu>
           <ContextMenuTrigger asChild>{linkContent}</ContextMenuTrigger>
@@ -229,7 +226,6 @@ export const BookmarkItem = memo(function BookmarkItem({
             bookmark={bookmark}
             groups={groups}
             onCopy={onCopy}
-            onRename={onRename}
             onEdit={onEdit}
             onDelete={onDelete}
             onMove={onMove}
@@ -256,5 +252,5 @@ export const BookmarkItem = memo(function BookmarkItem({
         </DialogContent>
       </Dialog>
     </>
-  );
-});
+  )
+})

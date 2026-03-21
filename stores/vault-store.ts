@@ -1,15 +1,16 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { Id } from "@/convex/_generated/dataModel";
 
 interface VaultState {
-  selectedGroupId: string;
-  setSelectedGroupId: (id: string) => void;
+  selectedGroupId: Id<"vaultGroups"> | null;
+  setSelectedGroupId: (id: Id<"vaultGroups">) => void;
 }
 
 export const useVaultStore = create<VaultState>()(
   persist(
     (set) => ({
-      selectedGroupId: "",
+      selectedGroupId: null,
       setSelectedGroupId: (id) => set({ selectedGroupId: id }),
     }),
     {

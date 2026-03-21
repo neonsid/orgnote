@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/context-menu'
 import {
   Copy,
-  Pencil,
   Edit3,
   Trash2,
   ChevronsRight,
@@ -27,7 +26,6 @@ interface DesktopMenuProps {
   bookmark: Bookmark
   groups: ConvexGroup[]
   onCopy: () => void
-  onRename: () => void
   onEdit: () => void
   onDelete: () => void
   onMove: (groupId: Id<'groups'>) => void
@@ -54,7 +52,6 @@ export function DesktopMenu({
   bookmark,
   groups,
   onCopy,
-  onRename,
   onEdit,
   onDelete,
   onMove,
@@ -92,12 +89,6 @@ export function DesktopMenu({
         <Copy className="size-4 mr-2" />
         Copy
         <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.copy} />
-      </ContextMenuItem>
-
-      <ContextMenuItem onClick={onRename}>
-        <Pencil className="size-4 mr-2" />
-        Rename
-        <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.rename} />
       </ContextMenuItem>
 
       <ContextMenuItem onClick={onEdit}>
@@ -153,7 +144,6 @@ interface MobileMenuProps {
   bookmark: Bookmark
   groups: ConvexGroup[]
   onCopy: () => void
-  onRename: () => void
   onEdit: () => void
   onDelete: () => void
   onMove: (groupId: Id<'groups'>) => void
@@ -166,7 +156,6 @@ export function MobileMenu({
   bookmark,
   groups,
   onCopy,
-  onRename,
   onEdit,
   onDelete,
   onMove,
@@ -220,14 +209,6 @@ export function MobileMenu({
       >
         <Copy className="size-4 mr-2" />
         Copy
-      </button>
-
-      <button
-        onClick={() => handleAction(onRename)}
-        className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
-      >
-        <Pencil className="size-4 mr-2" />
-        Rename
       </button>
 
       <button

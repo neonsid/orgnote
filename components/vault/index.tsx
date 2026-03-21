@@ -1,40 +1,43 @@
-'use client'
+"use client";
 
-import { useCallback, useEffect, useRef } from 'react'
-import { useUser } from '@clerk/react'
-import { Id } from '@/convex/_generated/dataModel'
-import { VaultUpload } from './vault-upload'
-import { VaultFileList } from './vault-file-list'
-import { useDialogStore } from '@/stores/dialog-store'
-import { useVaultData } from '@/hooks/use-vault-data'
-import dynamic from 'next/dynamic'
-import { useMutation } from 'convex/react'
-import { api } from '@/convex/_generated/api'
-import { DashboardHeader } from '../dashboard/dashboard-header'
-import { VaultFile } from '../dashboard/bookmark-list/types'
+import { useCallback, useEffect, useRef } from "react";
+import { useUser } from "@clerk/react";
+import { Id } from "@/convex/_generated/dataModel";
+import { VaultUpload } from "./vault-upload";
+import { VaultFileGallery } from "./vault-file-gallery";
+import { useDialogStore } from "@/stores/dialog-store";
+import { useVaultData } from "@/hooks/use-vault-data";
+import dynamic from "next/dynamic";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { DashboardHeader } from "../dashboard/dashboard-header";
+import { VaultFile } from "../dashboard/bookmark-list/types";
+import { toast } from "sonner";
 
 const DeleteBookmarkDialog = dynamic(
   () =>
-    import('../dashboard/dialog/delete-bookmark-dialog').then(
-      (m) => m.DeleteBookmarkDialog
+    import("../dashboard/dialog/delete-bookmark-dialog").then(
+      (m) => m.DeleteBookmarkDialog,
     ),
-  { ssr: false }
-)
+  { ssr: false },
+);
+
 export default function VaultPage() {
-  const { user, isLoaded } = useUser()
-  const hasAutoSelected = useRef(false)
+  const { user, isLoaded } = useUser();
+  const hasAutoSelected = useRef(false);
 
   const {
     deleteBookmarkOrItem,
     openDeleteBookmarkDialog,
     closeDeleteBookmarkDialog,
-  } = useDialogStore()
+  } = useDialogStore();
 
   const { groups, files, effectiveGroupId, selectGroup, isLoading } =
-    useVaultData(!!user)
+    useVaultData(!!user);
 
-  const createVaultGroup = useMutation(api.vault.createVaultGroup)
-  const deleteFile = useMutation(api.vault.deleteFile)
+  const createVaultGroup = useMutation(api.vault.createVaultGroup);
+  const deleteFile = useMutation(api.vault.deleteFile);
+
   useEffect(() => {
     if (
       groups &&
@@ -43,22 +46,36 @@ export default function VaultPage() {
       !hasAutoSelected.current
     ) {
       const latestGroup = [...groups].sort(
-        (a, b) => b.createdAt - a.createdAt
-      )[0]
-      selectGroup(latestGroup._id)
-      hasAutoSelected.current = true
+        (a, b) => b.createdAt - a.createdAt,
+      )[0];
+      selectGroup(latestGroup._id);
+      hasAutoSelected.current = true;
     }
-  }, [groups, effectiveGroupId, selectGroup])
+  }, [groups, effectiveGroupId, selectGroup]);
 
   const handleDeleteFile = useCallback(
     (file: VaultFile) => {
-      openDeleteBookmarkDialog(file._id as Id<'vaultFiles'>, file.name)
+      openDeleteBookmarkDialog(file._id as Id<"vaultFiles">, file.name);
     },
-    [openDeleteBookmarkDialog]
-  )
+    [openDeleteBookmarkDialog],
+  );
+
+  const handleConfirmDelete = useCallback(async () => {
+    const fileId = deleteBookmarkOrItem.bookmarkOrFileId;
+
+    if (!fileId) return;
+
+    closeDeleteBookmarkDialog();
+
+    toast.promise(deleteFile({ fileId: fileId as Id<"vaultFiles"> }), {
+      loading: "Deleting...",
+      success: "File deleted",
+      error: "Failed to delete file",
+    });
+  }, [deleteBookmarkOrItem, closeDeleteBookmarkDialog, deleteFile]);
 
   if (!isLoaded) {
-    return null
+    return null;
   }
 
   return (
@@ -69,7 +86,9 @@ export default function VaultPage() {
         createGroup={createVaultGroup}
         groups={groups}
         effectiveGroupId={effectiveGroupId}
-        onSelectGroup={selectGroup}
+        onSelectGroup={
+          selectGroup as (id: Id<"groups"> | Id<"vaultGroups">) => void
+        }
         loading={isLoading}
       />
 
@@ -77,28 +96,20 @@ export default function VaultPage() {
         <VaultUpload
           selectedGroupId={effectiveGroupId || null}
           groups={groups}
-          isLoading={isLoading}
-        />
-
-        <VaultFileList
           files={files}
-          onDeleteFile={handleDeleteFile}
           isLoading={isLoading}
+          onDeleteFile={handleDeleteFile}
         />
       </main>
+
       <DeleteBookmarkDialog
         bookmarkOrFileId={deleteBookmarkOrItem.bookmarkOrFileId}
         title={deleteBookmarkOrItem.title}
         variant="File"
         open={deleteBookmarkOrItem.open}
         onOpenChange={closeDeleteBookmarkDialog}
-        onDelete={async () => {
-          if (!deleteBookmarkOrItem.bookmarkOrFileId) return
-          await deleteFile({
-            fileId: deleteBookmarkOrItem.bookmarkOrFileId as Id<'vaultFiles'>,
-          })
-        }}
+        onDelete={handleConfirmDelete}
       />
     </div>
-  )
+  );
 }

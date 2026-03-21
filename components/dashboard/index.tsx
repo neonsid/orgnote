@@ -17,14 +17,6 @@ import { useDialogStore } from '@/stores/dialog-store'
 import { useDashboardData } from '@/hooks/use-dashboard-data'
 import { toast } from 'sonner'
 
-const RenameBookmarkDialog = dynamic(
-  () =>
-    import('./dialog/rename-bookmark-dialog').then(
-      (m) => m.RenameBookmarkDialog
-    ),
-  { ssr: false }
-)
-
 const EditBookmarkDialog = dynamic(
   () =>
     import('./dialog/edit-bookmark-dialog').then((m) => m.EditBookmarkDialog),
@@ -61,12 +53,9 @@ export default function DashboardPage() {
   }, [])
 
   const {
-    renameBookmark,
     editBookmark,
     deleteBookmarkOrItem,
-    openRenameDialog,
     openEditBookmarkDialog,
-    closeRenameDialog,
     closeEditBookmarkDialog,
     openDeleteBookmarkDialog,
     closeDeleteBookmarkDialog,
@@ -135,17 +124,6 @@ export default function DashboardPage() {
     navigator.clipboard.writeText(bookmark.url)
     toast.success('URL copied to clipboard')
   }, [])
-
-  const handleRename = useCallback(
-    (bookmark: Bookmark) => {
-      openRenameDialog(bookmark.id, {
-        id: bookmark.id,
-        title: bookmark.title,
-        url: bookmark.url,
-      })
-    },
-    [openRenameDialog]
-  )
 
   const handleEdit = useCallback(
     (bookmark: Bookmark) => {
@@ -239,19 +217,12 @@ export default function DashboardPage() {
           groups={groups}
           bookmarks={filteredBookmarks}
           onCopy={handleCopy}
-          onRename={handleRename}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onMove={handleMove}
           onToggleRead={handleToggleRead}
         />
       </main>
-
-      <RenameBookmarkDialog
-        bookmark={renameBookmark.bookmarkData}
-        open={renameBookmark.open}
-        onOpenChange={closeRenameDialog}
-      />
 
       <EditBookmarkDialog
         bookmark={editBookmark.bookmarkData}

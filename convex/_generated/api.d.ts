@@ -10,8 +10,11 @@
 
 import type * as bookmark_helpers from "../bookmark_helpers.js";
 import type * as bookmarks from "../bookmarks.js";
+import type * as fetchGroupBookmarks from "../fetchGroupBookmarks.js";
 import type * as groups from "../groups.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as lib_constants from "../lib/constants.js";
+import type * as lib_prompt from "../lib/prompt.js";
 import type * as lib_scira from "../lib/scira.js";
 import type * as lib_url_classifier from "../lib/url_classifier.js";
 import type * as metadata from "../metadata.js";
@@ -30,8 +33,11 @@ import type {
 declare const fullApi: ApiFromModules<{
   bookmark_helpers: typeof bookmark_helpers;
   bookmarks: typeof bookmarks;
+  fetchGroupBookmarks: typeof fetchGroupBookmarks;
   groups: typeof groups;
   "lib/auth": typeof lib_auth;
+  "lib/constants": typeof lib_constants;
+  "lib/prompt": typeof lib_prompt;
   "lib/scira": typeof lib_scira;
   "lib/url_classifier": typeof lib_url_classifier;
   metadata: typeof metadata;

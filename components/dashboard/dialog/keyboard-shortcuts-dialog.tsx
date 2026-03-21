@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import {
   Dialog,
@@ -6,30 +6,28 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { MousePointerClick } from "lucide-react";
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 interface Shortcut {
-  label: string;
-  keys: string[];
+  label: string
+  keys: string[]
 }
 
 const shortcuts: Shortcut[] = [
-  { label: "Focus search", keys: ["⌘", "F"] },
-  { label: "Navigate bookmarks", keys: ["↑", "↓"] },
-  { label: "Open bookmark", keys: ["⌘", "Enter"] },
-  { label: "Rename", keys: ["⌘", "R"] },
-  { label: "Edit", keys: ["⌘", "E"] },
-  { label: "Copy", keys: ["⌘", "C"] },
-  { label: "Delete", keys: ["⌘", "⌫"] },
-  { label: "Show Description", keys: ["⌘", "I"] },
-  { label: "Exit selection", keys: ["Esc"] },
-];
+  { label: 'Focus search', keys: ['⌘', 'F'] },
+  { label: 'Navigate bookmarks', keys: ['↑', '↓'] },
+  { label: 'Open bookmark', keys: ['⌘', 'Enter'] },
+  { label: 'Edit', keys: ['⌘', 'E'] },
+  { label: 'Copy', keys: ['⌘', 'C'] },
+  { label: 'Delete', keys: ['⌘', '⌫'] },
+  { label: 'Show Description', keys: ['⌘', 'I'] },
+  { label: 'Exit selection', keys: ['Esc'] },
+]
 
 interface KeyboardShortcutsDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
 export function KeyboardShortcutsDialog({
@@ -61,7 +59,7 @@ export function KeyboardShortcutsDialog({
                 <div className="flex items-center gap-1">
                   {shortcut.keys.map((key, i) => (
                     <span key={i}>
-                      {key === "/" ? (
+                      {key === '/' ? (
                         <span className="text-xs text-muted-foreground mx-0.5">
                           /
                         </span>
@@ -100,5 +98,5 @@ export function KeyboardShortcutsDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

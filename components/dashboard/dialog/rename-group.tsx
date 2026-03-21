@@ -35,7 +35,6 @@ export function RenameGroupDialog({
   onOpenChange,
 }: RenameGroupDialogProps) {
   const renameGroup = useMutation(api.groups.renameGroup)
-
   const form = useForm({
     defaultValues: {
       title: title,
@@ -57,16 +56,6 @@ export function RenameGroupDialog({
     },
   })
 
-  // Sync the input when a new bookmark is selected
-  // useEffect(() => {
-  //   if (groupId) {
-  //     form.setFieldValue('title', title || '')
-  //   }
-  //   if (color) {
-  //     form.setFieldValue('color', color || '')
-  //   }
-  // }, [groupId, form])
-
   // Reset form when dialog closes
   useEffect(() => {
     if (!open) {
@@ -78,7 +67,7 @@ export function RenameGroupDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Rename Bookmark</DialogTitle>
+          <DialogTitle>Rename Group</DialogTitle>
         </DialogHeader>
         <form
           onSubmit={(e) => {
