@@ -31,7 +31,7 @@ Add new skills under **`.agents/skills/<domain>/<skill-name>/SKILL.md`** (e.g. `
   - `radio-group` - Radio button groups
   - `card` - Card containers
   - `tabs` - Tab navigation
-  - `toast` / `sonner` - Notifications
+  - `toast` from `@/lib/toast` (Base UI / Coss `ToastProvider`) - Notifications
 
 - **ALWAYS use pnpm**
 

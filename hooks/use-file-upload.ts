@@ -89,11 +89,11 @@ export const useFileUpload = (
     (file: File | FileMetadata): string | null => {
       if (file instanceof File) {
         if (file.size > maxSize) {
-          return `File "${file.name}" exceeds the maximum size of ${formatBytes(maxSize)}.`
+          return `File "${file.name}" exceeds the maximum size of ${formatBytes(maxSize)} (this file is ${formatBytes(file.size)}).`
         }
       } else {
         if (file.size > maxSize) {
-          return `File "${file.name}" exceeds the maximum size of ${formatBytes(maxSize)}.`
+          return `File "${file.name}" exceeds the maximum size of ${formatBytes(maxSize)} (this file is ${formatBytes(file.size)}).`
         }
       }
 
@@ -208,18 +208,8 @@ export const useFileUpload = (
 
           // Skip duplicate files silently
           if (isDuplicate) {
-            return
+            continue
           }
-        }
-
-        // Check file size
-        if (file.size > maxSize) {
-          errors.push(
-            multiple
-              ? `Some files exceed the maximum size of ${formatBytes(maxSize)}.`
-              : `File exceeds the maximum size of ${formatBytes(maxSize)}.`
-          )
-          continue
         }
 
         const error = validateFile(file)
@@ -250,6 +240,9 @@ export const useFileUpload = (
             errors,
           }
         })
+        if (errors.length > 0) {
+          onError?.(errors)
+        }
       } else if (errors.length > 0) {
         onError?.(errors)
         setState((prev) => ({
@@ -274,6 +267,7 @@ export const useFileUpload = (
       clearFiles,
       onFilesChange,
       onFilesAdded,
+      onError,
     ]
   )
 

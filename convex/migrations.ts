@@ -3,12 +3,21 @@ import { internalMutation } from './_generated/server'
 import type { Doc, Id } from './_generated/dataModel'
 
 /**
- * One-time migration: strip legacy `createdAt` from documents.
+ * One-time migration: strip legacy `createdAt` from documents (Convex already
+ * exposes `_creationTime`).
  *
- * If schema rejects rows with extra `createdAt`, temporarily add
- * `createdAt: v.optional(v.number())` to the affected tables, push, run:
- *   pnpm exec convex run migrations:removeStoredCreatedAt
- * then remove the optional fields from schema again and push.
+ * This is an **internal** mutation: the CLI must use the `internal.*` path.
+ * `convex run` targets your **dev** deployment by default; production needs
+ * `--prod` (after `convex deploy`), or you will migrate dev only while prod
+ * still has stale rows and the next prod push fails schema validation.
+ *
+ * 1. Ensure schema includes `createdAt: v.optional(v.number())` on affected
+ *    tables so deploy succeeds (see convex/schema.ts).
+ * 2. Deploy, then run:
+ *      pnpm exec convex run internal.migrations.removeStoredCreatedAt
+ *    For production:
+ *      pnpm exec convex run internal.migrations.removeStoredCreatedAt --prod
+ * 3. Remove the optional `createdAt` fields from schema and deploy again.
  */
 export const removeStoredCreatedAt = internalMutation({
   args: {},

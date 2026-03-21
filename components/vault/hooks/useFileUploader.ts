@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useFileUpload, type FileWithPreview } from "@/hooks/use-file-upload";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { uploadFileToPresignedUrl } from "@/lib/upload-to-presigned-url";
 
 export interface UploadFileItem {
@@ -71,13 +71,56 @@ export function useFileUploader({
 
   const removeFileFromHookRef = useRef<(id: string) => void>(() => {});
 
+  const batchRef = useRef<{
+    total: number;
+    completed: number;
+    successes: number;
+  } | null>(null);
+
+  const enqueueBatchContribution = useCallback((count: number) => {
+    if (count <= 0) return;
+    if (!batchRef.current) {
+      batchRef.current = { total: count, completed: 0, successes: 0 };
+    } else {
+      batchRef.current.total += count;
+    }
+  }, []);
+
+  const finalizeBatchItem = useCallback((success: boolean) => {
+    const b = batchRef.current;
+    if (!b) return;
+    b.completed += 1;
+    if (success) b.successes += 1;
+    if (b.completed >= b.total) {
+      const n = b.successes;
+      if (n > 0) {
+        toast.success(
+          `${n} ${n === 1 ? "file" : "files"} uploaded successfully`,
+        );
+      }
+      batchRef.current = null;
+    }
+  }, []);
+
   const getPresignedUploadUrl = useAction(api.vault_node.getPresignedUploadUrl);
   const saveFileMetadata = useMutation(api.vault.mutations.saveFileMetadata);
 
   const isUploading = uploadFiles.some((f) => f.status === "uploading");
 
+  const onValidationError = useCallback((validationErrors: string[]) => {
+    if (validationErrors.length === 0) return;
+    if (validationErrors.length === 1) {
+      toast.error(validationErrors[0]);
+    } else {
+      toast.error("Some files could not be added", {
+        description: validationErrors.join("\n"),
+      });
+    }
+  }, []);
+
   const processFile = useCallback(
-    async (fileItem: UploadFileItem) => {
+    async (fileItem: UploadFileItem, options?: { isRetry?: boolean }) => {
+      const isRetry = options?.isRetry ?? false;
       try {
         const file = fileItem.file as File;
 
@@ -103,7 +146,12 @@ export function useFileUploader({
         });
 
         queryClient.invalidateQueries({ queryKey: [api.vault.queries.getFiles] });
-        toast.success("File uploaded successfully");
+
+        if (isRetry) {
+          toast.success("File uploaded successfully");
+        } else {
+          finalizeBatchItem(true);
+        }
 
         removeFileFromHookRef.current(fileItem.id);
         setUploadFiles((prev) => prev.filter((f) => f.id !== fileItem.id));
@@ -120,10 +168,19 @@ export function useFileUploader({
               : f,
           ),
         );
+        if (!isRetry) {
+          finalizeBatchItem(false);
+        }
         toast.error("Failed to upload file");
       }
     },
-    [getPresignedUploadUrl, saveFileMetadata, selectedGroupId, queryClient],
+    [
+      getPresignedUploadUrl,
+      saveFileMetadata,
+      selectedGroupId,
+      queryClient,
+      finalizeBatchItem,
+    ],
   );
 
   const [
@@ -143,6 +200,7 @@ export function useFileUploader({
     maxSize,
     accept: "*",
     multiple: true,
+    onError: onValidationError,
     onFilesAdded: (addedFiles) => {
       const existingSignatures = new Set(
         uploadFilesRef.current.map((fileItem) =>
@@ -166,6 +224,8 @@ export function useFileUploader({
       }
 
       if (uniqueFiles.length === 0) return;
+
+      enqueueBatchContribution(uniqueFiles.length);
 
       const newUploadFiles = uniqueFiles.map(createUploadFile);
 
@@ -204,6 +264,8 @@ export function useFileUploader({
 
       if (uniqueFiles.length === 0) return;
 
+      enqueueBatchContribution(uniqueFiles.length);
+
       const newUploadFiles = uniqueFiles.map(createUploadFile);
 
       setUploadFiles((prev) => [...prev, ...newUploadFiles]);
@@ -212,7 +274,7 @@ export function useFileUploader({
         processFile(file);
       });
     },
-    [processFile],
+    [processFile, enqueueBatchContribution],
   );
 
   const removeFile = useCallback(
@@ -239,7 +301,10 @@ export function useFileUploader({
         const updated = next.find((f) => f.id === fileId);
         if (updated) {
           queueMicrotask(() => {
-            processFile({ ...updated, progress: 0, status: "uploading" });
+            processFile(
+              { ...updated, progress: 0, status: "uploading" },
+              { isRetry: true },
+            );
           });
         }
         return next;

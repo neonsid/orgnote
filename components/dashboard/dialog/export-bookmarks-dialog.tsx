@@ -18,7 +18,7 @@ import {
 import { ChevronsUpDown } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 interface ExportedBookmark {
   title: string;
