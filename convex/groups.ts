@@ -1,7 +1,7 @@
 import { v, ConvexError } from 'convex/values'
 import { mutation, query } from './_generated/server'
 import { requireAuth } from './lib/auth'
-import { MAX_BOOKMARKS_PER_QUERY } from './bookmark_helpers'
+import { MAX_BOOKMARKS_PER_QUERY } from './lib/constants'
 
 export const list = query({
   args: {},

@@ -45,22 +45,22 @@ export function useDashboardData(isAuthenticated: boolean = true) {
     return dashboardData.bookmarks
       .filter((b) => b.groupId === effectiveGroupId)
       .map((b) => ({
-        id: b._id as Id<"bookmarks">,
+        id: b._id,
         title: b.title,
         domain: extractDomain(b.url),
         url: b.url,
         favicon: `https://www.google.com/s2/favicons?domain=${extractDomain(b.url)}&sz=64`,
         fallbackColor: COLORS[b.title.charCodeAt(0) % COLORS.length],
         createdAt: new Date(b.createdAt).toISOString().split("T")[0],
-        groupId: b.groupId as Id<"groups">,
+        groupId: b.groupId,
         doneReading: b.doneReading,
         description: b.description,
       }));
   }, [dashboardData, effectiveGroupId]);
 
   const selectGroup = useCallback(
-    (id: string) => {
-      setSelectedGroupId(id);
+    (id: Id<"groups"> | Id<"vaultGroups">) => {
+      setSelectedGroupId(id as Id<"groups">);
     },
     [setSelectedGroupId],
   );

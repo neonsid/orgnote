@@ -1,12 +1,13 @@
-import { memo } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
-import { GroupSelector } from './group-selector'
-import { UserInfo } from './user-info'
-import type { ConvexGroup } from './group-selector'
-import { useMutation } from 'convex/react'
-import { api } from '@/convex/_generated/api'
+import { memo } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import { GroupSelector } from "./group-selector";
+import { UserInfo } from "./user-info";
+import type { ConvexGroup } from "./group-selector";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 
 const Logo = memo(function Logo() {
   return (
@@ -24,17 +25,17 @@ const Logo = memo(function Logo() {
         />
       </div>
     </Link>
-  )
-})
+  );
+});
 
 interface DashboardHeaderProps {
-  groups: ConvexGroup[]
-  effectiveGroupId: string
-  onSelectGroup: (id: string) => void
-  loading?: boolean
-  createGroup: (args: { title: string; color: string }) => Promise<string>
-  showPublicButton: boolean
-  variant?: 'dashboard' | 'vault'
+  groups: ConvexGroup[];
+  effectiveGroupId: Id<"groups"> | Id<"vaultGroups"> | null;
+  onSelectGroup: (id: Id<"groups"> | Id<"vaultGroups">) => void;
+  loading?: boolean;
+  createGroup: (args: { title: string; color: string }) => Promise<string>;
+  showPublicButton: boolean;
+  variant?: "dashboard" | "vault";
 }
 
 export const DashboardHeader = memo(function DashboardHeader({
@@ -71,5 +72,5 @@ export const DashboardHeader = memo(function DashboardHeader({
         </div>
       </div>
     </header>
-  )
-})
+  );
+});

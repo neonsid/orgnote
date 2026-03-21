@@ -1,10 +1,9 @@
 import { v } from 'convex/values'
-import { mutation, query, internalMutation } from './_generated/server'
+import { mutation, query } from './_generated/server'
 import { requireAuth } from './lib/auth'
 import { ConvexError } from 'convex/values'
 import { internal } from './_generated/api'
-
-const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || ''
+import { R2_PUBLIC_URL } from './lib/constants'
 
 export const getFiles = query({
   args: { groupId: v.optional(v.id('vaultGroups')) },
@@ -39,10 +38,16 @@ export const deleteFile = mutation({
       throw new ConvexError('Not authorized to delete this file')
     }
 
-    // For R2 deletion, use an action via scheduler
+    const fileKey = file.url.replace(`${R2_PUBLIC_URL}/`, '')
+    const thumbnailFileKey = file.thumbnailUrl
+      ? file.thumbnailUrl.replace(`${R2_PUBLIC_URL}/`, '')
+      : undefined
+
+    await ctx.db.delete(args.fileId)
+
     await ctx.scheduler.runAfter(0, internal.vault_node.deleteFromR2, {
-      fileKey: file.url.replace(`${R2_PUBLIC_URL}/`, ''),
-      fileId: args.fileId,
+      fileKey,
+      thumbnailFileKey,
     })
 
     return { success: true }
@@ -55,6 +60,7 @@ export const saveFileMetadata = mutation({
     fileType: v.string(),
     fileSize: v.number(),
     fileUrl: v.string(),
+    thumbnailUrl: v.optional(v.string()),
     groupId: v.optional(v.id('vaultGroups')),
   },
   handler: async (ctx, args) => {
@@ -65,6 +71,7 @@ export const saveFileMetadata = mutation({
       type: args.fileType,
       size: args.fileSize,
       url: args.fileUrl,
+      thumbnailUrl: args.thumbnailUrl,
       groupId: args.groupId,
       ownerId: userId,
       createdAt: Date.now(),
@@ -106,6 +113,7 @@ export const getVaultData = query({
         type: f.type,
         size: f.size,
         url: f.url,
+        thumbnailUrl: f.thumbnailUrl,
         groupId: f.groupId,
         ownerId: f.ownerId,
         createdAt: f.createdAt,
@@ -140,14 +148,6 @@ export const deleteVaultGroup = mutation({
       throw new ConvexError('Not authorized')
     }
     await ctx.db.delete(args.groupId)
-    return true
-  },
-})
-
-export const deleteFileFromDb = internalMutation({
-  args: { fileId: v.id('vaultFiles') },
-  handler: async (ctx, args) => {
-    await ctx.db.delete(args.fileId)
     return true
   },
 })
