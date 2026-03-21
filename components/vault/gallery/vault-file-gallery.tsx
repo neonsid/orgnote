@@ -1,6 +1,7 @@
 "use client";
 
-import { memo, useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { memo, useState, useCallback, useRef, useMemo } from "react";
+import { useMountEffect } from "@/hooks/use-mount-effect";
 import { motion, AnimatePresence } from "motion/react";
 import { formatBytes } from "@/hooks/use-file-upload";
 import { VaultFile } from "@/components/dashboard/bookmark-list/types";
@@ -32,8 +33,42 @@ export const VaultFileGallery = memo(function VaultFileGallery({
   isLoading,
 }: VaultFileGalleryProps) {
   const isSmallMobile = useIsSmallMobile();
-  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
+  const [openPopoverId, setOpenPopoverIdState] = useState<string | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const autoClosePopoverTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const schedulePopoverAutoClose = useCallback((id: string | null) => {
+    if (autoClosePopoverTimer.current) {
+      clearTimeout(autoClosePopoverTimer.current);
+      autoClosePopoverTimer.current = null;
+    }
+    if (id && isSmallMobile) {
+      autoClosePopoverTimer.current = setTimeout(() => {
+        setOpenPopoverIdState(null);
+      }, 4000);
+    }
+  }, [isSmallMobile]);
+
+  const setOpenPopoverId = useCallback(
+    (id: string | null) => {
+      if (id === null) {
+        schedulePopoverAutoClose(null);
+      }
+      setOpenPopoverIdState(id);
+      if (id !== null && isSmallMobile) {
+        schedulePopoverAutoClose(id);
+      }
+    },
+    [isSmallMobile, schedulePopoverAutoClose],
+  );
+
+  useMountEffect(() => {
+    return () => {
+      if (autoClosePopoverTimer.current) {
+        clearTimeout(autoClosePopoverTimer.current);
+      }
+    };
+  });
   const ignoreNextClickId = useRef<string | null>(null);
   const [failedThumbnails, setFailedThumbnails] = useState<Set<string>>(
     new Set(),
@@ -61,7 +96,10 @@ export const VaultFileGallery = memo(function VaultFileGallery({
     setLightboxOpen(true);
   }, [setLightboxOpen]);
 
-  const closePopover = useCallback(() => setOpenPopoverId(null), []);
+  const closePopover = useCallback(() => {
+    schedulePopoverAutoClose(null);
+    setOpenPopoverIdState(null);
+  }, [schedulePopoverAutoClose]);
 
   const handleTouchStart = useCallback(
     (e: React.TouchEvent, id: string) => {
@@ -71,7 +109,7 @@ export const VaultFileGallery = memo(function VaultFileGallery({
         setOpenPopoverId(id);
       }, 500);
     },
-    [isSmallMobile],
+    [isSmallMobile, setOpenPopoverId],
   );
 
   const handleTouchEnd = useCallback(() => {
@@ -92,12 +130,6 @@ export const VaultFileGallery = memo(function VaultFileGallery({
     },
     [isSmallMobile],
   );
-
-  useEffect(() => {
-    if (!openPopoverId || !isSmallMobile) return;
-    const t = setTimeout(() => setOpenPopoverId(null), 4000);
-    return () => clearTimeout(t);
-  }, [openPopoverId, isSmallMobile]);
 
   const totalSize =
     files.reduce((sum, f) => sum + f.size, 0) +
@@ -132,45 +164,53 @@ export const VaultFileGallery = memo(function VaultFileGallery({
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {sortedFiles.map((file) => (
-          <motion.div
-            key={file._id}
-            layout={false}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="group/item relative aspect-square"
-          >
-            <StoredFileTile
-              file={file}
-              isSmallMobile={isSmallMobile}
-              openPopoverId={openPopoverId}
-              setOpenPopoverId={setOpenPopoverId}
-              ignoreNextClickId={ignoreNextClickId}
-              handleTouchStart={handleTouchStart}
-              handleTouchEnd={handleTouchEnd}
-              handleContextMenu={handleContextMenu}
-              failedThumbnails={failedThumbnails}
-              setFailedThumbnails={setFailedThumbnails}
-              loadingThumbnails={loadingThumbnails}
-              updateLoadingThumbnails={setLoadingThumbnails}
-              downloadingId={downloadingId}
-              setDownloadingId={setDownloadingId}
-              openLightbox={openLightbox}
-              closePopover={closePopover}
-              onDeleteFileAction={onDeleteFileAction}
-            />
-          </motion.div>
-        ))}
-
         <AnimatePresence mode="popLayout">
+          {sortedFiles.map((file) => (
+            <motion.div
+              key={file._id}
+              layout={false}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{
+                opacity: 0,
+                scale: 0.96,
+                transition: { duration: 0.25, ease: [0.25, 0.1, 0.25, 1] },
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="group/item relative aspect-square"
+            >
+              <StoredFileTile
+                file={file}
+                isSmallMobile={isSmallMobile}
+                openPopoverId={openPopoverId}
+                setOpenPopoverId={setOpenPopoverId}
+                ignoreNextClickId={ignoreNextClickId}
+                handleTouchStart={handleTouchStart}
+                handleTouchEnd={handleTouchEnd}
+                handleContextMenu={handleContextMenu}
+                failedThumbnails={failedThumbnails}
+                setFailedThumbnails={setFailedThumbnails}
+                loadingThumbnails={loadingThumbnails}
+                updateLoadingThumbnails={setLoadingThumbnails}
+                downloadingId={downloadingId}
+                setDownloadingId={setDownloadingId}
+                openLightbox={openLightbox}
+                closePopover={closePopover}
+                onDeleteFileAction={onDeleteFileAction}
+              />
+            </motion.div>
+          ))}
           {visibleUploadFiles.map((item) => (
             <motion.div
               key={item.id}
               layout={false}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{
+                opacity: 0,
+                scale: 0.96,
+                transition: { duration: 0.25, ease: [0.25, 0.1, 0.25, 1] },
+              }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
               className="group/item relative aspect-square"
             >

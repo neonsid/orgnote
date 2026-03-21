@@ -1,8 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import Moon from 'lucide-react/dist/esm/icons/moon'
-import Sun from 'lucide-react/dist/esm/icons/sun'
+import { useCallback, useRef, useState } from 'react'
+import { useMountEffect } from '@/hooks/use-mount-effect'
+import { Moon, Sun } from 'lucide-react'
 import { flushSync } from 'react-dom'
 
 import { cn } from '@/lib/utils'
@@ -25,7 +25,7 @@ export const AnimatedThemeToggler = ({
   const buttonRef = useRef<HTMLButtonElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
+  useMountEffect(() => {
     const updateTheme = () => {
       setIsDark(document.documentElement.classList.contains('dark'))
     }
@@ -39,7 +39,7 @@ export const AnimatedThemeToggler = ({
     })
 
     return () => observer.disconnect()
-  }, [])
+  })
 
   const toggleTheme = useCallback(async () => {
     if (isTransitioning) return
@@ -111,14 +111,12 @@ export const AnimatedThemeToggler = ({
     }
   }, [isDark, duration, iconOnly, isTransitioning])
 
-  useEffect(() => {
-    if (triggerRef) {
-      ;(triggerRef as React.MutableRefObject<{ toggle: () => void }>).current =
-        {
-          toggle: toggleTheme,
-        }
-    }
-  }, [triggerRef, toggleTheme])
+  if (triggerRef) {
+    ;(triggerRef as React.MutableRefObject<{ toggle: () => void } | null>).current =
+      {
+        toggle: toggleTheme,
+      }
+  }
 
   const icon = isDark ? <Sun className="size-4" /> : <Moon className="size-4" />
 

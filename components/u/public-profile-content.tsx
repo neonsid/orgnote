@@ -2,9 +2,9 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { PublicProfileHeader } from "@/components/public-profile/public-profile-header";
-import { ProfileSidebar } from "./profile-sidebar";
-import { PublicBookmarkList } from "./public-bookmark-list";
+import { PublicProfileHeader } from "@/components/u/public-profile-header";
+import { ProfileSidebar } from "@/components/u/profile-sidebar";
+import { PublicBookmarkList } from "@/components/u/public-bookmark-list";
 
 interface PublicProfileContentProps {
   username: string;
@@ -13,7 +13,7 @@ interface PublicProfileContentProps {
 export default function PublicProfileContent({
   username,
 }: PublicProfileContentProps) {
-  const data = useQuery(api.profile.getPublicProfileData, { username });
+  const data = useQuery(api.profile.queries.getPublicProfileData, { username });
 
   if (data === undefined) {
     return (

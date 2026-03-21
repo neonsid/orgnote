@@ -1,6 +1,6 @@
-import { internalQuery, internalMutation } from './_generated/server'
+import { internalQuery, internalMutation } from '../_generated/server'
 import { v } from 'convex/values'
-import { SCIRA_DAILY_LIMIT } from './lib/constants'
+import { SCIRA_DAILY_LIMIT } from '../lib/constants'
 
 export const checkSciraQuotaInternal = internalQuery({
   args: {

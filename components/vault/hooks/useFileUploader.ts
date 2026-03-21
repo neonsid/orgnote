@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useMutation, useAction } from "convex/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/convex/_generated/api";
@@ -67,13 +67,12 @@ export function useFileUploader({
   const queryClient = useQueryClient();
   const [uploadFiles, setUploadFiles] = useState<UploadFileItem[]>([]);
   const uploadFilesRef = useRef(uploadFiles);
+  uploadFilesRef.current = uploadFiles;
 
-  useEffect(() => {
-    uploadFilesRef.current = uploadFiles;
-  }, [uploadFiles]);
+  const removeFileFromHookRef = useRef<(id: string) => void>(() => {});
 
   const getPresignedUploadUrl = useAction(api.vault_node.getPresignedUploadUrl);
-  const saveFileMetadata = useMutation(api.vault.saveFileMetadata);
+  const saveFileMetadata = useMutation(api.vault.mutations.saveFileMetadata);
 
   const isUploading = uploadFiles.some((f) => f.status === "uploading");
 
@@ -103,21 +102,11 @@ export function useFileUploader({
             : undefined,
         });
 
-        setUploadFiles((prev) =>
-          prev.map((f) =>
-            f.id === fileItem.id
-              ? {
-                  ...f,
-                  progress: 100,
-                  status: "completed",
-                  fileUrl,
-                }
-              : f,
-          ),
-        );
-
-        queryClient.invalidateQueries({ queryKey: [api.vault.getFiles] });
+        queryClient.invalidateQueries({ queryKey: [api.vault.queries.getFiles] });
         toast.success("File uploaded successfully");
+
+        removeFileFromHookRef.current(fileItem.id);
+        setUploadFiles((prev) => prev.filter((f) => f.id !== fileItem.id));
       } catch (error) {
         setUploadFiles((prev) =>
           prev.map((f) =>
@@ -187,6 +176,8 @@ export function useFileUploader({
       });
     },
   });
+
+  removeFileFromHookRef.current = removeFileFromHook;
 
   const addFiles = useCallback(
     async (files: FileWithPreview[]) => {

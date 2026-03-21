@@ -41,7 +41,7 @@ export function sortVaultFiles(
 ): VaultFile[] {
   return [...files].sort((a, b) => {
     if (sortBy === "latest") {
-      const byTime = a.createdAt - b.createdAt;
+      const byTime = a._creationTime - b._creationTime;
       if (byTime !== 0) return byTime;
       return compareId(a, b);
     }

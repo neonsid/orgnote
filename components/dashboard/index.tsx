@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef } from 'react'
+import { useMountEffect } from '@/hooks/use-mount-effect'
 import { Loader2 } from 'lucide-react'
 import { useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
@@ -39,7 +40,7 @@ export default function DashboardPage() {
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [filter, setFilter] = useState<FilterType>('all')
 
-  useEffect(() => {
+  useMountEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
         e.preventDefault()
@@ -48,7 +49,7 @@ export default function DashboardPage() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  })
 
   const {
     editBookmark,
@@ -59,11 +60,11 @@ export default function DashboardPage() {
     closeDeleteBookmarkDialog,
   } = useDialogStore()
 
-  const createBookmark = useMutation(api.bookmarks.createBookMark)
-  const deleteBookmark = useMutation(api.bookmarks.deleteBookMark)
-  const moveBookmark = useMutation(api.bookmarks.moveBookMark)
-  const toggleReadStatus = useMutation(api.bookmarks.toggleReadStatus)
-  const createGroup = useMutation(api.groups.create)
+  const createBookmark = useMutation(api.bookmarks.mutations.createBookMark)
+  const deleteBookmark = useMutation(api.bookmarks.mutations.deleteBookMark)
+  const moveBookmark = useMutation(api.bookmarks.mutations.moveBookMark)
+  const toggleReadStatus = useMutation(api.bookmarks.mutations.toggleReadStatus)
+  const createGroup = useMutation(api.groups.mutations.create)
 
   const handleSubmitBookmark = useCallback(
     async (value: string) => {
@@ -78,7 +79,7 @@ export default function DashboardPage() {
       const domain = extractDomain(value)
       const isUrl = domain.includes('.')
 
-      let title = isUrl
+      const title = isUrl
         ? domain.split('.')[0].charAt(0).toUpperCase() +
           domain.split('.')[0].slice(1)
         : value
@@ -223,6 +224,7 @@ export default function DashboardPage() {
       </main>
 
       <EditBookmarkDialog
+        key={editBookmark.bookmarkData?.id ?? 'closed'}
         bookmark={editBookmark.bookmarkData}
         open={editBookmark.open}
         onOpenChange={closeEditBookmarkDialog}

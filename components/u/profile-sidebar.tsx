@@ -1,10 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import Image from "next/image";
-import GitHub from "lucide-react/dist/esm/icons/github";
-import Twitter from "lucide-react/dist/esm/icons/twitter";
-import Globe from "lucide-react/dist/esm/icons/globe";
+import { Github, Twitter, Globe } from "lucide-react";
 
 interface ProfileSidebarProps {
   username: string;
@@ -66,7 +63,7 @@ export const ProfileSidebar = memo(function ProfileSidebar({
             rel="noopener noreferrer"
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
-            <GitHub className="size-5" />
+            <Github className="size-5" />
           </a>
         )}
         {twitterLink && (

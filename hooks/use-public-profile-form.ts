@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useMemo } from "react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -45,6 +45,53 @@ function twitterUsernameFromStoredUrl(url: string): string | null {
   return null;
 }
 
+function defaultValuesFromProfile(
+  existingProfile: Doc<"userProfile"> | undefined | null,
+): PublicProfileFormData {
+  const base: PublicProfileFormData = {
+    isPublic: false,
+    username: "",
+    bio: "",
+    github: "",
+    twitter: "",
+    website: "",
+  };
+
+  if (!existingProfile) return base;
+
+  const next: PublicProfileFormData = {
+    ...base,
+    isPublic: existingProfile.isPublic,
+  };
+
+  if (existingProfile.username) {
+    next.username = existingProfile.username;
+  }
+  if (existingProfile.bio) {
+    next.bio = existingProfile.bio;
+  }
+
+  if (existingProfile.links && existingProfile.links.length > 0) {
+    for (const link of existingProfile.links) {
+      if (link.label === "GitHub") {
+        next.github = link.url;
+      } else if (link.label === "Twitter") {
+        const handle = twitterUsernameFromStoredUrl(link.url);
+        if (handle) {
+          next.twitter = handle;
+        }
+      } else if (link.label === "Portfolio") {
+        const match = link.url.match(/https:\/\/(.+)/);
+        if (match) {
+          next.website = match[1];
+        }
+      }
+    }
+  }
+
+  return next;
+}
+
 interface UsePublicProfileFormOptions {
   existingProfile: Doc<"userProfile"> | undefined | null;
 }
@@ -52,17 +99,15 @@ interface UsePublicProfileFormOptions {
 export function usePublicProfileForm({
   existingProfile,
 }: UsePublicProfileFormOptions) {
-  const upsertProfile = useMutation(api.profile.upsertProfile);
+  const upsertProfile = useMutation(api.profile.mutations.upsertProfile);
+
+  const defaultValues = useMemo(
+    () => defaultValuesFromProfile(existingProfile),
+    [existingProfile],
+  );
 
   const form = useForm({
-    defaultValues: {
-      isPublic: false,
-      username: "",
-      bio: "",
-      github: "",
-      twitter: "",
-      website: "",
-    } as PublicProfileFormData,
+    defaultValues,
     validators: {
       onChange: publicProfileSchema,
       onSubmit: publicProfileSchema,
@@ -100,38 +145,6 @@ export function usePublicProfileForm({
       }
     },
   });
-
-  // Load existing profile data
-  useEffect(() => {
-    if (existingProfile) {
-      form.setFieldValue("isPublic", existingProfile.isPublic);
-      if (existingProfile.username) {
-        form.setFieldValue("username", existingProfile.username);
-      }
-      if (existingProfile.bio) {
-        form.setFieldValue("bio", existingProfile.bio);
-      }
-      if (existingProfile.links && existingProfile.links.length > 0) {
-        for (const link of existingProfile.links) {
-          if (link.label === "GitHub") {
-            form.setFieldValue("github", link.url);
-          } else if (link.label === "Twitter") {
-            const handle = twitterUsernameFromStoredUrl(link.url);
-            if (handle) {
-              form.setFieldValue("twitter", handle);
-            }
-          } else if (link.label === "Portfolio") {
-            // Extract domain from https://domain.com
-            const match = link.url.match(/https:\/\/(.+)/);
-            if (match) {
-              form.setFieldValue("website", match[1]);
-            }
-          }
-        }
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- form is stable from useForm
-  }, [existingProfile]);
 
   return form;
 }

@@ -13,7 +13,7 @@ export interface VaultFile {
   thumbnailUrl?: string;
   groupId?: Id<"vaultGroups">;
   ownerId: string;
-  createdAt: number;
+  _creationTime: number;
 }
 
 export interface VaultGroup {
@@ -22,14 +22,13 @@ export interface VaultGroup {
   title: string;
   color: string;
   userId: string;
-  createdAt: number;
 }
 
 export function useVaultData(isAuthenticated: boolean = true) {
   const { selectedGroupId, setSelectedGroupId } = useVaultStore();
 
   const vaultData = useQuery(
-    api.vault.getVaultData,
+    api.vault.queries.getVaultData,
     isAuthenticated ? {} : "skip",
   );
 
@@ -45,7 +44,7 @@ export function useVaultData(isAuthenticated: boolean = true) {
       return selectedGroupId;
     }
     const latestGroup = [...groups].sort(
-      (a, b) => b.createdAt - a.createdAt,
+      (a, b) => b._creationTime - a._creationTime,
     )[0];
     return latestGroup?._id ?? "";
   }, [selectedGroupId, groups]);
@@ -63,7 +62,7 @@ export function useVaultData(isAuthenticated: boolean = true) {
         thumbnailUrl: f.thumbnailUrl,
         groupId: f.groupId,
         ownerId: f.ownerId,
-        createdAt: f.createdAt,
+        _creationTime: f._creationTime,
       }));
   }, [vaultData, effectiveGroupId]);
 

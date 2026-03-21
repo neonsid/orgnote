@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect } from 'react'
 import { useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { type Id } from '@/convex/_generated/dataModel'
@@ -34,7 +33,7 @@ export function RenameGroupDialog({
   color,
   onOpenChange,
 }: RenameGroupDialogProps) {
-  const renameGroup = useMutation(api.groups.renameGroup)
+  const renameGroup = useMutation(api.groups.mutations.renameGroup)
   const form = useForm({
     defaultValues: {
       title: title,
@@ -56,15 +55,14 @@ export function RenameGroupDialog({
     },
   })
 
-  // Reset form when dialog closes
-  useEffect(() => {
-    if (!open) {
-      form.reset()
-    }
-  }, [open, form])
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) form.reset()
+        onOpenChange(next)
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Rename Group</DialogTitle>

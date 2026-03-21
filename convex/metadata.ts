@@ -89,11 +89,14 @@ export const updateBookmarkGitHubMetadata = internalAction({
     try {
       const repoMeta = await fetchGitHubRepoTitle(args.owner, args.repo)
 
-      await ctx.runMutation(internal.bookmarks.updateBookmarkInternal, {
-        bookmarkId: args.bookmarkId,
-        title: repoMeta.name,
-        description: repoMeta.description ?? '',
-      })
+      await ctx.runMutation(
+        internal.bookmarks.internal.updateBookmarkInternal,
+        {
+          bookmarkId: args.bookmarkId,
+          title: repoMeta.name,
+          description: repoMeta.description ?? '',
+        }
+      )
     } catch (error) {
       console.error('Failed to update bookmark GitHub metadata:', error)
     }
@@ -186,7 +189,7 @@ async function generateDescriptionWithAI(
     })
 
     const prompt = generateBookMarkDescriptionPrompt(url, title!, content)
-    const { text, usage, finishReason } = await generateText({
+    const { text } = await generateText({
       model: openrouter('openai/gpt-oss-120b', {
         reasoning: { enabled: true, effort: 'low' },
       }),
@@ -244,7 +247,7 @@ export const generateBookmarkDescription = action({
         // Check Scira quota using internal query
         const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD — safe in action
         const quotaResult = await ctx.runQuery(
-          internal.metadata_internal.checkSciraQuotaInternal,
+          internal.metadata.internal.checkSciraQuotaInternal,
           {
             userId: userId,
             today,
@@ -295,7 +298,7 @@ export const generateBookmarkDescription = action({
 
         // Increment quota after successful fetch
         await ctx.runMutation(
-          internal.metadata_internal.incrementSciraQuotaInternal,
+          internal.metadata.internal.incrementSciraQuotaInternal,
           {
             userId: userId,
             usageId: quotaResult.usageId,

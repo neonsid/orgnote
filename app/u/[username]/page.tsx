@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
-import PublicProfileContent from "./public-profile-content";
+import PublicProfileContent from "@/components/u/public-profile-content";
 
 interface PageProps {
   params: Promise<{
@@ -15,7 +15,7 @@ export async function generateMetadata({
   const { username } = await params;
 
   try {
-    const profile = await fetchQuery(api.profile.getProfileByUsername, {
+    const profile = await fetchQuery(api.profile.queries.getProfileByUsername, {
       username,
     });
 

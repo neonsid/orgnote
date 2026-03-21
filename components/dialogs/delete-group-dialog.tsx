@@ -33,7 +33,7 @@ export function DeleteGroupDialog({
   onDeleted,
 }: DeleteGroupDialogProps) {
   const [isDeleting, setIsDeleting] = useState(false)
-  const deleteGroup = useMutation(api.groups.deleteGroup)
+  const deleteGroup = useMutation(api.groups.mutations.deleteGroup)
 
   async function handleDelete() {
     if (isDeleting) return
