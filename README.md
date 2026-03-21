@@ -1,251 +1,261 @@
 # Orgnote
 
-AI-powered bookmark manager that saves links and provides instant AI summaries so bookmarks make sense at a glance.
+AI-powered bookmark manager: save links, get instant summaries, organize groups, and share public profiles. Includes a **vault** for uploads (images, PDFs, and more) backed by Cloudflare R2.
+
+> **Package name:** `goldfish` (this repository / `package.json`).
 
 ## Features
 
-- **AI-Powered Summaries** – Automatically generates descriptions for bookmarked URLs
-- **Smart URL Classification** – Different extraction strategies for Twitter/X posts, GitHub repos, and generic websites
-- **Group Organization** – Organize bookmarks into color-coded collections
-- **Public Profiles** – Share your bookmark collections publicly with custom usernames
-- **Rate-Limited AI Usage** – 20 AI requests per user per day to manage API costs
-- **Google OAuth** – Social login support via Clerk
-- **Email Authentication** – Secure email-based auth with verification and password reset via Clerk
-- **Real-time Sync** – Convex provides live data synchronization
+- **AI summaries** — Descriptions for bookmarked URLs via OpenRouter
+- **URL-aware extraction** — Different paths for X/Twitter (Scira), GitHub, and generic sites (Open Graph + AI)
+- **Groups** — Color-coded bookmark collections (optional public visibility)
+- **Public profiles** — `/u/[username]` with shared bookmarks
+- **Vault** — File uploads with presigned URLs, thumbnails, and gallery UI (R2 storage)
+- **Rate limits** — Daily caps on AI / Scira usage per user
+- **Auth** — Clerk (Google OAuth, email, passwords) with Convex JWT validation
+- **Real-time data** — Convex queries and mutations
 
-## Tech Stack
+## Tech stack
 
-| Layer              | Technology                          |
-| ------------------ | ----------------------------------- |
-| **Framework**      | Next.js 16 (App Router)             |
-| **Language**       | TypeScript 5                        |
-| **UI**             | React 19 + Tailwind CSS + shadcn/ui |
-| **Backend**        | Convex (real-time serverless)       |
-| **Authentication** | Clerk + Convex Auth                 |
-| **AI Integration** | OpenRouter AI SDK                   |
-| **Hosting**        | Vercel                              |
+| Layer | Technology |
+| ----- | ---------- |
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript 5 |
+| UI | React 19, Tailwind CSS 4, shadcn/ui |
+| Backend | Convex |
+| Auth | Clerk + Convex `auth.config.ts` |
+| AI | OpenRouter (`@openrouter/ai-sdk-provider`, `ai`) |
+| X/Twitter content | Scira API |
+| Object storage | Cloudflare R2 (`@aws-sdk/client-s3`) |
+| Package manager | **pnpm** (required) |
+
+## Repository layout
+
+High-level structure (generated files and dependencies omitted):
+
+```text
+.
+├── .agents/skills/              # Agent/cursor skills (see AGENTS.md)
+│   ├── convex/convex-best-practices/
+│   └── frontend/use-effect/
+├── app/                         # Next.js App Router
+│   ├── api/download-vault-file/ # Proxied vault downloads (R2 allowlist)
+│   ├── dashboard/               # Authenticated bookmark UI
+│   ├── vault/                   # File vault UI
+│   ├── u/[username]/            # Public profile pages
+│   ├── layout.tsx
+│   ├── page.tsx                 # Landing
+│   └── globals.css
+├── components/                  # React components
+│   ├── dashboard/               # Bookmark dashboard, settings, dialogs
+│   ├── dialogs/                 # Shared modals
+│   ├── landing/
+│   ├── layout/
+│   ├── providers/               # Clerk, Convex, theme, React Query
+│   ├── ui/                      # shadcn primitives
+│   ├── u/                       # Public profile UI
+│   └── vault/                   # Upload, gallery, lightbox
+├── convex/                      # Convex backend
+│   ├── bookmark_metadata/       # OG, GitHub, Scira, OpenRouter pipelines
+│   ├── bookmarks/ groups/ profile/ vault/
+│   ├── lib/                     # Auth helpers, R2 constants, classifiers
+│   ├── schema.ts
+│   ├── auth.config.ts
+│   └── vault_node.ts            # Node actions (S3/R2)
+├── hooks/                       # Shared React hooks
+├── lib/                         # Client utilities (upload, validation, etc.)
+├── providers/
+├── public/                      # Static assets
+├── stores/                      # Zustand (dashboard, dialogs, vault)
+├── proxy.ts                     # Clerk middleware (route protection)
+├── AGENTS.md                    # Rules + pointers to .agents skills
+├── components.json              # shadcn config
+└── package.json
+```
 
 ## Prerequisites
 
-- Node.js 18+
-- pnpm (package manager)
-- Convex account
-- Clerk account
-- OpenRouter API key
-- Scira API key (for X/Twitter content)
+- **Node.js** 20+ recommended (Next.js 16)
+- **pnpm**
+- Accounts / keys: **Convex**, **Clerk**, **OpenRouter**, **Scira**, **Cloudflare R2** (for vault uploads)
 
-## Quick Start
+## Quick start
 
-### 1. Clone and Install
+### 1. Clone and install
 
 ```bash
 git clone <repository-url>
-cd orgnote
+cd goldfish
 pnpm install
 ```
 
-### 2. Set Up Environment Variables
+### 2. Environment files
 
-Copy the example environment file:
+Copy the example file and fill in values:
 
 ```bash
 cp .env.example .env.local
 ```
 
-### 3. Set Up Clerk
+See [Environment variables](#environment-variables) below for the full list.
 
-1. Go to [clerk.com](https://clerk.com) and create an account
-2. Create a new application
-3. Copy the **Frontend API URL** to `CLERK_FRONTEND_API_URL` in `.env.local`
+### 3. Clerk
 
-### 4. Set Up Convex
+1. Create an application at [clerk.com](https://clerk.com).
+2. Add the standard Clerk keys to **`.env.local`** (Clerk’s Next.js docs: publishable + secret keys).
+3. Configure a **Convex** JWT template in Clerk (name it `convex` per Convex + Clerk guides).
+4. Set **`CLERK_FRONTEND_API_URL`** in the **Convex dashboard** (used in `convex/auth.config.ts` — same value as Clerk’s Frontend API / issuer domain).
+
+### 4. Convex
 
 ```bash
-npx convex dev
+pnpm exec convex dev
 ```
 
-This will:
+This links the project, creates a dev deployment, and syncs `NEXT_PUBLIC_CONVEX_URL` into your local env flow. Keep this running alongside the app (or use `pnpm dev`, which runs frontend + backend in parallel).
 
-- Authenticate with Convex
-- Create a development deployment
-- Generate the Convex client configuration
+### 5. Convex dashboard secrets
 
-### 5. Run Development Server
+In Convex → **Settings → Environment Variables**, set:
+
+- `CLERK_FRONTEND_API_URL`
+- `OPENROUTER_API_KEY`
+- `SCIRA_API_KEY`
+- R2-related variables (see table below)
+
+### 6. Run the app
 
 ```bash
 pnpm dev
 ```
 
-The app will be available at `http://localhost:3000`.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Environment Variables
+---
 
-### Development (`.env.local`)
+## Environment variables
 
-```bash
-# Clerk (get from Clerk Dashboard → API Keys)
-CLERK_FRONTEND_API_URL=https://your-app.clerk.com
+Variables are split by **where** they are read: Next.js (`.env.local` / Vercel) vs **Convex dashboard**.
 
-# Convex (auto-generated from `npx convex dev`)
-NEXT_PUBLIC_CONVEX_URL=https://your-deployment.convex.cloud
+### Next.js — `.env.local` (development)
 
-# Site URL
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-```
+| Variable | Required | Description |
+| -------- | -------- | ----------- |
+| `NEXT_PUBLIC_CONVEX_URL` | **Yes** | Convex deployment URL (`https://….convex.cloud`). App throws if missing. |
+| `NEXT_PUBLIC_R2_PUBLIC_URL` | **Yes** (vault) | Public base URL for R2 bucket objects (must match signed URLs). Used by `app/api/download-vault-file`. |
+| `NEXT_PUBLIC_CONVEX_SITE_URL` | If you use Convex HTTP/site features | Convex `.site` URL when applicable. |
+| `NEXT_PUBLIC_SITE_URL` | Optional | Canonical site URL (e.g. `http://localhost:3000`); reserve for SEO/sharing if you wire it in. |
+| Clerk `NEXT_PUBLIC_*` + secret | **Yes** | Standard Clerk Next.js variables from the Clerk dashboard. |
 
-### Production (Vercel)
+`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` in `.env.example` are only needed if you configure Google OAuth manually outside Clerk’s defaults—follow Clerk’s OAuth setup if you use them.
 
-Set these in your Vercel project settings (Settings → Environment Variables):
+### Convex dashboard
 
-| Variable                      | Description                                 | Required | Example                                 |
-| ----------------------------- | ------------------------------------------- | -------- | --------------------------------------- |
-| `CLERK_FRONTEND_API_URL`      | Clerk Frontend API URL                      | **Yes**  | `https://your-app.clerk.com`            |
-| `CONVEX_DEPLOY_KEY`           | Convex deployment key for production builds | **Yes**  | `prod:your-key-here`                    |
-| `CONVEX_DEPLOYMENT`           | Your Convex deployment name                 | **Yes**  | `calm-octopus-227`                      |
-| `NEXT_PUBLIC_CONVEX_URL`      | Your Convex HTTP API URL                    | **Yes**  | `https://calm-octopus-227.convex.cloud` |
-| `NEXT_PUBLIC_CONVEX_SITE_URL` | Your Convex site URL (for HTTP actions)     | **Yes**  | `https://calm-octopus-227.convex.site`  |
-| `NEXT_PUBLIC_SITE_URL`        | Public URL of your site                     | **Yes**  | `https://orgnote.vercel.app`            |
+| Variable | Required | Description |
+| -------- | -------- | ----------- |
+| `CLERK_FRONTEND_API_URL` | **Yes** | Clerk Frontend API URL for JWT validation (`convex/auth.config.ts`). |
+| `OPENROUTER_API_KEY` | **Yes** (AI metadata) | OpenRouter API key. |
+| `SCIRA_API_KEY` | **Yes** (X/Twitter) | Scira key for tweet/thread extraction. |
+| `R2_ACCOUNT_ID` | **Yes** (vault) | Cloudflare account ID for R2. |
+| `R2_BUCKET_NAME` | **Yes** (vault) | Bucket name. |
+| `R2_ACCESS_KEY_ID` | **Yes** (vault) | R2 S3 API access key. |
+| `R2_SECRET_ACCESS_KEY` | **Yes** (vault) | R2 S3 API secret. |
+| `NEXT_PUBLIC_R2_PUBLIC_URL` | **Yes** (vault) | Same public object base URL as in Next.js (used in `convex/lib/constants.ts` for URL building). |
 
-### Convex Dashboard Environment Variables
+### Production (e.g. Vercel)
 
-Set these in your Convex dashboard (Settings → Environment Variables):
+Set the same **Next.js** variables as in `.env.local`, plus anything your host needs for Clerk.
 
-| Variable             | Description                                      | Required | How to Get                                       |
-| -------------------- | ------------------------------------------------ | -------- | ------------------------------------------------ |
-| `OPENROUTER_API_KEY` | API key for OpenRouter AI services               | **Yes**  | [openrouter.ai/keys](https://openrouter.ai/keys) |
-| `SCIRA_API_KEY`      | API key for Scira (X/Twitter content extraction) | **Yes**  | [scira.ai](https://scira.ai)                     |
+Common Convex-related production vars (names may match your CI setup):
 
-## Setting Up External Services
+| Variable | Purpose |
+| -------- | ------- |
+| `CONVEX_DEPLOY_KEY` | Deploy Convex functions from CI / Vercel build |
+| `CONVEX_DEPLOYMENT` | Deployment name |
+| `NEXT_PUBLIC_CONVEX_URL` | Production Convex URL |
+| `NEXT_PUBLIC_CONVEX_SITE_URL` | Production `.site` URL if used |
 
-### 1. Convex Setup
-
-1. Go to [convex.dev](https://convex.dev) and sign up
-2. Create a new project
-3. Run `npx convex dev` locally to set up the dev deployment
-4. Deploy to production with `npx convex deploy`
-5. Copy the deployment URL and deploy key to Vercel environment variables
-
-### 2. Clerk Setup
-
-1. Go to [clerk.com](https://clerk.com) and sign up
-2. Create a new application
-3. Configure the application:
-   - Add your production domain in **paths**
-   - Configure OAuth providers (Google) in **SSO Providers**
-4. Create a JWT template for Convex:
-   - Go to **JWT Templates** → Create new template
-   - Select **Convex** template
-   - Name it `convex`
-5. Copy the **Frontend API URL** to your environment variables
-
-### 3. OpenRouter Setup
-
-1. Go to [openrouter.ai](https://openrouter.ai)
-2. Create an account and generate an API key
-3. Add the key to Convex environment variables as `OPENROUTER_API_KEY`
-4. The app uses `openai/gpt-oss-120b` model by default
-
-### 4. Scira Setup
-
-1. Go to [scira.ai](https://scira.ai)
-2. Sign up and get an API key
-3. Add the key to Convex environment variables as `SCIRA_API_KEY`
-4. This enables X/Twitter content extraction (20 requests/day per user)
-
-## Database Schema (Convex)
-
-| Table         | Purpose                                        |
-| ------------- | ---------------------------------------------- |
-| `users`       | User records                                   |
-| `userProfile` | Public profile settings (bio, username, links) |
-| `groups`      | Bookmark collections                           |
-| `bookmarks`   | Saved links with metadata                      |
-| `skyraUsage`  | API usage tracking (20 req/day limit)          |
-| `sciraUsage`  | API usage tracking (20 req/day limit)          |
-
-## Available Scripts
-
-| Script              | Description                         |
-| ------------------- | ----------------------------------- |
-| `pnpm dev`          | Run Next.js + Convex in development |
-| `pnpm dev:frontend` | Run only Next.js dev server         |
-| `pnpm dev:backend`  | Run only Convex dev server          |
-| `pnpm build`        | Production build                    |
-| `pnpm lint`         | Run ESLint                          |
-| `pnpm lint:fix`     | Fix ESLint errors                   |
-| `pnpm typecheck`    | Run TypeScript checks               |
-| `pnpm fmt`          | Format code with oxfmt              |
-| `pnpm fmt:check`    | Check code formatting               |
-
-## Deployment
-
-### Deploy to Vercel
-
-1. Push your code to GitHub
-2. Import the repository in Vercel
-3. Add all environment variables (see [Production Environment Variables](#production-vercel))
-4. Add build command: `pnpm build`
-5. Deploy
-
-### Deploy Convex Functions
+Deploy Convex:
 
 ```bash
-npx convex deploy
+pnpm exec convex deploy
 ```
 
-Make sure to set the `CONVEX_DEPLOY_KEY` environment variable in Vercel before deploying.
+---
 
-## Architecture
+## Database schema (Convex)
 
-### Authentication Flow
+| Table | Purpose |
+| ----- | ------- |
+| `userProfile` | Public profile (`username`, bio, links, visibility) |
+| `groups` | Bookmark groups |
+| `bookmarks` | Links, metadata, `doneReading`, `groupId` |
+| `sciraUsage` | Daily Scira usage per user |
+| `openRouterMetadataUsage` | Daily OpenRouter metadata usage per user |
+| `metadataJobs` | Async bookmark metadata pipeline status |
+| `vaultFiles` | Uploaded files (R2 URLs, optional `vaultGroups`) |
+| `vaultGroups` | Vault collections |
 
-1. User authenticates via Clerk (OAuth or email)
-2. Clerk provides JWT token to the client
-3. Convex validates the JWT using `ctx.auth.getUserIdentity()`
-4. User ID is available in all Convex queries/mutations
+`_creationTime` is provided by Convex on every document.
 
-### Data Flow
+---
 
-1. User authenticates via Clerk
-2. Bookmarks and groups are stored in Convex
-3. AI metadata extraction happens in Convex actions
-4. X/Twitter content uses Scira API + OpenRouter
-5. Generic URLs use Open Graph scraping + OpenRouter
+## Scripts
 
-### Rate Limiting
+| Command | Description |
+| ------- | ----------- |
+| `pnpm dev` | Next.js + `convex dev` in parallel |
+| `pnpm dev:frontend` | Next.js only |
+| `pnpm dev:backend` | Convex only |
+| `pnpm build` | Production Next.js build |
+| `pnpm start` | Start production server |
+| `pnpm lint` / `pnpm lint:fix` | ESLint |
+| `pnpm typecheck` | `tsc --noEmit` |
+| `pnpm fmt` / `pnpm fmt:check` | oxfmt |
 
-- Users get 20 AI-powered extractions per day
-- Tracked per user per day in `skyraUsage` and `sciraUsage` tables
-- Resets at midnight UTC
+`predev` runs `convex dev --until-success` so codegen is ready before parallel dev.
+
+---
+
+## Architecture (short)
+
+1. **Auth** — Clerk on the client; Convex validates identity via Clerk JWT (`ctx.auth.getUserIdentity()`).
+2. **Bookmarks** — Stored in Convex; metadata enrichment runs in actions (Open Graph, GitHub API, Scira, OpenRouter `openai/gpt-oss-120b`).
+3. **Vault** — Convex Node actions talk to R2 with presigned uploads; public URLs use `NEXT_PUBLIC_R2_PUBLIC_URL`; downloads can go through `app/api/download-vault-file` for allowlisted URLs.
+4. **Rate limits** — Enforced using daily counters in `sciraUsage` / `openRouterMetadataUsage` (see Convex rate-limit helpers).
+
+---
+
+## AI & agent development
+
+- **`AGENTS.md`** — Project rules (shadcn, pnpm, React hooks summary) and **where to load skills**.
+- **`.agents/skills/`** — Deeper guides, e.g. Convex best practices and the frontend `use-effect` skill.
+
+---
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Make your changes
-4. Run linting and type checking: `pnpm lint && pnpm typecheck`
-5. Commit your changes: `git commit -am 'Add new feature'`
-6. Push to the branch: `git push origin feature/my-feature`
-7. Submit a pull request
+1. Fork and create a branch.
+2. `pnpm lint && pnpm typecheck` before pushing.
+3. Open a pull request.
 
-## Thank You
+---
 
-- **[minimal.so](https://minimal.so)** - This project was heavily inspired by minimal.so's bookmark manager. Their elegant design and functionality served as a great reference for building this application.
-- **[Kilo Code](https://kilo.ai)** - For providing free access to their Kimi K2.5 AI subscription, which was used to help build and develop this project.
+## Acknowledgments
+
+- **[minimal.so](https://minimal.so)** — Inspiration for bookmark UX and structure.
+- **[Kilo Code](https://kilo.ai)** — Kimi K2.5 access during development.
+
+---
 
 ## License
 
-[MIT License](LICENSE)
+MIT — add a root `LICENSE` file when you publish the legal text.
+
+---
 
 ## Support
 
-For issues and feature requests, please use the [GitHub issue tracker](https://github.com/yourusername/orgnote/issues).
+Use your repository’s issue tracker (replace the URL in your fork):
 
-
-- [x] Add file upload for articles
-- [x] Clean the vibecoded mess
-- [] Remove createdAt from all fields because convex already has it
-- [] Complete all todos
-- [] Clean the codebase and make the dialog which are common in components/dialog
-- [] Clean the file upload component as well
-- [] Clean the codebase later
+`https://github.com/<your-org>/goldfish/issues`
