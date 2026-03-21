@@ -15,7 +15,7 @@ import {
   bookmarks as initialBookmarks,
   type Group,
 } from "@/lib/dummy-data";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 // Dynamic import for rename dialog to enable code splitting
 const LandingRenameBookmarkDialog = dynamic(

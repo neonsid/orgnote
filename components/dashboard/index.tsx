@@ -16,7 +16,7 @@ import { type Id } from '@/convex/_generated/dataModel'
 import { extractDomain } from '@/lib/domain-utils'
 import { useDialogStore } from '@/stores/dialog-store'
 import { useDashboardData } from '@/hooks/use-dashboard-data'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 const EditBookmarkDialog = dynamic(
   () =>
@@ -69,7 +69,7 @@ export default function DashboardPage() {
   const handleSubmitBookmark = useCallback(
     async (value: string) => {
       if (!effectiveGroupId) {
-        toast('Please create a group first to add bookmarks', {
+        toast.info('Please create a group first to add bookmarks', {
           description:
             'Click on the group selector in the header to create a new group',
         })

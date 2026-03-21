@@ -14,7 +14,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { RenameGroupFormData, renameGroupSchema } from '@/lib/validation'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import { GROUP_COLORS } from './create-group-dialog'
 import { Check } from 'lucide-react'
 

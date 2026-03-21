@@ -16,7 +16,7 @@ import { useNameForm } from "@/hooks/use-name-form";
 import { usePublicProfileForm } from "@/hooks/use-public-profile-form";
 import { GeneralSettings } from "./general-settings";
 import { PublicProfileSettings } from "./public-profile-settings";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { SettingsTab } from "./types";
 import type { Doc } from "@/convex/_generated/dataModel";
 

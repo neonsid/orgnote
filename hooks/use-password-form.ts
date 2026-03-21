@@ -5,7 +5,7 @@ import {
   changePasswordSchema,
   type ChangePasswordFormData,
 } from "@/lib/validation";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 interface FieldErrors {
   currentPassword?: string;

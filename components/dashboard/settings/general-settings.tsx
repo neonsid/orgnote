@@ -3,7 +3,7 @@
 import { useRef } from 'react'
 import Image from 'next/image'
 import Upload from 'lucide-react/dist/esm/icons/upload'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import { useUser } from '@clerk/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

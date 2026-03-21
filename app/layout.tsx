@@ -4,7 +4,10 @@ import "./globals.css";
 import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
 import { ThemeAwareClerkProvider } from "@/components/providers/clerk-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
-import { Toaster } from "@/components/ui/sonner";
+import {
+  AnchoredToastProvider,
+  ToastProvider,
+} from "@/components/ui/toast";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { QueryProvider } from "@/providers/query-provider";
@@ -46,10 +49,13 @@ export default function RootLayout({
         >
           <QueryProvider>
             <ThemeAwareClerkProvider>
-              <ConvexClientProvider>{children}</ConvexClientProvider>
+              <ConvexClientProvider>
+                <ToastProvider>
+                  <AnchoredToastProvider>{children}</AnchoredToastProvider>
+                </ToastProvider>
+              </ConvexClientProvider>
             </ThemeAwareClerkProvider>
           </QueryProvider>
-          <Toaster />
         </ThemeProvider>
         <Analytics />
         <SpeedInsights />

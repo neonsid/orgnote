@@ -11,7 +11,7 @@ import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { DashboardHeader } from "../dashboard/dashboard-header";
 import { VaultFile } from "../dashboard/bookmark-list/types";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 const DeleteBookmarkDialog = dynamic(
   () =>

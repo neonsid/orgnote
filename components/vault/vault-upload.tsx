@@ -4,6 +4,7 @@ import {
   Trash2 as Trash2Icon,
   Loader2,
 } from 'lucide-react'
+import { motion } from 'motion/react'
 import { cn } from '@/lib/utils'
 import { VaultFileGallery } from './vault-file-gallery'
 import { VaultFile } from '../dashboard/bookmark-list/types'
@@ -71,7 +72,6 @@ export function VaultUpload({
   const {
     uploadFiles,
     isDragging,
-    errors,
     removeFile,
     retryUpload,
     clearAll,
@@ -89,7 +89,6 @@ export function VaultUpload({
   }
 
   const hasContent = uploadFiles.length > 0 || files.length > 0 || isLoading
-  const showDropzone = !hasContent
 
   return (
     <div className="space-y-4">
@@ -111,49 +110,35 @@ export function VaultUpload({
 
       <input {...getInputProps()} className="sr-only" />
 
-      <div
-        className={cn(
-          'rounded-lg transition-colors',
-          showDropzone &&
-            cn(
-              'border-2 border-dashed p-6',
-              isDragging
-                ? 'border-primary bg-primary/5'
-                : 'border-muted-foreground/25'
-            )
-        )}
-        {...(showDropzone && dragHandlers)}
-      >
-        {hasContent ? (
-          <>
-            <VaultFileGallery
-              files={files}
-              uploadFiles={uploadFiles}
-              onDeleteFileAction={onDeleteFileAction}
-              onRemoveUpload={removeFile}
-              onRetryUpload={retryUpload}
-              isLoading={isLoading}
-            />
-            {errors.length > 0 && (
-              <div className="mt-4 rounded-lg bg-destructive/10 p-4 text-sm text-destructive space-y-1">
-                {errors.map((error, i) => (
-                  <p key={i}>{error}</p>
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground">
-              Drop files here or use Add files above
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Max {MAX_FILE_SIZE / 1024 / 1024}MB per file • Up to {MAX_FILES}{' '}
-              files at a time
-            </p>
-          </div>
-        )}
-      </div>
+      {hasContent ? (
+        <>
+          <VaultFileGallery
+            files={files}
+            uploadFiles={uploadFiles}
+            onDeleteFileAction={onDeleteFileAction}
+            onRemoveUpload={removeFile}
+            onRetryUpload={retryUpload}
+            isLoading={isLoading}
+          />
+        </>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+          className={cn(
+            'flex flex-col items-center justify-center py-12 text-muted-foreground rounded-lg transition-colors',
+            isDragging && 'bg-primary/5'
+          )}
+          {...dragHandlers}
+        >
+          <p className="text-sm font-medium">No files yet</p>
+          <p className="text-xs mt-1 text-center">
+            Click <span className="font-medium text-foreground/80">Add files</span>{' '}
+            above to upload
+          </p>
+        </motion.div>
+      )}
     </div>
   )
 }

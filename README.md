@@ -246,16 +246,3 @@ pnpm exec convex deploy
 - **[minimal.so](https://minimal.so)** — Inspiration for bookmark UX and structure.
 - **[Kilo Code](https://kilo.ai)** — Kimi K2.5 access during development.
 
----
-
-## License
-
-MIT — add a root `LICENSE` file when you publish the legal text.
-
----
-
-## Support
-
-Use your repository’s issue tracker (replace the URL in your fork):
-
-`https://github.com/<your-org>/goldfish/issues`
