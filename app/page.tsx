@@ -4,10 +4,10 @@ import { memo } from 'react'
 import { motion } from 'motion/react'
 import Image from 'next/image'
 import { Sparkles, BrainCog } from 'lucide-react'
-import { Header } from '@/components/header'
-import { Footer } from '@/components/footer'
+import { Header } from '@/components/layout/header'
+import { Footer } from '@/components/layout/footer'
 import { DashboardDemo } from '@/components/landing/dashboard-demo'
-import { FeaturesSection } from '@/components/features-section'
+import { FeaturesSection } from '@/components/landing/features-section'
 
 const containerVariants = {
   hidden: { opacity: 0 },

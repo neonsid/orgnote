@@ -18,7 +18,11 @@ const SORT_OPTIONS: {
   label: string
   icon: typeof Clock
 }[] = [
-  { value: 'latest', label: 'Latest', icon: Clock },
+  {
+    value: 'latest',
+    label: 'Date added',
+    icon: Clock,
+  },
   { value: 'size', label: 'Size', icon: ArrowDownNarrowWide },
   { value: 'name', label: 'Name', icon: ArrowDownAZ },
 ]

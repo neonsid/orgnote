@@ -8,6 +8,43 @@ import {
 } from "@/lib/validation";
 import type { Doc } from "@/convex/_generated/dataModel";
 
+/** Parse stored profile link URL (or plain handle) into an X/Twitter handle for the form. */
+function twitterUsernameFromStoredUrl(url: string): string | null {
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+
+  // Bare handle stored without URL (must run before URL() so "foo" is not parsed as hostname)
+  if (
+    !trimmed.includes("://") &&
+    !trimmed.includes("/") &&
+    /^[A-Za-z0-9_]{1,15}$/.test(trimmed)
+  ) {
+    return trimmed;
+  }
+
+  try {
+    const withProtocol =
+      trimmed.startsWith("http://") || trimmed.startsWith("https://")
+        ? trimmed
+        : `https://${trimmed}`;
+    const parsed = new URL(withProtocol);
+    const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+    const isTwitterHost =
+      host === "x.com" ||
+      host === "twitter.com" ||
+      host === "mobile.twitter.com";
+    if (!isTwitterHost) return null;
+    const segment = parsed.pathname.split("/").filter(Boolean)[0];
+    if (!segment) return null;
+    const handle = segment.replace(/^@/, "");
+    if (/^[A-Za-z0-9_]{1,15}$/.test(handle)) return handle;
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 interface UsePublicProfileFormOptions {
   existingProfile: Doc<"userProfile"> | undefined | null;
 }
@@ -79,10 +116,9 @@ export function usePublicProfileForm({
           if (link.label === "GitHub") {
             form.setFieldValue("github", link.url);
           } else if (link.label === "Twitter") {
-            // Extract username from https://x.com/username
-            const match = link.url.match(/https:\/\/x\.com\/(\w+)/);
-            if (match) {
-              form.setFieldValue("twitter", match[1]);
+            const handle = twitterUsernameFromStoredUrl(link.url);
+            if (handle) {
+              form.setFieldValue("twitter", handle);
             }
           } else if (link.label === "Portfolio") {
             // Extract domain from https://domain.com

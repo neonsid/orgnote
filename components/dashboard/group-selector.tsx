@@ -19,19 +19,17 @@ import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
 
 const CreateGroupDialog = dynamic(
-  () =>
-    import("@/components/dashboard/dialog").then((m) => m.CreateGroupDialog),
+  () => import("@/components/dialogs").then((m) => m.CreateGroupDialog),
   { ssr: false },
 );
 
 const DeleteGroupDialog = dynamic(
-  () =>
-    import("@/components/dashboard/dialog").then((m) => m.DeleteGroupDialog),
+  () => import("@/components/dialogs").then((m) => m.DeleteGroupDialog),
   { ssr: false },
 );
 
 const RenameGroupDialog = dynamic(
-  () => import("./dialog/rename-group").then((m) => m.RenameGroupDialog),
+  () => import("@/components/dialogs").then((m) => m.RenameGroupDialog),
   { ssr: false },
 );
 /**

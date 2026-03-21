@@ -2,7 +2,7 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { PublicProfileHeader } from "@/components/public-profile-header";
+import { PublicProfileHeader } from "@/components/public-profile/public-profile-header";
 import { ProfileSidebar } from "./profile-sidebar";
 import { PublicBookmarkList } from "./public-bookmark-list";
 

@@ -25,9 +25,7 @@ const EditBookmarkDialog = dynamic(
 
 const DeleteBookmarkDialog = dynamic(
   () =>
-    import('./dialog/delete-bookmark-dialog').then(
-      (m) => m.DeleteBookmarkDialog
-    ),
+    import('@/components/dialogs').then((m) => m.DeleteBookmarkDialog),
   { ssr: false }
 )
 

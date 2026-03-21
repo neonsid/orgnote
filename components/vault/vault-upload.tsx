@@ -7,12 +7,9 @@ import {
   Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { VaultFileGallery, type UploadFileItem } from './vault-file-gallery'
+import { VaultFileGallery } from './vault-file-gallery'
 import { VaultFile } from '../dashboard/bookmark-list/types'
-import {
-  useFileUploader,
-  type UploadFileItem as HookUploadFileItem,
-} from './hooks/useFileUploader'
+import { useFileUploader } from './hooks/useFileUploader'
 import { Button } from '@/components/ui/button'
 
 interface VaultGroup {
@@ -26,23 +23,7 @@ interface VaultUploadProps {
   groups: VaultGroup[]
   files: VaultFile[]
   isLoading?: boolean
-  onDeleteFile: (file: VaultFile) => void
-}
-
-function transformToGalleryItems(
-  uploadFiles: HookUploadFileItem[]
-): UploadFileItem[] {
-  return uploadFiles.map((f) => ({
-    id: f.id,
-    file: {
-      name: f.file.name,
-      type: f.file.type,
-      size: f.file.size,
-    },
-    progress: f.progress,
-    status: f.status,
-    fileUrl: f.fileUrl,
-  }))
+  onDeleteFileAction: (file: VaultFile) => void
 }
 
 function EmptyState({
@@ -87,11 +68,10 @@ export function VaultUpload({
   groups,
   files,
   isLoading,
-  onDeleteFile,
+  onDeleteFileAction,
 }: VaultUploadProps) {
   const {
     uploadFiles,
-    isUploading,
     isDragging,
     errors,
     removeFile,
@@ -107,29 +87,16 @@ export function VaultUpload({
   })
 
   useEffect(() => {
-    const completed = uploadFiles.filter((f) => f.status === 'completed')
-    if (completed.length === 0) return
-
     const fileUrls = new Set(files.map((f) => f.url))
-    const toRemove = completed.filter(
-      (f) => f.fileUrl && fileUrls.has(f.fileUrl)
-    )
-    if (toRemove.length === 0) return
-
-    const timer = setTimeout(() => {
-      const removeUrls = new Set(toRemove.map((f) => f.fileUrl))
-      uploadFiles.forEach((f) => {
-        if (
-          f.status === 'completed' &&
-          f.fileUrl &&
-          removeUrls.has(f.fileUrl)
-        ) {
-          removeFile(f.id)
-        }
-      })
-    }, 500)
-
-    return () => clearTimeout(timer)
+    for (const f of uploadFiles) {
+      if (
+        f.status === 'completed' &&
+        f.fileUrl &&
+        fileUrls.has(f.fileUrl)
+      ) {
+        removeFile(f.id)
+      }
+    }
   }, [uploadFiles, files, removeFile])
 
   if (groups.length === 0 || !selectedGroupId) {
@@ -176,10 +143,10 @@ export function VaultUpload({
           <>
             <VaultFileGallery
               files={files}
-              uploadFiles={transformToGalleryItems(uploadFiles)}
-              onDeleteFile={onDeleteFile}
+              uploadFiles={uploadFiles}
+              onDeleteFileAction={onDeleteFileAction}
               onRemoveUpload={removeFile}
-              onRetryUpload={(item) => retryUpload(item.id)}
+              onRetryUpload={retryUpload}
               isLoading={isLoading}
             />
             {errors.length > 0 && (

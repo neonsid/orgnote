@@ -7,6 +7,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useFileUpload, type FileWithPreview } from "@/hooks/use-file-upload";
 import { toast } from "sonner";
+import { uploadFileToPresignedUrl } from "@/lib/upload-to-presigned-url";
 
 export interface UploadFileItem {
   id: string;
@@ -58,36 +59,6 @@ function createUploadFile(file: FileWithPreview): UploadFileItem {
   };
 }
 
-async function uploadToR2(
-  file: File,
-  uploadUrl: string,
-  onProgress: (progress: number) => void,
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", uploadUrl);
-    xhr.setRequestHeader("Content-Type", file.type);
-
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const progress = Math.round((event.loaded / event.total) * 100);
-        onProgress(progress);
-      }
-    };
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve();
-      } else {
-        reject(new Error(`Upload failed with status ${xhr.status}`));
-      }
-    };
-
-    xhr.onerror = () => reject(new Error("Upload failed"));
-    xhr.send(file);
-  });
-}
-
 export function useFileUploader({
   selectedGroupId,
   maxFiles = 3,
@@ -116,7 +87,7 @@ export function useFileUploader({
           fileType: file.type,
         });
 
-        await uploadToR2(file, uploadUrl, (progress) => {
+        await uploadFileToPresignedUrl(file, uploadUrl, (progress) => {
           setUploadFiles((prev) =>
             prev.map((f) => (f.id === fileItem.id ? { ...f, progress } : f)),
           );
@@ -263,8 +234,8 @@ export function useFileUploader({
 
   const retryUpload = useCallback(
     (fileId: string) => {
-      setUploadFiles((prev) =>
-        prev.map((f) =>
+      setUploadFiles((prev) => {
+        const next = prev.map((f) =>
           f.id === fileId
             ? {
                 ...f,
@@ -273,14 +244,17 @@ export function useFileUploader({
                 error: undefined,
               }
             : f,
-        ),
-      );
-      const file = uploadFiles.find((f) => f.id === fileId);
-      if (file) {
-        processFile({ ...file, progress: 0, status: "uploading" });
-      }
+        );
+        const updated = next.find((f) => f.id === fileId);
+        if (updated) {
+          queueMicrotask(() => {
+            processFile({ ...updated, progress: 0, status: "uploading" });
+          });
+        }
+        return next;
+      });
     },
-    [uploadFiles, processFile],
+    [processFile],
   );
 
   const clearAll = useCallback(() => {
