@@ -238,8 +238,7 @@ Make sure to set the `CONVEX_DEPLOY_KEY` environment variable in Vercel before d
 [MIT License](LICENSE)
 
 ## Support
-> [!WARNING]
-> 
+
 For issues and feature requests, please use the [GitHub issue tracker](https://github.com/yourusername/orgnote/issues).
 
 
@@ -249,9 +248,3 @@ For issues and feature requests, please use the [GitHub issue tracker](https://g
 - [] Complete all todos
 - [] Clean the codebase and make the dialog which are common in components/dialog
 - [] Clean the file upload component as well
-- [] Clean the code
-- [] Solve in api route the constant variable
-- [] Setup a command whenever pushing formats the code using oxformatterj
-- [] Remove thumbnail url from conve and frontend
-- [] If possible use useReu=ducer in use-bookmarks-shortcuts in dashboard
-
