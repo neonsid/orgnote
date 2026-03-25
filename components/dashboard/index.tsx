@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useMemo } from 'react'
 import { useMountEffect } from '@/hooks/use-mount-effect'
 import { Loader2 } from 'lucide-react'
 import { useMutation } from 'convex/react'
@@ -16,7 +16,12 @@ import { type Id } from '@/convex/_generated/dataModel'
 import { extractDomain } from '@/lib/domain-utils'
 import { useDialogStore } from '@/stores/dialog-store'
 import { useDashboardData } from '@/hooks/use-dashboard-data'
+import { UnsafeBookmarkToastBridge } from '@/hooks/use-unsafe-bookmark-toast'
 import { toast } from '@/lib/toast'
+import {
+  toExportedBookmark,
+  downloadBookmarksFile,
+} from '@/lib/bookmark-export'
 
 const EditBookmarkDialog = dynamic(
   () =>
@@ -37,8 +42,24 @@ export default function DashboardPage() {
   const { groups, bookmarks, effectiveGroupId, selectGroup, isLoading } =
     useDashboardData(!!user)
 
+  const bookmarkSafetyWatch = useMemo(
+    () =>
+      bookmarks.map((b) => ({
+        id: b.id,
+        title: b.title,
+        publicListingBlockedForUrlSafety: b.publicListingBlockedForUrlSafety,
+      })),
+    [bookmarks],
+  )
+
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [filter, setFilter] = useState<FilterType>('all')
+  const [multiSelectMode, setMultiSelectMode] = useState(false)
+  const [selectedBookmarkIds, setSelectedBookmarkIds] = useState<
+    Set<Id<'bookmarks'>>
+  >(new Set())
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
+  const [bulkDeleteIds, setBulkDeleteIds] = useState<Id<'bookmarks'>[]>([])
 
   useMountEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -62,7 +83,13 @@ export default function DashboardPage() {
 
   const createBookmark = useMutation(api.bookmarks.mutations.createBookMark)
   const deleteBookmark = useMutation(api.bookmarks.mutations.deleteBookMark)
+  const deleteBookmarksBulk = useMutation(
+    api.bookmarks.mutations.deleteBookmarksBulk
+  )
   const moveBookmark = useMutation(api.bookmarks.mutations.moveBookMark)
+  const moveBookmarksBulk = useMutation(
+    api.bookmarks.mutations.moveBookmarksBulk
+  )
   const toggleReadStatus = useMutation(api.bookmarks.mutations.toggleReadStatus)
   const createGroup = useMutation(api.groups.mutations.create)
 
@@ -157,6 +184,135 @@ export default function DashboardPage() {
     [toggleReadStatus]
   )
 
+  const exitMultiSelect = useCallback(() => {
+    setMultiSelectMode(false)
+    setSelectedBookmarkIds(new Set())
+  }, [])
+
+  const enterMultiSelect = useCallback((id: Id<'bookmarks'>) => {
+    setMultiSelectMode(true)
+    setSelectedBookmarkIds(new Set([id]))
+  }, [])
+
+  const toggleMultiSelect = useCallback((id: Id<'bookmarks'>) => {
+    setSelectedBookmarkIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  const allVisibleBookmarksSelected = useMemo(
+    () =>
+      filteredBookmarks.length > 0 &&
+      filteredBookmarks.every((b) => selectedBookmarkIds.has(b.id)),
+    [filteredBookmarks, selectedBookmarkIds],
+  )
+
+  const selectAllVisibleBookmarks = useCallback(() => {
+    setSelectedBookmarkIds((prev) => {
+      const visibleIds = filteredBookmarks.map((b) => b.id)
+      if (visibleIds.length === 0) return prev
+
+      const everyVisibleInSelection = visibleIds.every((id) => prev.has(id))
+      if (everyVisibleInSelection) {
+        return new Set()
+      }
+      return new Set(visibleIds)
+    })
+  }, [filteredBookmarks])
+
+  const handleMoveSelectedBookmarks = useCallback(
+    async (newGroupId: Id<'groups'>) => {
+      const ids = [...selectedBookmarkIds]
+      if (ids.length === 0) return
+      const n = ids.length
+      try {
+        await moveBookmarksBulk({ bookmarkIds: ids, groupId: newGroupId })
+        toast.success(
+          `Moved ${n} bookmark${n === 1 ? '' : 's'}`,
+        )
+        exitMultiSelect()
+      } catch {
+        toast.error('Failed to move bookmarks')
+      }
+    },
+    [selectedBookmarkIds, moveBookmarksBulk, exitMultiSelect]
+  )
+
+  const handleCopySelectedUrls = useCallback(() => {
+    if (selectedBookmarkIds.size === 0) {
+      toast.error('Select at least one bookmark')
+      return
+    }
+    const urls = filteredBookmarks
+      .filter((b) => selectedBookmarkIds.has(b.id))
+      .map((b) => b.url)
+    void navigator.clipboard.writeText(urls.join('\n'))
+    toast.success(
+      urls.length === 1 ? 'URL copied to clipboard' : 'URLs copied to clipboard'
+    )
+  }, [filteredBookmarks, selectedBookmarkIds])
+
+  const handleExportSelectedBookmarks = useCallback(
+    (format: 'json' | 'csv') => {
+      const selected = filteredBookmarks.filter((b) =>
+        selectedBookmarkIds.has(b.id)
+      )
+      if (selected.length === 0) {
+        toast.error('Select at least one bookmark')
+        return
+      }
+      const exported = selected.map((b) => {
+        const g = groups.find((g) => g._id === b.groupId)
+        return toExportedBookmark({
+          title: b.title,
+          url: b.url,
+          groupName: g?.title ?? 'Unknown',
+          createdAtIso: new Date(`${b.createdAt}T00:00:00.000Z`).toISOString(),
+        })
+      })
+      downloadBookmarksFile({
+        format,
+        bookmarks: exported,
+        filenamePrefix: 'OrgNote',
+      })
+      toast.success(
+        `Exported ${exported.length} bookmark${exported.length === 1 ? '' : 's'}`
+      )
+    },
+    [filteredBookmarks, selectedBookmarkIds, groups]
+  )
+
+  const handleDeleteSelectedBookmarks = useCallback(() => {
+    if (selectedBookmarkIds.size === 0) {
+      toast.error('Select at least one bookmark')
+      return
+    }
+    setBulkDeleteIds([...selectedBookmarkIds])
+    setBulkDeleteOpen(true)
+  }, [selectedBookmarkIds])
+
+  const handleBulkDeleteOpenChange = useCallback((open: boolean) => {
+    setBulkDeleteOpen(open)
+    if (!open) setBulkDeleteIds([])
+  }, [])
+
+  const runBulkDelete = useCallback(async () => {
+    if (bulkDeleteIds.length === 0) return
+    const n = bulkDeleteIds.length
+    try {
+      await deleteBookmarksBulk({ bookmarkIds: bulkDeleteIds })
+      toast.success(
+        `Deleted ${n} bookmark${n === 1 ? '' : 's'}`,
+      )
+      exitMultiSelect()
+    } catch {
+      toast.error('Failed to delete bookmarks')
+    }
+  }, [bulkDeleteIds, deleteBookmarksBulk, exitMultiSelect])
+
   if (!isUserLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -171,6 +327,10 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
+      <UnsafeBookmarkToastBridge
+        key={effectiveGroupId || '__none__'}
+        bookmarks={bookmarkSafetyWatch}
+      />
       <DashboardHeader
         variant="dashboard"
         showPublicButton={true}
@@ -181,7 +341,9 @@ export default function DashboardPage() {
         loading={isLoading}
       />
 
-      <main className="flex-1 w-full max-w-4xl mx-auto px-3 sm:px-6 py-4 sm:py-6 mt-2 sm:mt-10">
+      <main
+        className={`flex-1 w-full max-w-4xl mx-auto px-3 sm:px-6 py-4 sm:py-6 mt-2 sm:mt-10 ${multiSelectMode ? 'pb-28' : ''}`}
+      >
         <div className="flex items-center gap-2 mb-8">
           <div className="flex-1">
             <BookmarkSearch
@@ -215,6 +377,18 @@ export default function DashboardPage() {
           loading={isLoading}
           groups={groups}
           bookmarks={filteredBookmarks}
+          effectiveGroupId={effectiveGroupId as Id<'groups'>}
+          multiSelectMode={multiSelectMode}
+          selectedBookmarkIds={selectedBookmarkIds}
+          allVisibleBookmarksSelected={allVisibleBookmarksSelected}
+          onToggleMultiSelect={toggleMultiSelect}
+          onEnterMultiSelect={enterMultiSelect}
+          onExitMultiSelect={exitMultiSelect}
+          onSelectAllVisibleBookmarks={selectAllVisibleBookmarks}
+          onMoveSelectedBookmarks={handleMoveSelectedBookmarks}
+          onCopySelectedUrls={handleCopySelectedUrls}
+          onExportSelectedBookmarks={handleExportSelectedBookmarks}
+          onDeleteSelectedBookmarks={handleDeleteSelectedBookmarks}
           onCopy={handleCopy}
           onEdit={handleEdit}
           onDelete={handleDelete}
@@ -243,6 +417,16 @@ export default function DashboardPage() {
               deleteBookmarkOrItem.bookmarkOrFileId as Id<'bookmarks'>,
           })
         }}
+      />
+
+      <DeleteBookmarkDialog
+        bookmarkOrFileId={null}
+        title={null}
+        variant="Bookmark"
+        open={bulkDeleteOpen}
+        onOpenChange={handleBulkDeleteOpenChange}
+        bulkBookmarkCount={bulkDeleteIds.length}
+        onDelete={runBulkDelete}
       />
     </div>
   )

@@ -155,6 +155,7 @@ Variables are split by **where** they are read: Next.js (`.env.local` / Vercel) 
 | -------- | -------- | ----------- |
 | `CLERK_FRONTEND_API_URL` | **Yes** | Clerk Frontend API URL for JWT validation (`convex/auth.config.ts`). |
 | `OPENROUTER_API_KEY` | **Yes** (AI metadata) | OpenRouter API key. |
+| `GOOGLE_SAFE_BROWSING_API_KEY` | **Optional** | [Google Safe Browsing API](https://developers.google.com/safe-browsing) key. When set, new/updated bookmark URLs are checked; matches are hidden from public profiles. If unset, checks are skipped. **E2E test:** bookmark `https://testsafebrowsing.appspot.com/s/malware.html` — the public API often returns no match for `.../phishing.html` even though Chrome warns on it. |
 | `SCIRA_API_KEY` | **Yes** (X/Twitter) | Scira key for tweet/thread extraction. |
 | `R2_ACCOUNT_ID` | **Yes** (vault) | Cloudflare account ID for R2. |
 | `R2_BUCKET_NAME` | **Yes** (vault) | Bucket name. |
@@ -245,4 +246,8 @@ pnpm exec convex deploy
 
 - **[minimal.so](https://minimal.so)** — Inspiration for bookmark UX and structure.
 - **[Kilo Code](https://kilo.ai)** — Kimi K2.5 access during development.
+
+- [] Make this next
+- [] Move to convex/helper for authedQuery
+- [] Fix calling useAction on client
 
