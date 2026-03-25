@@ -19,15 +19,12 @@ import { ChevronsUpDown } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { toast } from "@/lib/toast";
+import {
+  toExportedBookmark,
+  downloadBookmarksFile,
+  type ExportedBookmark,
+} from "@/lib/bookmark-export";
 
-interface ExportedBookmark {
-  title: string;
-  url: string;
-  type: "link";
-  color: string | null;
-  groupName: string;
-  createdAt: string;
-}
 interface ExportBookmarksDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -95,44 +92,13 @@ export function ExportBookmarksDialog({
     return allBookmarks.filter((b) => selectedGroups.has(b.groupId)).length;
   };
 
-  const formatBookmarkForExport = (
-    bookmark: BookmarkWithGroup,
-  ): ExportedBookmark => ({
-    title: bookmark.title,
-    url: bookmark.url,
-    type: "link",
-    color: null,
-    groupName: bookmark.groupTitle,
-    createdAt: new Date(bookmark._creationTime).toISOString(),
-  });
-
-  const generateCSVExport = (bookmarks: BookmarkWithGroup[]) => {
-    const headers = [
-      "Title",
-      "URL",
-      "Type",
-      "Color",
-      "Group Name",
-      "Created At",
-    ];
-    const rows = bookmarks.map((b) => {
-      const exported = formatBookmarkForExport(b);
-      return [
-        exported.title,
-        exported.url,
-        exported.type,
-        exported.color ?? "",
-        exported.groupName,
-        exported.createdAt,
-      ];
+  const mapToExported = (bookmark: BookmarkWithGroup): ExportedBookmark =>
+    toExportedBookmark({
+      title: bookmark.title,
+      url: bookmark.url,
+      groupName: bookmark.groupTitle,
+      createdAtIso: new Date(bookmark._creationTime).toISOString(),
     });
-    const csv = [headers, ...rows]
-      .map((row) =>
-        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
-      )
-      .join("\n");
-    return csv;
-  };
 
   const handleExport = async () => {
     if (selectedGroups.size === 0) {
@@ -156,33 +122,12 @@ export function ExportBookmarksDialog({
 
     setIsExporting(true);
     try {
-      const date = new Date().toISOString().split("T")[0];
-      let content: string;
-      let filename: string;
-      let mimeType: string;
-
-      if (format === "csv") {
-        content = generateCSVExport(bookmarksToExport);
-        filename = `OrgNote-${date}.csv`;
-        mimeType = "text/csv";
-      } else {
-        const formattedBookmarks = bookmarksToExport.map(
-          formatBookmarkForExport,
-        );
-        content = JSON.stringify(formattedBookmarks, null, 2);
-        filename = `OrgNote-${date}.json`;
-        mimeType = "application/json";
-      }
-
-      const blob = new Blob([content], { type: mimeType });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const exported = bookmarksToExport.map(mapToExported);
+      downloadBookmarksFile({
+        format,
+        bookmarks: exported,
+        filenamePrefix: "OrgNote",
+      });
 
       toast.success(`Exported ${bookmarksToExport.length} bookmarks`);
       handleOpenChange(false);

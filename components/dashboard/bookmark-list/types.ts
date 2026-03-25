@@ -11,6 +11,8 @@ export interface Bookmark {
   groupId: Id<'groups'>
   doneReading: boolean
   description?: string
+  /** When true, link is hidden from public profile (Google Safe Browsing). */
+  publicListingBlockedForUrlSafety?: boolean
 }
 
 // TODO: Shift types otuside

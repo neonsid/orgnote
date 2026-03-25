@@ -1,20 +1,23 @@
+import type { ReactNode } from 'react'
 import { FaviconIcon } from './favicon-icon'
 import { formatDate, KEYBOARD_SHORTCUTS } from './constants'
 import type { Bookmark } from './types'
 
 interface BookmarkRowMainProps {
   bookmark: Bookmark
+  /** When set, replaces the site icon (e.g. multi-select checkbox). */
+  leading?: ReactNode
 }
 
-export function BookmarkRowMain({ bookmark }: BookmarkRowMainProps) {
+export function BookmarkRowMain({ bookmark, leading }: BookmarkRowMainProps) {
   const hasDescription = !!bookmark.description
 
   return (
     <>
-      <FaviconIcon bookmark={bookmark} />
+      {leading ?? <FaviconIcon bookmark={bookmark} />}
 
       <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-baseline gap-2 flex-wrap">
           <span
             className={`font-medium text-sm truncate group-hover:text-primary transition-colors ${
               bookmark.doneReading ? 'text-muted-foreground' : 'text-foreground'
@@ -22,6 +25,14 @@ export function BookmarkRowMain({ bookmark }: BookmarkRowMainProps) {
           >
             {bookmark.title}
           </span>
+          {bookmark.publicListingBlockedForUrlSafety ? (
+            <span
+              className="text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-500 shrink-0"
+              title="This URL matched Google Safe Browsing and is hidden from your public profile."
+            >
+              Hidden on public
+            </span>
+          ) : null}
           <span className="text-xs text-muted-foreground truncate hidden sm:inline">
             {bookmark.domain}
           </span>

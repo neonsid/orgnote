@@ -7,9 +7,10 @@ import {
   verifyGroupOwnership,
   fetchGroupBookmarksByGroupId,
   fetchGroupBookmarks,
+  bookmarkIsVisibleOnPublicListing,
 } from './helpers'
 
-import { MAX_BOOKMARKS_PER_QUERY } from '../lib/constants'
+import { MAX_GROUPS_PER_QUERY } from '../lib/constants'
 
 async function buildPublicBookmarkList(
   ctx: GenericQueryCtx<DataModel>,
@@ -32,6 +33,7 @@ async function buildPublicBookmarkList(
     const groupBookmarks = await fetchGroupBookmarks(ctx, group._id)
 
     for (const bookmark of groupBookmarks) {
+      if (!bookmarkIsVisibleOnPublicListing(bookmark)) continue
       bookmarks.push({
         _id: bookmark._id,
         title: bookmark.title,
@@ -91,7 +93,7 @@ export const getDashboardData = query({
       .query('groups')
       .withIndex('by_userId_and_isPublic', (q) => q.eq('userId', userId))
       .order('desc')
-      .take(MAX_BOOKMARKS_PER_QUERY)
+      .take(MAX_GROUPS_PER_QUERY)
 
     const bookmarkLists = await Promise.all(
       groups.map((group) => fetchGroupBookmarks(ctx, group._id))
@@ -105,6 +107,9 @@ export const getDashboardData = query({
       doneReading: bookmark.doneReading,
       _creationTime: bookmark._creationTime,
       groupId: bookmark.groupId,
+      publicListingBlockedForUrlSafety:
+        bookmark.publicListingBlockedForUrlSafety,
+      urlSafetyCheckedAt: bookmark.urlSafetyCheckedAt,
     }))
 
     return {
@@ -156,7 +161,7 @@ export const getBookmarkCountsByUser = query({
     const groups = await ctx.db
       .query('groups')
       .withIndex('by_userId_and_isPublic', (q) => q.eq('userId', userId))
-      .take(MAX_BOOKMARKS_PER_QUERY)
+      .take(MAX_GROUPS_PER_QUERY)
 
     const counts: Record<string, number> = {}
     for (const group of groups) {
@@ -175,7 +180,7 @@ export const getAllUserBookmarks = query({
     const groups = await ctx.db
       .query('groups')
       .withIndex('by_userId_and_isPublic', (q) => q.eq('userId', userId))
-      .take(MAX_BOOKMARKS_PER_QUERY)
+      .take(MAX_GROUPS_PER_QUERY)
 
     const groupBookmarks = await Promise.all(
       groups.map(async (group) => {
@@ -220,7 +225,7 @@ export const getPublicBookmarksByUsername = query({
       .withIndex('by_userId_and_isPublic', (q) =>
         q.eq('userId', profile.userId).eq('isPublic', true)
       )
-      .take(MAX_BOOKMARKS_PER_QUERY)
+      .take(MAX_GROUPS_PER_QUERY)
 
     return await buildPublicBookmarkList(ctx, groups)
   },

@@ -1,64 +1,17 @@
 'use node'
-import { action, internalAction, type ActionCtx } from './_generated/server'
-import { v, type Infer } from 'convex/values'
-import { ConvexError } from 'convex/values'
-import { internal } from './_generated/api'
-import { classifyUrl, parseGitHubRepo } from './lib/url_classifier'
-import { fetchTweetContentWithScira, getSciraApiKey } from './lib/scira'
-
-// OpenRouter integration
-import { createOpenRouter } from '@openrouter/ai-sdk-provider'
-import { generateText } from 'ai'
-import {
-  MAX_DESCRIPTION_LENGTH,
-  MAX_GITHUB_README_LENGTH,
-} from './lib/constants'
-import { generateBookMarkDescriptionPrompt } from './lib/prompt'
-
-// Type for the return value
-const returnsValidator = v.object({
-  success: v.boolean(),
-  title: v.optional(v.string()),
-  description: v.optional(v.string()),
-  imageUrl: v.optional(v.string()),
-  error: v.optional(v.string()),
-  remainingSciraQuota: v.optional(v.number()),
-})
-
-type ReturnType = Infer<typeof returnsValidator>
 
 /**
- * Fetch GitHub README content
+ * Convex registers this file as the `metadata` API module (`api.metadata.*`).
+ * Shared implementation lives in `./metadata/*.ts` next to `./metadata/internal.ts`.
  */
-async function fetchGitHubReadme(
-  owner: string,
-  repo: string
-): Promise<string | null> {
-  try {
-    // Try HEAD first
-    let url = `https://raw.githubusercontent.com/${owner}/${repo}/HEAD/README.md`
-    let response = await fetch(url)
-
-    if (!response.ok) {
-      // Try lowercase variant
-      url = `https://raw.githubusercontent.com/${owner}/${repo}/HEAD/readme.md`
-      response = await fetch(url)
-    }
-
-    if (!response.ok) {
-      return null
-    }
-
-    const text = await response.text()
-    // Truncate if too long
-    return text.length > MAX_GITHUB_README_LENGTH
-      ? text.slice(0, MAX_GITHUB_README_LENGTH) + '...'
-      : text
-  } catch (error) {
-    console.error('Failed to fetch README:', error)
-    return null
-  }
-}
+import { action, internalAction } from './_generated/server'
+import { v } from 'convex/values'
+import { ConvexError } from 'convex/values'
+import { internal } from './_generated/api'
+import { isFigmaUrl } from './lib/url_classifier'
+import { bookmarkDescriptionReturnsValidator } from './metadata/validators'
+import { fetchGitHubRepoTitle } from './metadata/github_fetch'
+import { runBookmarkDescriptionFlow } from './metadata/bookmark_description'
 
 export const fetchGitHubRepoInfoInternal = internalAction({
   args: {
@@ -103,125 +56,13 @@ export const updateBookmarkGitHubMetadata = internalAction({
   },
 })
 
-/**
- * Fetch the actual repository title and description from the GitHub API.
- * Falls back to owner/repo if the API call fails.
- */
-async function fetchGitHubRepoTitle(
-  owner: string,
-  repo: string
-): Promise<{ name: string; description: string | null }> {
-  try {
-    const response = await fetch(
-      `https://api.github.com/repos/${owner}/${repo}`,
-      {
-        headers: {
-          Accept: 'application/vnd.github.v3+json',
-          'User-Agent': 'Orgnote-Bookmark-Manager',
-        },
-      }
-    )
-
-    if (!response.ok) {
-      return { name: `${owner}/${repo}`, description: null }
-    }
-
-    const data = await response.json()
-    return {
-      name: data.name || `${owner}/${repo}`,
-      description: data.description || null,
-    }
-  } catch (error) {
-    console.error('Failed to fetch GitHub repo info:', error)
-    return { name: `${owner}/${repo}`, description: null }
-  }
-}
-
-/**
- * Fetch Open Graph metadata from a generic URL
- */
-async function fetchOpenGraphMetadata(
-  url: string
-): Promise<{ title?: string; description?: string; content: string } | null> {
-  try {
-    // Dynamic import to avoid issues with ESM/CJS
-    const { default: ogs } = await import('open-graph-scraper')
-
-    const { result } = await ogs({ url })
-
-    const title = result.ogTitle || result.twitterTitle || undefined
-    const description =
-      result.ogDescription || result.twitterDescription || undefined
-
-    // Build content string from available metadata
-    const contentParts: string[] = []
-    if (title) contentParts.push(`Title: ${title}`)
-    if (description) contentParts.push(`Description: ${description}`)
-    if (result.ogSiteName) contentParts.push(`Site: ${result.ogSiteName}`)
-
-    return {
-      title,
-      description,
-      content: contentParts.join('\n') || url,
-    }
-  } catch (error) {
-    console.error('Failed to fetch Open Graph metadata:', error)
-    return null
-  }
-}
-
-/**
- * Generate description using OpenRouter AI
- */
-async function generateDescriptionWithAI(
-  url: string,
-  title: string | undefined,
-  content: string
-): Promise<string> {
-  const apiKey = process.env.OPENROUTER_API_KEY
-  if (!apiKey) {
-    throw new Error('OPENROUTER_API_KEY not configured')
-  }
-
-  try {
-    const openrouter = createOpenRouter({
-      apiKey,
-    })
-
-    const prompt = generateBookMarkDescriptionPrompt(url, title!, content)
-    const { text } = await generateText({
-      model: openrouter('openai/gpt-oss-120b', {
-        reasoning: { enabled: true, effort: 'low' },
-      }),
-      prompt,
-      temperature: 0.7,
-    })
-
-    let description = text.trim()
-
-    description = description.replace(/^["']|["']$/g, '')
-
-    if (description.length > MAX_DESCRIPTION_LENGTH) {
-      description = description.slice(0, MAX_DESCRIPTION_LENGTH)
-    }
-    return description
-  } catch (error) {
-    console.error(
-      '[OpenRouter] Error message:',
-      error instanceof Error ? error.message : String(error)
-    )
-    throw error
-  }
-}
-
 export const generateBookmarkDescription = action({
   args: {
     url: v.string(),
     userId: v.optional(v.string()),
   },
-  returns: returnsValidator,
-  handler: async (ctx, args): Promise<ReturnType> => {
-    // Use provided userId or authenticate
+  returns: bookmarkDescriptionReturnsValidator,
+  handler: async (ctx, args) => {
     let userId = args.userId
     if (!userId) {
       const identity = await ctx.auth.getUserIdentity()
@@ -234,143 +75,18 @@ export const generateBookmarkDescription = action({
       userId = identity.subject
     }
 
-    try {
-      const urlType = classifyUrl(args.url)
+    // Non-HTML/file URLs (PDF, media, archives): create/import skips scheduling auto metadata
+    // (see scheduleBookmarkMetadata). If this action still runs, the generic branch uses
+    // open-graph-scraper, which rejects non-HTML URLs → null, generic 'could not fetch' error, no LLM.
 
-      // Fetch raw metadata based on URL type
-      let title: string | undefined
-      let content: string
-      let imageUrl: string | undefined
-      let remainingQuota: number | undefined
-
-      if (urlType === 'twitter') {
-        // Check Scira quota using internal query
-        const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD — safe in action
-        const quotaResult = await ctx.runQuery(
-          internal.metadata.internal.checkSciraQuotaInternal,
-          {
-            userId: userId,
-            today,
-          }
-        )
-
-        remainingQuota = quotaResult.remaining
-
-        if (!quotaResult.hasQuota) {
-          return {
-            success: false,
-            error: `Daily X/Twitter limit reached (20/day). Enter description manually or try again tomorrow.`,
-            remainingSciraQuota: 0,
-          }
-        }
-
-        // Fetch tweet content using Scira + OpenRouter
-        const sciraKey = getSciraApiKey()
-        const openRouterKey = process.env.OPENROUTER_API_KEY
-
-        if (!sciraKey) {
-          return {
-            success: false,
-            error: 'Scira API not configured. Enter description manually.',
-          }
-        }
-
-        if (!openRouterKey) {
-          return {
-            success: false,
-            error: 'OpenRouter API not configured. Enter description manually.',
-          }
-        }
-
-        const tweetData = await fetchTweetContentWithScira(
-          args.url,
-          sciraKey,
-          openRouterKey
-        )
-
-        if (!tweetData) {
-          return {
-            success: false,
-            error: 'Could not fetch tweet content. Enter description manually.',
-            remainingSciraQuota: remainingQuota,
-          }
-        }
-
-        // Increment quota after successful fetch
-        await ctx.runMutation(
-          internal.metadata.internal.incrementSciraQuotaInternal,
-          {
-            userId: userId,
-            usageId: quotaResult.usageId,
-          }
-        )
-
-        title = tweetData.author ? `Tweet by ${tweetData.author}` : undefined
-        content = tweetData.content
-        imageUrl = tweetData.urls[0] // Use first URL as image if available
-      } else if (urlType === 'github') {
-        const repoInfo = parseGitHubRepo(args.url)
-        if (!repoInfo) {
-          return {
-            success: false,
-            error: 'Invalid GitHub URL. Enter description manually.',
-          }
-        }
-
-        // Fetch the actual repo title from GitHub API
-        const repoMeta = await fetchGitHubRepoTitle(
-          repoInfo.owner,
-          repoInfo.repo
-        )
-        title = repoMeta.name
-
-        const readme = await fetchGitHubReadme(repoInfo.owner, repoInfo.repo)
-
-        if (!readme) {
-          content = repoMeta.description
-            ? `GitHub repository: ${title} — ${repoMeta.description}`
-            : `GitHub repository: ${repoInfo.owner}/${repoInfo.repo}`
-        } else {
-          content = readme
-        }
-      } else {
-        // Generic URL - use Open Graph
-        const ogData = await fetchOpenGraphMetadata(args.url)
-
-        if (!ogData) {
-          return {
-            success: false,
-            error: 'Could not fetch page content. Enter description manually.',
-          }
-        }
-
-        title = ogData.title
-        content = ogData.content
-      }
-
-      // Generate description with AI
-      const description = await generateDescriptionWithAI(
-        args.url,
-        title,
-        content
-      )
-
-      return {
-        success: true,
-        title,
-        description,
-        imageUrl,
-        remainingSciraQuota: remainingQuota,
-      }
-    } catch (error) {
-      console.error('Error generating description:', error)
+    if (isFigmaUrl(args.url)) {
       return {
         success: false,
         error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to generate description. Try again or enter manually.',
+          'Figma blocks automated fetching, so no AI summary is generated. You can add a description manually.',
       }
     }
+
+    return runBookmarkDescriptionFlow(ctx, { url: args.url, userId })
   },
 })

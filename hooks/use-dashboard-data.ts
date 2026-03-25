@@ -16,6 +16,7 @@ interface Bookmark {
   groupId: Id<"groups">;
   doneReading: boolean;
   description?: string;
+  publicListingBlockedForUrlSafety?: boolean;
 }
 
 export function useDashboardData(isAuthenticated: boolean = true) {
@@ -55,6 +56,7 @@ export function useDashboardData(isAuthenticated: boolean = true) {
         groupId: b.groupId,
         doneReading: b.doneReading,
         description: b.description,
+        publicListingBlockedForUrlSafety: b.publicListingBlockedForUrlSafety,
       }));
   }, [dashboardData, effectiveGroupId]);
 

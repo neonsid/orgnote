@@ -37,6 +37,9 @@ export default defineSchema({
     doneReading: v.boolean(),
     updatedAt: v.optional(v.number()),
     groupId: v.id('groups'),
+    /** When true, bookmark is omitted from public profile / public group views (Google Safe Browsing match). */
+    publicListingBlockedForUrlSafety: v.optional(v.boolean()),
+    urlSafetyCheckedAt: v.optional(v.number()),
   })
     .index('by_groupId', ['groupId']),
   sciraUsage: defineTable({

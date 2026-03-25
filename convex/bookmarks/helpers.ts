@@ -17,6 +17,18 @@ export function isValidUrl(url: string): boolean {
   }
 }
 
+/** Google favicon service URL for bookmark rows (matches dashboard quick-add). */
+export function faviconUrlForHttpUrl(url: string): string {
+  try {
+    const parsed = new URL(url.startsWith('http') ? url : `https://${url}`)
+    const host = parsed.hostname.replace(/^www\./i, '')
+    if (!host) return ''
+    return `https://www.google.com/s2/favicons?domain=${host}&sz=64`
+  } catch {
+    return ''
+  }
+}
+
 export async function requireUserId(userId: string): Promise<void> {
   if (!userId) {
     throw new ConvexError({
@@ -64,6 +76,13 @@ export async function verifyGroupOwnership(
       message: "You don't own this group",
     })
   }
+}
+
+/** Omit from public profile when Google Safe Browsing flagged the URL. */
+export function bookmarkIsVisibleOnPublicListing(bookmark: {
+  publicListingBlockedForUrlSafety?: boolean
+}): boolean {
+  return bookmark.publicListingBlockedForUrlSafety !== true
 }
 
 /** Fetch bookmarks for a group (unordered, by groupId index) */

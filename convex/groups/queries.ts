@@ -1,7 +1,7 @@
 import { v } from 'convex/values'
 import { query } from '../_generated/server'
 import { requireAuth } from '../lib/auth'
-import { MAX_BOOKMARKS_PER_QUERY } from '../lib/constants'
+import { MAX_GROUPS_PER_QUERY } from '../lib/constants'
 
 export const list = query({
   args: {},
@@ -10,7 +10,7 @@ export const list = query({
     return await ctx.db
       .query('groups')
       .withIndex('by_userId_and_isPublic', (q) => q.eq('userId', userId))
-      .take(MAX_BOOKMARKS_PER_QUERY)
+      .take(MAX_GROUPS_PER_QUERY)
   },
 })
 
@@ -35,7 +35,7 @@ export const getPublicGroupsByUsername = query({
       .withIndex('by_userId_and_isPublic', (q) =>
         q.eq('userId', profile.userId).eq('isPublic', true)
       )
-      .take(MAX_BOOKMARKS_PER_QUERY)
+      .take(MAX_GROUPS_PER_QUERY)
 
     return groups
   },
