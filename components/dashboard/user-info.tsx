@@ -36,14 +36,6 @@ const UserSettingsDialog = dynamic(
   { ssr: false },
 );
 
-const ImportBookmarksDialog = dynamic(
-  () =>
-    import("@/components/dashboard/dialog").then(
-      (m) => m.ImportBookmarksDialog,
-    ),
-  { ssr: false },
-);
-
 const ExportBookmarksDialog = dynamic(
   () =>
     import("@/components/dashboard/dialog").then(
@@ -66,7 +58,6 @@ export const UserInfo = memo(function UserInfo({
     open: boolean;
     shortcutsOpen: boolean;
     settingsOpen: boolean;
-    importBookmarksOpen: boolean;
     exportBookmarksOpen: boolean;
     isRedirectingToVault: boolean;
     isRedirectingToProfile: boolean;
@@ -80,9 +71,7 @@ export const UserInfo = memo(function UserInfo({
     | { type: "setShortcutsOpen"; open: boolean }
     | { type: "openSettings" }
     | { type: "setSettingsOpen"; open: boolean }
-    | { type: "openImportBookmarks" }
     | { type: "openExportBookmarks" }
-    | { type: "setImportBookmarksOpen"; open: boolean }
     | { type: "setExportBookmarksOpen"; open: boolean }
     | { type: "setRedirectingToVault"; redirecting: boolean }
     | { type: "setRedirectingToProfile"; redirecting: boolean }
@@ -111,25 +100,16 @@ export const UserInfo = memo(function UserInfo({
           ...state,
           open: false,
           settingsOpen: true,
-          importBookmarksOpen: false,
           exportBookmarksOpen: false,
         };
       case "setSettingsOpen":
         return { ...state, settingsOpen: action.open };
-      case "openImportBookmarks":
-        return {
-          ...state,
-          settingsOpen: false,
-          importBookmarksOpen: true,
-        };
       case "openExportBookmarks":
         return {
           ...state,
           settingsOpen: false,
           exportBookmarksOpen: true,
         };
-      case "setImportBookmarksOpen":
-        return { ...state, importBookmarksOpen: action.open };
       case "setExportBookmarksOpen":
         return { ...state, exportBookmarksOpen: action.open };
       case "setRedirectingToVault":
@@ -147,7 +127,6 @@ export const UserInfo = memo(function UserInfo({
     open: false,
     shortcutsOpen: false,
     settingsOpen: false,
-    importBookmarksOpen: false,
     exportBookmarksOpen: false,
     isRedirectingToVault: false,
     isRedirectingToProfile: false,
@@ -352,14 +331,11 @@ export const UserInfo = memo(function UserInfo({
       <UserSettingsDialog
         open={state.settingsOpen}
         onOpenChange={(open) => dispatch({ type: "setSettingsOpen", open })}
-        onImportClick={() => dispatch({ type: "openImportBookmarks" })}
+        onImportClick={() => {
+          dispatch({ type: "setSettingsOpen", open: false });
+          router.push("/dashboard/import");
+        }}
         onExportClick={() => dispatch({ type: "openExportBookmarks" })}
-      />
-      <ImportBookmarksDialog
-        open={state.importBookmarksOpen}
-        onOpenChange={(open) =>
-          dispatch({ type: "setImportBookmarksOpen", open })
-        }
       />
       <ExportBookmarksDialog
         open={state.exportBookmarksOpen}
