@@ -8,6 +8,7 @@ Extended, task-specific guidance lives under **`.agents/skills/`**. Read the rel
 | ---- | ---- | ------------ |
 | Convex | `.agents/skills/convex/convex-best-practices/SKILL.md` | Backend functions, schema, queries, mutations, actions, Convex patterns |
 | Frontend / React effects | `.agents/skills/frontend/use-effect/SKILL.md` | `useEffect`, side effects, subscriptions, replacing effects with declarative patterns, `useMountEffect` |
+| Frontend / React props | `.agents/skills/frontend/large-react-prop-lists/SKILL.md` | Many props, wide component APIs, grouping props, splitting components, container vs presentational |
 
 Add new skills under **`.agents/skills/<domain>/<skill-name>/SKILL.md`** (e.g. `convex/`, `frontend/`) so they stay grouped and discoverable.
 
