@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, type RefObject } from 'react'
 import { useMountEffect } from '@/hooks/use-mount-effect'
 import type { Bookmark } from './types'
 
@@ -8,6 +8,8 @@ interface UseBookmarkShortcutsOptions {
   onShowDescription?: (bookmark: Bookmark) => void
   onEdit?: (bookmark: Bookmark) => void
   onCopy?: (bookmark: Bookmark) => void
+  /** When true, keyboard shortcuts for hovered bookmark are disabled (multi-select mode). */
+  multiSelectModeRef?: RefObject<boolean>
 }
 
 export function useBookmarkShortcuts({
@@ -15,6 +17,7 @@ export function useBookmarkShortcuts({
   onShowDescription,
   onEdit,
   onCopy,
+  multiSelectModeRef,
 }: UseBookmarkShortcutsOptions) {
   const hoveredBookmarkRef = useRef<Bookmark | null>(null)
 
@@ -38,6 +41,7 @@ export function useBookmarkShortcuts({
 
   useMountEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (multiSelectModeRef?.current) return
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault()
         if (hoveredBookmarkRef.current) {

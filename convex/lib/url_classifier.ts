@@ -67,6 +67,74 @@ export function isTwitterUrl(url: string): boolean {
   }
 }
 
+/**
+ * Path “extension” from URL string, matching open-graph-scraper’s `findImageTypeFromUrl`
+ * (last `.` segment, query stripped).
+ */
+function urlPathExtensionForOgs(url: string): string {
+  const last = url.split('.').pop() ?? ''
+  return last.split('?')[0]?.toLowerCase() ?? ''
+}
+
+/**
+ * Non-HTML URLs that open-graph-scraper rejects before fetch (`isThisANonHTMLUrl`).
+ * Keep in sync with `open-graph-scraper` lib/utils `invalidImageTypes` for consistent behavior.
+ */
+const NON_HTML_URL_EXTENSIONS = new Set([
+  'doc',
+  'docx',
+  'xls',
+  'xlsx',
+  'ppt',
+  'pptx',
+  '3gp',
+  'avi',
+  'mov',
+  'mp4',
+  'm4v',
+  'm4a',
+  'mp3',
+  'mkv',
+  'ogv',
+  'ogm',
+  'ogg',
+  'oga',
+  'webm',
+  'wav',
+  'bmp',
+  'gif',
+  'jpg',
+  'jpeg',
+  'png',
+  'webp',
+  'zip',
+  'rar',
+  'tar',
+  'gz',
+  'tgz',
+  'bz2',
+  'tbz2',
+  'txt',
+  'pdf',
+])
+
+/** True when the URL likely points at a document/media/archive, not an HTML page (no Open Graph scrape). */
+export function isLikelyNonHtmlUrl(url: string): boolean {
+  const ext = urlPathExtensionForOgs(url)
+  if (ext && NON_HTML_URL_EXTENSIONS.has(ext)) return true
+  return false
+}
+
+/** Figma blocks server-side/Open Graph fetches (403); skip auto metadata. */
+export function isFigmaUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase()
+    return host === 'figma.com' || host.endsWith('.figma.com')
+  } catch {
+    return false
+  }
+}
+
 export function extractTweetId(url: string): string | null {
   try {
     const parsed = new URL(url)
