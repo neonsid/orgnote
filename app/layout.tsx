@@ -11,6 +11,7 @@ import {
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { QueryProvider } from "@/providers/query-provider";
+import { MotionProvider } from "@/components/providers/motion-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,6 +48,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <MotionProvider>
           <QueryProvider>
             <ThemeAwareClerkProvider>
               <ConvexClientProvider>
@@ -56,6 +58,7 @@ export default function RootLayout({
               </ConvexClientProvider>
             </ThemeAwareClerkProvider>
           </QueryProvider>
+          </MotionProvider>
         </ThemeProvider>
         <Analytics />
         <SpeedInsights />

@@ -4,7 +4,7 @@ import {
   Trash2 as Trash2Icon,
   Loader2,
 } from 'lucide-react'
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 import { cn } from '@/lib/utils'
 import { VaultFileGallery } from './vault-file-gallery'
 import { VaultFile } from '../dashboard/bookmark-list/types'
@@ -122,7 +122,7 @@ export function VaultUpload({
           />
         </>
       ) : (
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
@@ -137,7 +137,7 @@ export function VaultUpload({
             Click <span className="font-medium text-foreground/80">Add files</span>{' '}
             above to upload
           </p>
-        </motion.div>
+        </m.div>
       )}
     </div>
   )

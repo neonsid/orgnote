@@ -97,8 +97,8 @@ export function PasswordRequirementsList({
   return (
     <div className="space-y-1 mt-2 p-3 bg-muted rounded-md">
       <p className="text-sm font-medium mb-2">Password requirements:</p>
-      {requirements.map((req, index) => (
-        <PasswordRequirement key={index} met={req.met} text={req.text} />
+      {requirements.map((req) => (
+        <PasswordRequirement key={req.text} met={req.met} text={req.text} />
       ))}
     </div>
   );

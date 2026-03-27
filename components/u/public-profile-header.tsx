@@ -9,7 +9,7 @@ import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useUser } from "@clerk/react";
-import { motion, AnimatePresence } from "motion/react";
+import { m, AnimatePresence } from "motion/react";
 
 export function PublicProfileHeader() {
   const [mobileMenuOpen, setMobileMenuOpenState] = useState(false);
@@ -100,7 +100,7 @@ export function PublicProfileHeader() {
         {mobileMenuOpen && (
           <>
             {/* Backdrop with blur */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -110,7 +110,7 @@ export function PublicProfileHeader() {
             />
 
             {/* Menu panel */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -152,7 +152,7 @@ export function PublicProfileHeader() {
                   </>
                 )}
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>

@@ -2,7 +2,7 @@
 
 import { useReducer, useRef, useCallback, memo } from 'react'
 import { useMountEffect } from '@/hooks/use-mount-effect'
-import { motion, AnimatePresence } from 'motion/react'
+import { m, AnimatePresence } from 'motion/react'
 import { useIsSmallMobile } from '@/hooks/use-mobile'
 import { BookmarkItem } from './bookmark-item'
 import { MultiSelectToolbar } from './multi-select-toolbar'
@@ -213,14 +213,16 @@ export const BookmarkList = memo(function BookmarkList({
 
   if (loading && bookmarks.length === 0) {
     return (
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
         className="w-full space-y-1"
       >
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="flex items-center gap-3 p-2 animate-pulse">
+        {(
+          ["sk-1", "sk-2", "sk-3", "sk-4", "sk-5"] as const
+        ).map((sk) => (
+          <div key={sk} className="flex items-center gap-3 p-2 animate-pulse">
             <div className="size-5 rounded bg-muted" />
             <div className="flex-1 flex items-center gap-2">
               <div className="h-4 w-32 rounded bg-muted" />
@@ -229,13 +231,13 @@ export const BookmarkList = memo(function BookmarkList({
             <div className="h-3 w-16 rounded bg-muted" />
           </div>
         ))}
-      </motion.div>
+      </m.div>
     )
   }
 
   if (!loading && bookmarks.length === 0) {
     return (
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
@@ -245,7 +247,7 @@ export const BookmarkList = memo(function BookmarkList({
         <p className="text-xs mt-1">
           Try a different search or press Enter to add
         </p>
-      </motion.div>
+      </m.div>
     )
   }
 

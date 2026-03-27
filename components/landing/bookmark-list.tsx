@@ -3,7 +3,7 @@
 import { useState, memo, useRef, useMemo } from "react";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import Image from "next/image";
-import { motion, AnimatePresence } from "motion/react";
+import { m, AnimatePresence } from "motion/react";
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -86,6 +86,7 @@ const FaviconIcon = memo(function FaviconIcon({
           src={favicon}
           alt=""
           fill
+          sizes="28px"
           className="object-cover"
           onError={() => setImgError(true)}
           unoptimized
@@ -111,9 +112,9 @@ const FaviconIcon = memo(function FaviconIcon({
 function KeyboardShortcut({ keys }: { keys: string[] }) {
   return (
     <ContextMenuShortcut className="flex items-center gap-1">
-      {keys.map((key, index) => (
+      {keys.map((key, idx) => (
         <kbd
-          key={index}
+          key={`${keys.join('·')}-${idx}-${key}`}
           className="inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-md bg-muted border border-border text-xs font-medium text-muted-foreground select-none"
         >
           {key}
@@ -219,7 +220,7 @@ const DesktopRow = memo(function DesktopRow({
   onMove,
 }: DesktopRowProps) {
   return (
-    <motion.div
+    <m.div
       key={bookmark.id}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -255,9 +256,9 @@ const DesktopRow = memo(function DesktopRow({
               {formatDate(bookmark.createdAt)}
             </span>
             <span className="text-xs text-muted-foreground tabular-nums shrink-0 w-[72px] text-right hidden group-hover:flex items-center justify-end gap-1">
-              {KEYBOARD_SHORTCUTS.open.map((key: string, index: number) => (
+              {KEYBOARD_SHORTCUTS.open.map((key: string, idx: number) => (
                 <kbd
-                  key={index}
+                  key={`${bookmark.id}-open-${idx}-${key}`}
                   className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded bg-muted border border-border text-[10px] font-medium"
                 >
                   {key}
@@ -276,7 +277,7 @@ const DesktopRow = memo(function DesktopRow({
           onMove={onMove}
         />
       </ContextMenu>
-    </motion.div>
+    </m.div>
   );
 });
 
@@ -290,7 +291,7 @@ interface MobileRowProps {
 
 const MobileRow = memo(function MobileRow({ bookmark }: MobileRowProps) {
   return (
-    <motion.div
+    <m.div
       key={bookmark.id}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -322,7 +323,7 @@ const MobileRow = memo(function MobileRow({ bookmark }: MobileRowProps) {
           {formatDate(bookmark.createdAt)}
         </span>
       </a>
-    </motion.div>
+    </m.div>
   );
 });
 
@@ -332,7 +333,7 @@ const MobileRow = memo(function MobileRow({ bookmark }: MobileRowProps) {
 
 const EmptyState = memo(function EmptyState() {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
@@ -342,7 +343,7 @@ const EmptyState = memo(function EmptyState() {
       <p className="text-xs mt-1">
         Try a different search or press Enter to add
       </p>
-    </motion.div>
+    </m.div>
   );
 });
 

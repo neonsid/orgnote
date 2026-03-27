@@ -10,7 +10,7 @@ import { DashboardHeader } from './dashboard-header'
 import { BookmarkList, type Bookmark } from './bookmark-list'
 import { FilterDropdown, type FilterType } from './filter-dropdown'
 import { BookmarkSearch } from './bookmark-search'
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 import dynamic from 'next/dynamic'
 import { type Id } from '@/convex/_generated/dataModel'
 import { extractDomain } from '@/lib/domain-utils'
@@ -364,14 +364,14 @@ export default function DashboardPage() {
           </span>
         </div>
 
-        <motion.div
+        <m.div
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
           transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1], delay: 0.1 }}
           className="origin-left mb-2 px-2"
         >
           <div className="h-px bg-foreground/20 dark:bg-white/80" />
-        </motion.div>
+        </m.div>
 
         <BookmarkList
           loading={isLoading}
