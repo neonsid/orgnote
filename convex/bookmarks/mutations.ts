@@ -399,3 +399,24 @@ export const updateBookmarkDetails = mutation({
     return { success: true }
   },
 })
+
+/** Edit dialog: records intent and schedules AI work (prefer over client `useAction`). */
+export const requestBookmarkDescription = mutation({
+  args: { url: v.string() },
+  returns: v.id('bookmarkDescriptionJobs'),
+  handler: async (ctx, args) => {
+    const userId = await requireAuth(ctx)
+
+    const jobId = await ctx.db.insert('bookmarkDescriptionJobs', {
+      ownerId: userId,
+      url: args.url,
+      status: 'pending',
+    })
+
+    await ctx.scheduler.runAfter(0, internal.metadata.processBookmarkDescriptionJob, {
+      jobId,
+    })
+
+    return jobId
+  },
+})
