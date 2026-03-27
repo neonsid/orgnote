@@ -6,7 +6,6 @@ import {
 } from '../_generated/server'
 import { Id } from '../_generated/dataModel'
 import { internal } from '../_generated/api'
-import { api } from '../_generated/api'
 // ──────────────────────────────────────────────
 // Internal
 // ──────────────────────────────────────────────
@@ -87,7 +86,7 @@ export const generateAndUpdateMetadata = internalAction({
   handler: async (ctx, args) => {
     try {
       const metadataResult = await ctx.runAction(
-        api.metadata.generateBookmarkDescription,
+        internal.metadata.executeBookmarkDescription,
         { url: args.url, userId: args.userId }
       )
 

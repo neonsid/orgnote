@@ -1,7 +1,7 @@
 "use client";
 
 import { useReducer, useCallback, useMemo, memo } from "react";
-import { useMutation, useAction } from "convex/react";
+import { useMutation, useConvex } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { type Id } from "@/convex/_generated/dataModel";
 import {
@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Loader2, Sparkles, RefreshCw, Pencil } from "lucide-react";
 import { toast } from "@/lib/toast";
+import { waitForBookmarkDescriptionJob } from "@/lib/poll-convex-query";
 
 interface Bookmark {
   id: string;
@@ -113,9 +114,10 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
 }: EditBookmarkDialogProps) {
   const [state, dispatch] = useReducer(reducer, bookmark, dialogStateFromBookmark);
 
+  const convex = useConvex();
   const updateBookmark = useMutation(api.bookmarks.mutations.updateBookmarkDetails);
-  const generateDescription = useAction(
-    api.metadata.generateBookmarkDescription,
+  const requestBookmarkDescription = useMutation(
+    api.bookmarks.mutations.requestBookmarkDescription,
   );
 
   // Handle dialog close
@@ -151,9 +153,10 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
     dispatch({ type: "setGenerating", isGenerating: true });
 
     try {
-      const result = await generateDescription({
+      const jobId = await requestBookmarkDescription({
         url: state.form.url,
       });
+      const result = await waitForBookmarkDescriptionJob(convex, jobId);
 
       if (result.success && result.description) {
         dispatch({
@@ -177,7 +180,7 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
     } finally {
       dispatch({ type: "setGenerating", isGenerating: false });
     }
-  }, [state.form.url, state.form.title, generateDescription]);
+  }, [state.form.url, state.form.title, convex, requestBookmarkDescription]);
 
   const handleSave = useCallback(async () => {
     if (!bookmark) return;

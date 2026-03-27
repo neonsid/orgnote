@@ -31,6 +31,7 @@ import type * as profile_mutations from "../profile/mutations.js";
 import type * as profile_queries from "../profile/queries.js";
 import type * as rate_limit from "../rate_limit.js";
 import type * as safeBrowsing from "../safeBrowsing.js";
+import type * as vault_internal from "../vault/internal.js";
 import type * as vault_mutations from "../vault/mutations.js";
 import type * as vault_queries from "../vault/queries.js";
 import type * as vault_node from "../vault_node.js";
@@ -65,6 +66,7 @@ declare const fullApi: ApiFromModules<{
   "profile/queries": typeof profile_queries;
   rate_limit: typeof rate_limit;
   safeBrowsing: typeof safeBrowsing;
+  "vault/internal": typeof vault_internal;
   "vault/mutations": typeof vault_mutations;
   "vault/queries": typeof vault_queries;
   vault_node: typeof vault_node;

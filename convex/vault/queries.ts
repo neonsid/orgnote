@@ -2,6 +2,37 @@ import { v } from 'convex/values'
 import { query } from '../_generated/server'
 import { requireAuth } from '../lib/auth'
 
+export const getVaultUploadRequest = query({
+  args: { requestId: v.id('vaultUploadRequests') },
+  returns: v.union(
+    v.null(),
+    v.object({
+      _id: v.id('vaultUploadRequests'),
+      _creationTime: v.number(),
+      ownerId: v.string(),
+      fileName: v.string(),
+      fileType: v.string(),
+      status: v.union(
+        v.literal('pending'),
+        v.literal('ready'),
+        v.literal('failed')
+      ),
+      uploadUrl: v.optional(v.string()),
+      fileUrl: v.optional(v.string()),
+      fileKey: v.optional(v.string()),
+      error: v.optional(v.string()),
+    })
+  ),
+  handler: async (ctx, args) => {
+    const userId = await requireAuth(ctx)
+    const row = await ctx.db.get(args.requestId)
+    if (!row || row.ownerId !== userId) {
+      return null
+    }
+    return row
+  },
+})
+
 export const getFiles = query({
   args: { groupId: v.optional(v.id('vaultGroups')) },
   handler: async (ctx, args) => {

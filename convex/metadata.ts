@@ -4,9 +4,8 @@
  * Convex registers this file as the `metadata` API module (`api.metadata.*`).
  * Shared implementation lives in `./metadata/*.ts` next to `./metadata/internal.ts`.
  */
-import { action, internalAction } from './_generated/server'
+import { internalAction } from './_generated/server'
 import { v } from 'convex/values'
-import { ConvexError } from 'convex/values'
 import { internal } from './_generated/api'
 import { isFigmaUrl } from './lib/url_classifier'
 import { bookmarkDescriptionReturnsValidator } from './metadata/validators'
@@ -56,29 +55,14 @@ export const updateBookmarkGitHubMetadata = internalAction({
   },
 })
 
-export const generateBookmarkDescription = action({
+/** Used by `bookmarks/internal.generateAndUpdateMetadata` — prefer helpers over chaining public actions. */
+export const executeBookmarkDescription = internalAction({
   args: {
     url: v.string(),
-    userId: v.optional(v.string()),
+    userId: v.string(),
   },
   returns: bookmarkDescriptionReturnsValidator,
   handler: async (ctx, args) => {
-    let userId = args.userId
-    if (!userId) {
-      const identity = await ctx.auth.getUserIdentity()
-      if (!identity) {
-        throw new ConvexError({
-          code: 'UNAUTHORIZED',
-          message: 'Not authenticated',
-        })
-      }
-      userId = identity.subject
-    }
-
-    // Non-HTML/file URLs (PDF, media, archives): create/import skips scheduling auto metadata
-    // (see scheduleBookmarkMetadata). If this action still runs, the generic branch uses
-    // open-graph-scraper, which rejects non-HTML URLs → null, generic 'could not fetch' error, no LLM.
-
     if (isFigmaUrl(args.url)) {
       return {
         success: false,
@@ -87,6 +71,68 @@ export const generateBookmarkDescription = action({
       }
     }
 
-    return runBookmarkDescriptionFlow(ctx, { url: args.url, userId })
+    return runBookmarkDescriptionFlow(ctx, { url: args.url, userId: args.userId })
+  },
+})
+
+/** Scheduled by `bookmarks/mutations.requestBookmarkDescription` (client uses mutation + query, not useAction). */
+export const processBookmarkDescriptionJob = internalAction({
+  args: { jobId: v.id('bookmarkDescriptionJobs') },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const job = await ctx.runQuery(
+      internal.metadata.internal.getBookmarkDescriptionJobRow,
+      { jobId: args.jobId }
+    )
+    if (!job || job.status !== 'pending') {
+      return null
+    }
+
+    try {
+      if (isFigmaUrl(job.url)) {
+        await ctx.runMutation(
+          internal.metadata.internal.finalizeBookmarkDescriptionJob,
+          {
+            jobId: args.jobId,
+            result: {
+              success: false,
+              error:
+                'Figma blocks automated fetching, so no AI summary is generated. You can add a description manually.',
+            },
+          }
+        )
+        return null
+      }
+
+      const result = await runBookmarkDescriptionFlow(ctx, {
+        url: job.url,
+        userId: job.ownerId,
+      })
+
+      await ctx.runMutation(
+        internal.metadata.internal.finalizeBookmarkDescriptionJob,
+        {
+          jobId: args.jobId,
+          result,
+        }
+      )
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to generate description'
+      await ctx.runMutation(
+        internal.metadata.internal.finalizeBookmarkDescriptionJob,
+        {
+          jobId: args.jobId,
+          result: {
+            success: false,
+            error: message,
+          },
+        }
+      )
+    }
+
+    return null
   },
 })
