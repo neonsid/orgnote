@@ -17,6 +17,8 @@ interface DeleteBookmarkDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onDelete: () => Promise<void>
+  /** When set, confirms deletion of this many bookmarks (single-item fields ignored for copy). */
+  bulkBookmarkCount?: number
 }
 
 export function DeleteBookmarkDialog({
@@ -26,8 +28,19 @@ export function DeleteBookmarkDialog({
   variant,
   onOpenChange,
   onDelete,
+  bulkBookmarkCount,
 }: DeleteBookmarkDialogProps) {
+  const isBulkBookmarks =
+    variant === 'Bookmark' &&
+    bulkBookmarkCount !== undefined &&
+    bulkBookmarkCount > 0
+
   async function handleConfirm() {
+    if (isBulkBookmarks) {
+      await onDelete()
+      onOpenChange(false)
+      return
+    }
     if (!bookmarkOrFileId) return
     await onDelete()
     onOpenChange(false)
@@ -37,12 +50,21 @@ export function DeleteBookmarkDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md gap-4">
         <DialogHeader className="space-y-2">
-          <DialogTitle>Delete {variant}</DialogTitle>
+          <DialogTitle>
+            {isBulkBookmarks ? 'Delete bookmarks' : `Delete ${variant}`}
+          </DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Are you sure you want to delete &quot;{title}&quot;? This action
-          cannot be undone.
-        </p>
+        {isBulkBookmarks ? (
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Are you sure you want to delete {bulkBookmarkCount} bookmark
+            {bulkBookmarkCount === 1 ? '' : 's'}? This action cannot be undone.
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Are you sure you want to delete &quot;{title}&quot;? This action
+            cannot be undone.
+          </p>
+        )}
         <DialogFooter className="gap-2 sm:gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel

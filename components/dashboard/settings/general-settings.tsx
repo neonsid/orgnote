@@ -2,7 +2,7 @@
 
 import { useRef } from 'react'
 import Image from 'next/image'
-import Upload from 'lucide-react/dist/esm/icons/upload'
+import { Upload } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { useUser } from '@clerk/react'
 import { Button } from '@/components/ui/button'
@@ -12,11 +12,13 @@ import { Label } from '@/components/ui/label'
 interface GeneralSettingsProps {
   nameForm: ReturnType<typeof import('@/hooks/use-name-form').useNameForm>
   onExportClick: () => void
+  onImportClick: () => void
 }
 
 export function GeneralSettings({
   nameForm,
   onExportClick,
+  onImportClick,
 }: GeneralSettingsProps) {
   const { user } = useUser()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -113,7 +115,15 @@ export function GeneralSettings({
       {/* Data Section */}
       <div className="space-y-3">
         <Label>Data</Label>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onImportClick}
+            className="gap-2"
+          >
+            Import Bookmarks
+          </Button>
           <Button
             variant="outline"
             size="sm"

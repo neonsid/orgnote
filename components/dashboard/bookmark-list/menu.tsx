@@ -6,6 +6,7 @@ import {
   ContextMenuSub,
   ContextMenuSubTrigger,
   ContextMenuSubContent,
+  ContextMenuSeparator,
 } from '@/components/ui/context-menu'
 import {
   Copy,
@@ -15,6 +16,7 @@ import {
   CheckCircle2,
   Circle,
   Info,
+  Layers,
 } from 'lucide-react'
 import type { Bookmark } from './types'
 import type { ConvexGroup } from '../group-selector'
@@ -31,6 +33,7 @@ interface DesktopMenuProps {
   onMove: (groupId: Id<'groups'>) => void
   onToggleRead: () => void
   onShowDescription?: () => void
+  onEnterMultiSelect: () => void
 }
 
 function KeyboardShortcut({ keys }: { keys: readonly string[] }) {
@@ -57,6 +60,7 @@ export function DesktopMenu({
   onMove,
   onToggleRead,
   onShowDescription,
+  onEnterMultiSelect,
 }: DesktopMenuProps) {
   const otherGroups = useMemo(
     () =>
@@ -136,6 +140,13 @@ export function DesktopMenu({
         Delete
         <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.delete} />
       </ContextMenuItem>
+
+      <ContextMenuSeparator />
+
+      <ContextMenuItem onClick={onEnterMultiSelect}>
+        <Layers className="size-4 mr-2" />
+        Select multiple
+      </ContextMenuItem>
     </ContextMenuContent>
   )
 }
@@ -149,6 +160,7 @@ interface MobileMenuProps {
   onMove: (groupId: Id<'groups'>) => void
   onToggleRead: () => void
   onShowDescription?: () => void
+  onEnterMultiSelect: () => void
   onClose: () => void
   /** When false, collapses "Move to" so reopening the menu starts fresh. */
   isOpen: boolean
@@ -163,13 +175,18 @@ export function MobileMenu({
   onMove,
   onToggleRead,
   onShowDescription,
+  onEnterMultiSelect,
   onClose,
   isOpen,
 }: MobileMenuProps) {
   const [moveTargetsOpen, setMoveTargetsOpen] = useState(false)
 
   useEffect(() => {
-    if (!isOpen) setMoveTargetsOpen(false)
+    if (!isOpen) {
+      // Collapse "Move to" when popover closes (avoids stale open state on reopen).
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset derived UI when parent closes
+      setMoveTargetsOpen(false)
+    }
   }, [isOpen])
 
   const otherGroups = useMemo(
@@ -292,6 +309,20 @@ export function MobileMenu({
       >
         <Trash2 className="size-4 mr-2" />
         Delete
+      </button>
+
+      <div className="h-px bg-border my-1" />
+
+      <button
+        type="button"
+        onClick={() => {
+          onEnterMultiSelect()
+          onClose()
+        }}
+        className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
+      >
+        <Layers className="size-4 mr-2" />
+        Select multiple
       </button>
     </div>
   )

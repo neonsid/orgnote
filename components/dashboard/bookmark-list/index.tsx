@@ -5,15 +5,29 @@ import { useMountEffect } from '@/hooks/use-mount-effect'
 import { motion, AnimatePresence } from 'motion/react'
 import { useIsSmallMobile } from '@/hooks/use-mobile'
 import { BookmarkItem } from './bookmark-item'
+import { MultiSelectToolbar } from './multi-select-toolbar'
 import { useBookmarkShortcuts } from './use-bookmark-shortcuts'
 import type { Bookmark } from './types'
 import type { ConvexGroup } from '../group-selector'
 import type { Id } from '@/convex/_generated/dataModel'
+import { cn } from '@/lib/utils'
 
 interface BookmarkListProps {
   bookmarks: Bookmark[]
   groups: ConvexGroup[]
   loading: boolean
+  effectiveGroupId: Id<'groups'>
+  multiSelectMode: boolean
+  selectedBookmarkIds: Set<Id<'bookmarks'>>
+  allVisibleBookmarksSelected: boolean
+  onToggleMultiSelect: (bookmarkId: Id<'bookmarks'>) => void
+  onEnterMultiSelect: (bookmarkId: Id<'bookmarks'>) => void
+  onExitMultiSelect: () => void
+  onSelectAllVisibleBookmarks: () => void
+  onMoveSelectedBookmarks: (newGroupId: Id<'groups'>) => void
+  onCopySelectedUrls: () => void
+  onExportSelectedBookmarks: (format: 'json' | 'csv') => void
+  onDeleteSelectedBookmarks: () => void
   onCopy: (bookmark: Bookmark) => void
   onEdit: (bookmark: Bookmark) => void
   onDelete: (bookmark: Bookmark) => void
@@ -24,12 +38,24 @@ interface BookmarkListProps {
 export const BookmarkList = memo(function BookmarkList({
   bookmarks,
   groups,
+  loading,
+  effectiveGroupId,
+  multiSelectMode,
+  selectedBookmarkIds,
+  allVisibleBookmarksSelected,
+  onToggleMultiSelect,
+  onEnterMultiSelect,
+  onExitMultiSelect,
+  onSelectAllVisibleBookmarks,
+  onMoveSelectedBookmarks,
+  onCopySelectedUrls,
+  onExportSelectedBookmarks,
+  onDeleteSelectedBookmarks,
   onCopy,
   onEdit,
   onDelete,
   onMove,
   onToggleRead,
-  loading,
 }: BookmarkListProps) {
   type ListState = {
     openPopoverId: string | null
@@ -74,6 +100,11 @@ export const BookmarkList = memo(function BookmarkList({
   }
 
   const isSmallMobile = useIsSmallMobile()
+  const multiSelectModeRef = useRef(multiSelectMode)
+  // Latest flag for mount-only keydown listener — same pattern as use-bookmark-shortcuts / .agents use-effect skill (no useEffect sync).
+  // eslint-disable-next-line react-hooks/refs
+  multiSelectModeRef.current = multiSelectMode
+
   const [state, dispatch] = useReducer(reducer, {
     openPopoverId: null,
     showDescriptionId: null,
@@ -105,6 +136,7 @@ export const BookmarkList = memo(function BookmarkList({
   })
 
   const { setHoveredBookmark } = useBookmarkShortcuts({
+    multiSelectModeRef,
     onEdit,
     onCopy,
     onDelete,
@@ -120,7 +152,7 @@ export const BookmarkList = memo(function BookmarkList({
 
   const handleTouchStart = useCallback(
     (e: React.TouchEvent, id: string) => {
-      if (!isSmallMobile) return
+      if (!isSmallMobile || multiSelectMode) return
       longPressTriggered.current = false
 
       longPressTimer.current = setTimeout(() => {
@@ -129,7 +161,7 @@ export const BookmarkList = memo(function BookmarkList({
         schedulePopoverAutoClose(id)
       }, 500)
     },
-    [isSmallMobile, schedulePopoverAutoClose]
+    [isSmallMobile, multiSelectMode, schedulePopoverAutoClose]
   )
 
   const handleTouchEnd = useCallback(() => {
@@ -147,9 +179,21 @@ export const BookmarkList = memo(function BookmarkList({
     [isSmallMobile]
   )
 
+  const onExitMultiSelectRef = useRef(onExitMultiSelect)
+  // eslint-disable-next-line react-hooks/refs -- latest handler for mount-only keydown listener
+  onExitMultiSelectRef.current = onExitMultiSelect
+
   useMountEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (!bookmarksLengthRef.current) return
+
+      if (multiSelectModeRef.current) {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          onExitMultiSelectRef.current()
+        }
+        return
+      }
 
       if (e.key === 'ArrowDown') {
         e.preventDefault()
@@ -206,7 +250,7 @@ export const BookmarkList = memo(function BookmarkList({
   }
 
   return (
-    <div className="w-full">
+    <div className={cn('w-full', multiSelectMode && 'flex flex-col')}>
       <AnimatePresence mode="popLayout">
         {bookmarks.map((bookmark, index) => (
           <BookmarkItem
@@ -214,7 +258,11 @@ export const BookmarkList = memo(function BookmarkList({
             bookmark={bookmark}
             groups={groups}
             isMobile={isSmallMobile}
-            isSelected={state.selectedIndex === index}
+            isKeyboardFocused={state.selectedIndex === index}
+            multiSelectMode={multiSelectMode}
+            isMultiSelected={selectedBookmarkIds.has(bookmark.id)}
+            onToggleMultiSelect={() => onToggleMultiSelect(bookmark.id)}
+            onEnterMultiSelect={() => onEnterMultiSelect(bookmark.id)}
             isPopoverOpen={state.openPopoverId === bookmark.id}
             onPopoverOpenChange={(open) => {
               dispatch({
@@ -247,6 +295,20 @@ export const BookmarkList = memo(function BookmarkList({
           />
         ))}
       </AnimatePresence>
+
+      {multiSelectMode && (
+        <MultiSelectToolbar
+          currentGroupId={effectiveGroupId}
+          groups={groups}
+          allVisibleSelected={allVisibleBookmarksSelected}
+          onSelectAll={onSelectAllVisibleBookmarks}
+          onMove={onMoveSelectedBookmarks}
+          onCopyUrls={onCopySelectedUrls}
+          onExport={onExportSelectedBookmarks}
+          onDelete={onDeleteSelectedBookmarks}
+          onClose={onExitMultiSelect}
+        />
+      )}
     </div>
   )
 })

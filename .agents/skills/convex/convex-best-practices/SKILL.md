@@ -345,6 +345,7 @@ export const remove = mutation({
 - Never run `npx convex deploy` unless explicitly instructed
 - Never run any git commands unless explicitly instructed
 - Always define return validators for functions
+- Always add all the constants to a constants.ts file
 - Use indexes for all queries that filter data
 - Make mutations idempotent to handle retries gracefully
 - Use ConvexError for user-facing error messages

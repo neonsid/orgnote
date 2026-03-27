@@ -11,7 +11,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ExportBookmarksDialog } from "@/components/dashboard/dialog";
 import { useNameForm } from "@/hooks/use-name-form";
 import { usePublicProfileForm } from "@/hooks/use-public-profile-form";
 import { GeneralSettings } from "./general-settings";
@@ -38,6 +37,8 @@ function PublicProfileFormHost({
 interface UserSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onImportClick: () => void;
+  onExportClick: () => void;
 }
 
 function SettingsTabs({
@@ -76,19 +77,19 @@ function SettingsTabs({
 export function UserSettingsDialog({
   open,
   onOpenChange,
+  onImportClick,
+  onExportClick,
 }: UserSettingsDialogProps) {
   const { user } = useUser();
 
   type SettingsState = {
     activeTab: SettingsTab;
     isSaving: boolean;
-    exportOpen: boolean;
   };
 
   type SettingsAction =
     | { type: "setActiveTab"; tab: SettingsTab }
     | { type: "setSaving"; saving: boolean }
-    | { type: "setExportOpen"; open: boolean }
     | { type: "reset" };
 
   function reducer(
@@ -100,10 +101,11 @@ export function UserSettingsDialog({
         return { ...state, activeTab: action.tab };
       case "setSaving":
         return { ...state, isSaving: action.saving };
-      case "setExportOpen":
-        return { ...state, exportOpen: action.open };
       case "reset":
-        return { activeTab: "general", isSaving: false, exportOpen: false };
+        return {
+          activeTab: "general",
+          isSaving: false,
+        };
       default:
         return state;
     }
@@ -112,7 +114,6 @@ export function UserSettingsDialog({
   const [state, dispatch] = useReducer(reducer, {
     activeTab: "general",
     isSaving: false,
-    exportOpen: false,
   });
 
   const existingProfile = useQuery(api.profile.queries.getProfile);
@@ -178,9 +179,8 @@ export function UserSettingsDialog({
             {state.activeTab === "general" && (
               <GeneralSettings
                 nameForm={nameForm}
-                onExportClick={() =>
-                  dispatch({ type: "setExportOpen", open: true })
-                }
+                onExportClick={onExportClick}
+                onImportClick={onImportClick}
               />
             )}
 
@@ -213,11 +213,6 @@ export function UserSettingsDialog({
           </Button>
         </div>
       </DialogContent>
-
-      <ExportBookmarksDialog
-        open={state.exportOpen}
-        onOpenChange={(open) => dispatch({ type: "setExportOpen", open })}
-      />
     </Dialog>
   );
 }
