@@ -36,12 +36,18 @@ interface DesktopMenuProps {
   onEnterMultiSelect: () => void
 }
 
-function KeyboardShortcut({ keys }: { keys: readonly string[] }) {
+function KeyboardShortcut({
+  keys,
+  idPrefix,
+}: {
+  keys: readonly string[]
+  idPrefix: string
+}) {
   return (
     <ContextMenuShortcut className="flex items-center gap-1">
-      {keys.map((key, index) => (
+      {keys.map((key, idx) => (
         <kbd
-          key={index}
+          key={`${idPrefix}-${idx}-${key}`}
           className="inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-md bg-muted border border-border text-xs font-medium text-muted-foreground select-none"
         >
           {key}
@@ -92,20 +98,29 @@ export function DesktopMenu({
       <ContextMenuItem onClick={onCopy}>
         <Copy className="size-4 mr-2" />
         Copy
-        <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.copy} />
+        <KeyboardShortcut
+          idPrefix={bookmark.id}
+          keys={KEYBOARD_SHORTCUTS.copy}
+        />
       </ContextMenuItem>
 
       <ContextMenuItem onClick={onEdit}>
         <Edit3 className="size-4 mr-2" />
         Edit...
-        <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.edit} />
+        <KeyboardShortcut
+          idPrefix={bookmark.id}
+          keys={KEYBOARD_SHORTCUTS.edit}
+        />
       </ContextMenuItem>
 
       {bookmark.description && onShowDescription && (
         <ContextMenuItem onClick={onShowDescription}>
           <Info className="size-4 mr-2" />
           Description
-          <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.description} />
+          <KeyboardShortcut
+            idPrefix={bookmark.id}
+            keys={KEYBOARD_SHORTCUTS.description}
+          />
         </ContextMenuItem>
       )}
 
@@ -138,7 +153,10 @@ export function DesktopMenu({
       <ContextMenuItem variant="destructive" onClick={onDelete}>
         <Trash2 className="size-4 mr-2" />
         Delete
-        <KeyboardShortcut keys={KEYBOARD_SHORTCUTS.delete} />
+        <KeyboardShortcut
+          idPrefix={bookmark.id}
+          keys={KEYBOARD_SHORTCUTS.delete}
+        />
       </ContextMenuItem>
 
       <ContextMenuSeparator />

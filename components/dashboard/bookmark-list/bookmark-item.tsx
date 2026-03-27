@@ -1,5 +1,5 @@
 import { memo, useState, useCallback } from 'react'
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 import {
   Popover,
   PopoverTrigger,
@@ -134,7 +134,7 @@ export const BookmarkItem = memo(function BookmarkItem({
     <>
       {isMobile ? (
         multiSelectMode ? (
-          <motion.div
+          <m.div
             layout
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -157,9 +157,9 @@ export const BookmarkItem = memo(function BookmarkItem({
             >
               <BookmarkRowMain bookmark={bookmark} leading={rowLeading} />
             </div>
-          </motion.div>
+          </m.div>
         ) : (
-          <motion.div
+          <m.div
             layout
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -200,10 +200,10 @@ export const BookmarkItem = memo(function BookmarkItem({
                 />
               </PopoverContent>
             </Popover>
-          </motion.div>
+          </m.div>
         )
       ) : (
-        <motion.div
+        <m.div
           layout
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -244,7 +244,7 @@ export const BookmarkItem = memo(function BookmarkItem({
             </ContextMenuTrigger>
             <DesktopMenu {...menuProps} />
           </ContextMenu>
-        </motion.div>
+        </m.div>
       )}
 
       <BookmarkDescriptionDialog

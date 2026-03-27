@@ -57,8 +57,8 @@ export function KeyboardShortcutsDialog({
                   {shortcut.label}
                 </span>
                 <div className="flex items-center gap-1">
-                  {shortcut.keys.map((key, i) => (
-                    <span key={i}>
+                  {shortcut.keys.map((key, idx) => (
+                    <span key={`${shortcut.label}-${idx}-${key}`}>
                       {key === '/' ? (
                         <span className="text-xs text-muted-foreground mx-0.5">
                           /

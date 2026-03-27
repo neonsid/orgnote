@@ -87,8 +87,10 @@ export function StoredFileTile({
           onOpenChange={(open) => !open && setOpenPopoverId(null)}
         >
           <PopoverTrigger asChild>
-            <div
-              className="absolute inset-0 z-20 cursor-pointer rounded-lg"
+            <button
+              type="button"
+              aria-label={`Open ${file.name}`}
+              className="absolute inset-0 z-20 cursor-pointer rounded-lg border-0 bg-transparent p-0"
               onTouchStart={(e) => handleTouchStart(e, id)}
               onTouchEnd={handleTouchEnd}
               onTouchMove={handleTouchEnd}

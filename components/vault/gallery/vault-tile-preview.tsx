@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 import { getFileIcon } from "@/components/vault/file-type-utils";
@@ -26,6 +27,26 @@ export function VaultTilePreview({
   imageObjectFit,
 }: VaultTilePreviewProps) {
   if (isImage(mimeType) && imageSrc) {
+    const imageClassName = cn(
+      "rounded-lg border transition-all group-hover/item:scale-105",
+      imageObjectFit === "cover" ? "object-cover" : "object-contain",
+      showThumbnailSpinner ? "opacity-0" : "opacity-100",
+      onImageClick && "cursor-pointer",
+    );
+
+    const image = (
+      <Image
+        src={imageSrc}
+        alt={fileName}
+        fill
+        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+        className={imageClassName}
+        unoptimized
+        onLoad={onThumbnailLoad}
+        onError={onThumbnailError}
+      />
+    );
+
     return (
       <>
         {showThumbnailSpinner && (
@@ -33,32 +54,33 @@ export function VaultTilePreview({
             <Spinner className="text-muted-foreground size-6" />
           </div>
         )}
-        {/* eslint-disable-next-line @next/next/no-img-element -- dynamic vault URLs */}
-        <img
-          src={imageSrc}
-          alt={fileName}
-          onLoad={onThumbnailLoad}
-          onError={onThumbnailError}
-          onClick={onImageClick}
-          className={cn(
-            "rounded-lg h-full w-full border transition-all group-hover/item:scale-105 cursor-pointer",
-            imageObjectFit === "cover" ? "object-cover" : "object-contain",
-            showThumbnailSpinner ? "opacity-0" : "opacity-100",
-          )}
-        />
+        {onImageClick ? (
+          <button
+            type="button"
+            aria-label={`View ${fileName}`}
+            onClick={onImageClick}
+            className="relative block h-full w-full rounded-lg border-0 bg-transparent p-0"
+          >
+            {image}
+          </button>
+        ) : (
+          <div className="relative h-full w-full">{image}</div>
+        )}
       </>
     );
   }
 
   if (isPdf(mimeType)) {
     return (
-      <div className="bg-muted rounded-lg flex h-full w-full items-center justify-center border">
-        {/* eslint-disable-next-line @next/next/no-img-element -- static asset */}
-        <img
+      <div className="bg-muted rounded-lg flex h-full w-full items-center justify-center border p-2">
+        <Image
           src="/pdf2.png"
           alt="PDF"
+          width={160}
+          height={160}
+          sizes="160px"
           className={cn(
-            "rounded-lg h-full w-full p-2",
+            "rounded-lg h-full w-full max-h-full",
             imageObjectFit === "cover" ? "object-cover" : "object-contain",
           )}
         />

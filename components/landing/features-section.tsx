@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import { Sparkles, FolderOpen, Share2, Zap } from "lucide-react";
 
 const features = [
@@ -60,7 +60,7 @@ const itemVariants = {
 export function FeaturesSection() {
   return (
     <section className="w-full max-w-2xl mx-auto px-4 sm:px-6">
-      <motion.div
+      <m.div
         className="text-center mb-10 sm:mb-12"
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -73,9 +73,9 @@ export function FeaturesSection() {
         <p className="text-muted-foreground">
           No more lost links. No more messy folders.
         </p>
-      </motion.div>
+      </m.div>
 
-      <motion.div
+      <m.div
         className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
         variants={containerVariants}
         initial="hidden"
@@ -83,7 +83,7 @@ export function FeaturesSection() {
         viewport={{ once: true, margin: "-50px" }}
       >
         {features.map((feature) => (
-          <motion.div
+          <m.div
             key={feature.id}
             variants={itemVariants}
             className="group relative overflow-hidden rounded-xl border border-border bg-card p-5 transition-all duration-300 hover:border-foreground/20 hover:shadow-md"
@@ -113,9 +113,9 @@ export function FeaturesSection() {
                 {feature.description}
               </p>
             </div>
-          </motion.div>
+          </m.div>
         ))}
-      </motion.div>
+      </m.div>
     </section>
   );
 }

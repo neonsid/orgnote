@@ -74,8 +74,10 @@ export function Header() {
         {mobileMenuOpen && (
           <>
             {/* Overlay */}
-            <div
-              className="md:hidden fixed inset-0 top-14 z-30 bg-black/40"
+            <button
+              type="button"
+              aria-label="Close menu"
+              className="md:hidden fixed inset-0 top-14 z-30 cursor-default border-0 bg-black/40 p-0"
               onClick={() => setMobileMenuOpen(false)}
             />
             {/* Panel */}

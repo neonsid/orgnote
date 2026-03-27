@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Dialog as DialogPrimitive } from 'radix-ui'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -46,11 +47,15 @@ export function ImageLightbox({
           <DialogTitle className="sr-only">
             View image: {alt}
           </DialogTitle>
-          <div className="relative">
-            <img
+          <div className="relative inline-block max-w-[min(42rem,95vw)] max-h-[85vh]">
+            <Image
               src={src}
               alt={alt}
-              className="max-w-[min(42rem,95vw)] max-h-[85vh] w-auto h-auto object-contain rounded-lg border shadow-2xl"
+              width={1200}
+              height={900}
+              sizes="(max-width: 768px) 95vw, 42rem"
+              className="max-h-[85vh] w-auto h-auto object-contain rounded-lg border shadow-2xl"
+              unoptimized
             />
             <Button
               size="icon"

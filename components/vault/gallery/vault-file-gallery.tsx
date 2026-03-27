@@ -2,7 +2,7 @@
 
 import { memo, useState, useCallback, useRef, useMemo } from "react";
 import { useMountEffect } from "@/hooks/use-mount-effect";
-import { motion, AnimatePresence } from "motion/react";
+import { m, AnimatePresence } from "motion/react";
 import { formatBytes } from "@/hooks/use-file-upload";
 import { VaultFile } from "@/components/dashboard/bookmark-list/types";
 import { ImageLightbox } from "@/components/vault/image-lightbox";
@@ -142,9 +142,18 @@ export const VaultFileGallery = memo(function VaultFileGallery({
     if (isLoading) {
       return (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {[...Array(6)].map((_, i) => (
+          {(
+            [
+              "sk-a",
+              "sk-b",
+              "sk-c",
+              "sk-d",
+              "sk-e",
+              "sk-f",
+            ] as const
+          ).map((sk) => (
             <div
-              key={i}
+              key={sk}
               className="aspect-square rounded-lg bg-muted animate-pulse"
             />
           ))}
@@ -166,7 +175,7 @@ export const VaultFileGallery = memo(function VaultFileGallery({
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         <AnimatePresence mode="popLayout">
           {sortedFiles.map((file) => (
-            <motion.div
+            <m.div
               key={file._id}
               layout={false}
               initial={{ opacity: 0, y: 10 }}
@@ -198,10 +207,10 @@ export const VaultFileGallery = memo(function VaultFileGallery({
                 closePopover={closePopover}
                 onDeleteFileAction={onDeleteFileAction}
               />
-            </motion.div>
+            </m.div>
           ))}
           {visibleUploadFiles.map((item) => (
-            <motion.div
+            <m.div
               key={item.id}
               layout={false}
               initial={{ opacity: 0, y: 10 }}
@@ -233,7 +242,7 @@ export const VaultFileGallery = memo(function VaultFileGallery({
                 onRemoveUpload={onRemoveUpload}
                 onRetryUpload={onRetryUpload}
               />
-            </motion.div>
+            </m.div>
           ))}
         </AnimatePresence>
       </div>

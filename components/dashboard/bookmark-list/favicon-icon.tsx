@@ -1,4 +1,5 @@
 import { useState, memo } from "react";
+import Image from "next/image";
 import { Check } from "lucide-react";
 import type { Bookmark } from "./types";
 
@@ -14,15 +15,16 @@ export const FaviconIcon = memo(function FaviconIcon({
   if (bookmark.favicon && !imgError) {
     return (
       <div className="relative size-7 rounded-lg overflow-hidden shrink-0 border border-border bg-background">
-        <img
+        <Image
           src={bookmark.favicon}
           alt=""
           width={28}
           height={28}
+          sizes="28px"
           className="size-full object-cover"
           loading="lazy"
-          decoding="async"
           onError={() => setImgError(true)}
+          unoptimized
         />
         {bookmark.doneReading && (
           <div className="absolute inset-0 bg-background/60 flex items-center justify-center">

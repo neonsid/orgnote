@@ -49,9 +49,9 @@ export function BookmarkRowMain({ bookmark, leading }: BookmarkRowMainProps) {
         {formatDate(bookmark.createdAt)}
       </span>
       <span className="text-xs text-muted-foreground tabular-nums shrink-0 hidden group-hover:flex items-center gap-1 self-start mt-1">
-        {KEYBOARD_SHORTCUTS.open.map((key, index) => (
+        {KEYBOARD_SHORTCUTS.open.map((key, idx) => (
           <kbd
-            key={index}
+            key={`${bookmark.id}-open-${idx}-${key}`}
             className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded bg-muted border border-border text-[10px] font-medium"
           >
             {key}

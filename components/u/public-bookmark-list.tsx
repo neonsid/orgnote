@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, memo } from "react";
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import { extractDomain } from "@/lib/domain-utils";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
@@ -58,7 +58,7 @@ const BookmarkItem = memo(function BookmarkItem({
   index: number;
 }) {
   return (
-    <motion.div
+    <m.div
       variants={itemVariants}
       initial="hidden"
       animate="show"
@@ -108,7 +108,7 @@ const BookmarkItem = memo(function BookmarkItem({
           <ArrowUpRight className="hidden size-4 text-muted-foreground group-hover:inline transition-all ease-in duration-400" />
         </div>
       </a>
-    </motion.div>
+    </m.div>
   );
 });
 
