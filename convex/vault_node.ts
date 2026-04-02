@@ -1,8 +1,8 @@
 'use node'
 
 import { v } from 'convex/values'
-import { action, internalAction } from './_generated/server'
-import { requireAuth } from './lib/auth'
+import { internalAction } from './_generated/server'
+import { internal } from './_generated/api'
 import {
   S3Client,
   PutObjectCommand,
@@ -57,32 +57,51 @@ function generateFileKey(fileName: string): string {
   return `${uuid}-${sanitizedFileName}`
 }
 
-export const getPresignedUploadUrl = action({
-  args: { fileName: v.string(), fileType: v.string() },
+/** Scheduled by `vault/mutations.requestPresignedUploadUrl` — not called from the client. */
+export const completeVaultUploadRequest = internalAction({
+  args: { requestId: v.id('vaultUploadRequests') },
+  returns: v.null(),
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
-
-    validateFileInput(args.fileName, args.fileType)
-
-    const fileKey = generateFileKey(userId)
-    const contentType = args.fileType
-
-    const command = new PutObjectCommand({
-      Bucket: R2_BUCKET_NAME,
-      Key: fileKey,
-      ContentType: contentType,
+    const row = await ctx.runQuery(internal.vault.internal.getVaultUploadRequestRow, {
+      requestId: args.requestId,
     })
-
-    const signedUrl = await getSignedUrl(s3Client, command, {
-      expiresIn: 3600,
-    })
-    const fileUrl = `${R2_PUBLIC_URL}/${fileKey}`
-
-    return {
-      uploadUrl: signedUrl,
-      fileUrl,
-      fileKey,
+    if (!row || row.status !== 'pending') {
+      return null
     }
+
+    try {
+      validateFileInput(row.fileName, row.fileType)
+
+      const fileKey = generateFileKey(row.fileName)
+      const contentType = row.fileType
+
+      const command = new PutObjectCommand({
+        Bucket: R2_BUCKET_NAME,
+        Key: fileKey,
+        ContentType: contentType,
+      })
+
+      const signedUrl = await getSignedUrl(s3Client, command, {
+        expiresIn: 3600,
+      })
+      const fileUrl = `${R2_PUBLIC_URL}/${fileKey}`
+
+      await ctx.runMutation(internal.vault.internal.setVaultUploadRequestReady, {
+        requestId: args.requestId,
+        uploadUrl: signedUrl,
+        fileUrl,
+        fileKey,
+      })
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to prepare upload'
+      await ctx.runMutation(internal.vault.internal.setVaultUploadRequestFailed, {
+        requestId: args.requestId,
+        error: message,
+      })
+    }
+
+    return null
   },
 })
 

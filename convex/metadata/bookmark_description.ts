@@ -10,7 +10,7 @@ import { fetchGitHubReadme, fetchGitHubRepoTitle } from './github_fetch'
 import { fetchOpenGraphMetadata } from './open_graph'
 
 /**
- * Core URL-type branching and LLM step for `generateBookmarkDescription`.
+ * Core URL-type branching and LLM step for bookmark description (internal actions).
  * Caller resolves auth and Figma before invoking.
  */
 export async function runBookmarkDescriptionFlow(

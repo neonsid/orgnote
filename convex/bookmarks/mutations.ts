@@ -399,3 +399,45 @@ export const updateBookmarkDetails = mutation({
     return { success: true }
   },
 })
+
+/** Edit dialog: records intent and schedules AI work (prefer over client `useAction`). */
+export const requestBookmarkDescription = mutation({
+  args: { url: v.string() },
+  returns: v.id('bookmarkDescriptionJobs'),
+  handler: async (ctx, args) => {
+    const userId = await requireAuth(ctx)
+
+    const jobId = await ctx.db.insert('bookmarkDescriptionJobs', {
+      ownerId: userId,
+      url: args.url,
+      status: 'pending',
+    })
+
+    await ctx.scheduler.runAfter(0, internal.metadata.processBookmarkDescriptionJob, {
+      jobId,
+    })
+
+    return jobId
+  },
+})
+
+export const cancelBookmarkDescriptionJob = mutation({
+  args: { jobId: v.id('bookmarkDescriptionJobs') },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const userId = await requireAuth(ctx)
+    const job = await ctx.db.get(args.jobId)
+    if (!job || job.ownerId !== userId) {
+      return null
+    }
+    if (job.status !== 'pending') {
+      return null
+    }
+    await ctx.db.patch(args.jobId, {
+      status: 'cancelled',
+      success: false,
+      error: 'Generation cancelled.',
+    })
+    return null
+  },
+})

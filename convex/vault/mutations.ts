@@ -3,7 +3,52 @@ import { mutation } from '../_generated/server'
 import { requireAuth } from '../lib/auth'
 import { ConvexError } from 'convex/values'
 import { internal } from '../_generated/api'
-import { R2_PUBLIC_URL } from '../lib/constants'
+import {
+  ALLOWED_FILE_TYPES,
+  MAX_FILENAME_LENGTH,
+  R2_PUBLIC_URL,
+} from '../lib/constants'
+
+function validateFileNameAndType(fileName: string, fileType: string): void {
+  if (fileName.length > MAX_FILENAME_LENGTH) {
+    throw new ConvexError('Filename too long')
+  }
+  if (!fileName || fileName.trim() === '') {
+    throw new ConvexError('Filename is required')
+  }
+  if (!fileType || fileType.trim() === '') {
+    throw new ConvexError('File type is required')
+  }
+  const isAllowedType = ALLOWED_FILE_TYPES.some((type) =>
+    fileType.startsWith(type)
+  )
+  if (!isAllowedType) {
+    throw new ConvexError('File type not allowed')
+  }
+}
+
+/** Client calls this instead of a public action; intent is stored then an internal action runs. */
+export const requestPresignedUploadUrl = mutation({
+  args: { fileName: v.string(), fileType: v.string() },
+  returns: v.id('vaultUploadRequests'),
+  handler: async (ctx, args) => {
+    const userId = await requireAuth(ctx)
+    validateFileNameAndType(args.fileName, args.fileType)
+
+    const requestId = await ctx.db.insert('vaultUploadRequests', {
+      ownerId: userId,
+      fileName: args.fileName,
+      fileType: args.fileType,
+      status: 'pending',
+    })
+
+    await ctx.scheduler.runAfter(0, internal.vault_node.completeVaultUploadRequest, {
+      requestId,
+    })
+
+    return requestId
+  },
+})
 
 export const deleteFile = mutation({
   args: { fileId: v.id('vaultFiles') },

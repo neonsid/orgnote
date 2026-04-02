@@ -230,3 +230,35 @@ export const getPublicBookmarksByUsername = query({
     return await buildPublicBookmarkList(ctx, groups)
   },
 })
+
+export const getBookmarkDescriptionJob = query({
+  args: { jobId: v.id('bookmarkDescriptionJobs') },
+  returns: v.union(
+    v.null(),
+    v.object({
+      _id: v.id('bookmarkDescriptionJobs'),
+      _creationTime: v.number(),
+      ownerId: v.string(),
+      url: v.string(),
+      status: v.union(
+        v.literal('pending'),
+        v.literal('complete'),
+        v.literal('cancelled')
+      ),
+      success: v.optional(v.boolean()),
+      title: v.optional(v.string()),
+      description: v.optional(v.string()),
+      imageUrl: v.optional(v.string()),
+      error: v.optional(v.string()),
+      remainingSciraQuota: v.optional(v.number()),
+    })
+  ),
+  handler: async (ctx, args) => {
+    const userId = await requireAuth(ctx)
+    const job = await ctx.db.get(args.jobId)
+    if (!job || job.ownerId !== userId) {
+      return null
+    }
+    return job
+  },
+})

@@ -63,4 +63,35 @@ export default defineSchema({
     color: v.string(),
     userId: v.string(),
   }).index('by_userId', ['userId']),
+  /** Presigned-upload flow: mutation inserts + schedules internal action (avoid client useAction). */
+  vaultUploadRequests: defineTable({
+    ownerId: v.string(),
+    fileName: v.string(),
+    fileType: v.string(),
+    status: v.union(
+      v.literal('pending'),
+      v.literal('ready'),
+      v.literal('failed')
+    ),
+    uploadUrl: v.optional(v.string()),
+    fileUrl: v.optional(v.string()),
+    fileKey: v.optional(v.string()),
+    error: v.optional(v.string()),
+  }).index('by_owner', ['ownerId']),
+  /** AI description from edit dialog: mutation inserts + schedules internal action. */
+  bookmarkDescriptionJobs: defineTable({
+    ownerId: v.string(),
+    url: v.string(),
+    status: v.union(
+      v.literal('pending'),
+      v.literal('complete'),
+      v.literal('cancelled')
+    ),
+    success: v.optional(v.boolean()),
+    title: v.optional(v.string()),
+    description: v.optional(v.string()),
+    imageUrl: v.optional(v.string()),
+    error: v.optional(v.string()),
+    remainingSciraQuota: v.optional(v.number()),
+  }).index('by_owner', ['ownerId']),
 })
