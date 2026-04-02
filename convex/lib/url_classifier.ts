@@ -159,3 +159,39 @@ export function extractTweetId(url: string): string | null {
     return null
   }
 }
+
+/**
+ * Username segment from standard tweet URLs: `/{handle}/status/{id}`.
+ * Returns null for `i/status/...`, `i/web/status/...`, or non-tweet paths.
+ */
+export function extractTwitterHandleFromUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url)
+    if (!twitterHosts.includes(parsed.hostname)) {
+      return null
+    }
+
+    const pathParts = parsed.pathname.split('/').filter(Boolean)
+    const statusIndex = pathParts.indexOf('status')
+    if (statusIndex < 1) {
+      return null
+    }
+
+    const candidate = pathParts[statusIndex - 1]
+    if (!candidate) {
+      return null
+    }
+    const lower = candidate.toLowerCase()
+    if (lower === 'i' || lower === 'intent' || lower === 'home' || lower === 'search') {
+      return null
+    }
+    // X/Twitter handles: letters, digits, underscore; max 15 (exclude obvious non-handles)
+    if (!/^[A-Za-z0-9_]{1,15}$/.test(candidate)) {
+      return null
+    }
+
+    return candidate
+  } catch {
+    return null
+  }
+}

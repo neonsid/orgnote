@@ -4,7 +4,9 @@ import { extractTweetId } from './url_classifier'
 import { GenericMutationCtx } from 'convex/server'
 import { DataModel } from '../_generated/dataModel'
 import {
+  OPENROUTER_FALLBACK_MODEL_ID,
   OPENROUTER_GENERATE_TEXT_TIMEOUT_MS,
+  OPENROUTER_PRIMARY_MODEL_ID,
   SCIRA_API_URL,
   SCIRA_DAILY_LIMIT,
   SCIRA_FETCH_TIMEOUT_MS,
@@ -84,7 +86,7 @@ async function fetchFromScira(
 }
 
 /**
- * Clean Scira output using gpt-oss-120b via OpenRouter
+ * Clean Scira output via OpenRouter (primary model, then openrouter/free fallback).
  */
 async function cleanWithOpenRouter(
   rawContent: string,
@@ -101,17 +103,42 @@ async function cleanWithOpenRouter(
     const openrouter = createOpenRouter({ apiKey })
     console.log('[Scira/OpenRouter] OpenRouter client created')
 
-    console.log(
-      '[Scira/OpenRouter] Calling generateText with model: openai/gpt-oss-120b'
-    )
-    const { text, usage, finishReason } = await generateText({
-      model: openrouter('openai/gpt-oss-120b'),
+    const callSettings = {
       system: CLEANUP_SYSTEM_PROMPT,
       prompt: `Clean up this tweet summary data:\n\n${rawContent}`,
       temperature: 0.3,
       maxRetries: 1,
       timeout: OPENROUTER_GENERATE_TEXT_TIMEOUT_MS,
-    })
+    } as const
+
+    let text: string
+    let usage: unknown
+    let finishReason: string | undefined
+    try {
+      console.log(
+        `[Scira/OpenRouter] Calling generateText with model: ${OPENROUTER_PRIMARY_MODEL_ID}`
+      )
+      const result = await generateText({
+        ...callSettings,
+        model: openrouter(OPENROUTER_PRIMARY_MODEL_ID),
+      })
+      text = result.text
+      usage = result.usage
+      finishReason = result.finishReason
+    } catch (primaryError) {
+      console.warn(
+        '[Scira/OpenRouter] Primary model failed, retrying with',
+        OPENROUTER_FALLBACK_MODEL_ID,
+        primaryError instanceof Error ? primaryError.message : primaryError
+      )
+      const result = await generateText({
+        ...callSettings,
+        model: openrouter(OPENROUTER_FALLBACK_MODEL_ID),
+      })
+      text = result.text
+      usage = result.usage
+      finishReason = result.finishReason
+    }
 
     console.log('[Scira/OpenRouter] Response received:')
     console.log('[Scira/OpenRouter] - Text:', text)
@@ -143,19 +170,14 @@ async function cleanWithOpenRouter(
       author: parsed.author,
     }
   } catch (error) {
-    console.error('[Scira/OpenRouter] Error in cleanWithOpenRouter:')
-    console.error('[Scira/OpenRouter] Error type:', typeof error)
-    console.error(
-      '[Scira/OpenRouter] Error message:',
+    const message =
       error instanceof Error ? error.message : String(error)
-    )
-    console.error(
-      '[Scira/OpenRouter] Error stack:',
-      error instanceof Error ? error.stack : 'No stack'
+    console.warn(
+      '[Scira/OpenRouter] Cleanup failed (both models or parse); using raw Scira text:',
+      message
     )
 
     // Fallback: return raw content as summary
-    console.log('[Scira/OpenRouter] Falling back to raw content')
     return {
       summary: rawContent.slice(0, 300).replace(/\n/g, ' '),
       keyPoints: [],

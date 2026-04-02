@@ -1,3 +1,4 @@
+import { extractTwitterHandleFromUrl } from "@/convex/lib/url_classifier";
 import { extractDomain } from "@/lib/domain-utils";
 import { MAX_BOOKMARK_URL_LENGTH } from "@/lib/url-limits";
 
@@ -34,6 +35,9 @@ function titleFromUrlLikeQuickAdd(value: string): string {
   const domain = extractDomain(value);
   const isUrl = domain.includes(".");
   if (!isUrl) return value.trim() || value;
+  const href = value.startsWith("http") ? value : `https://${value}`;
+  const tw = extractTwitterHandleFromUrl(href);
+  if (tw) return `Tweet by @${tw}`;
   const first = domain.split(".")[0] ?? "";
   if (!first) return value.trim() || value;
   return first.charAt(0).toUpperCase() + first.slice(1);

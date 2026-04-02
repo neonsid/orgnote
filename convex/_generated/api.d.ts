@@ -16,6 +16,7 @@ import type * as groups_mutations from "../groups/mutations.js";
 import type * as groups_queries from "../groups/queries.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_constants from "../lib/constants.js";
+import type * as lib_openrouter_helpers from "../lib/openrouter_helpers.js";
 import type * as lib_prompt from "../lib/prompt.js";
 import type * as lib_scira from "../lib/scira.js";
 import type * as lib_url_classifier from "../lib/url_classifier.js";
@@ -51,6 +52,7 @@ declare const fullApi: ApiFromModules<{
   "groups/queries": typeof groups_queries;
   "lib/auth": typeof lib_auth;
   "lib/constants": typeof lib_constants;
+  "lib/openrouter_helpers": typeof lib_openrouter_helpers;
   "lib/prompt": typeof lib_prompt;
   "lib/scira": typeof lib_scira;
   "lib/url_classifier": typeof lib_url_classifier;

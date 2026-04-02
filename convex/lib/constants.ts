@@ -52,6 +52,10 @@ export const OPENROUTER_GENERATE_TEXT_TIMEOUT_MS = parsePositiveIntEnv(
   60_000
 )
 
+/** Default model; fallback used when this errors (rate limits, outages). */
+export const OPENROUTER_PRIMARY_MODEL_ID = 'openai/gpt-oss-120b' as const
+export const OPENROUTER_FALLBACK_MODEL_ID = 'openrouter/free' as const
+
 /** Scira xsearch HTTP `fetch` — endpoints are slow; cap at 1.5 minutes. */
 export const SCIRA_FETCH_TIMEOUT_MS = parsePositiveIntEnv(
   'SCIRA_FETCH_TIMEOUT_MS',

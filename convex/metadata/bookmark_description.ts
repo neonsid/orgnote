@@ -2,7 +2,11 @@
 
 import type { ActionCtx } from '../_generated/server'
 import { internal } from '../_generated/api'
-import { classifyUrl, parseGitHubRepo } from '../lib/url_classifier'
+import {
+  classifyUrl,
+  extractTwitterHandleFromUrl,
+  parseGitHubRepo,
+} from '../lib/url_classifier'
 import { fetchTweetContentWithScira, getSciraApiKey } from '../lib/scira'
 import { generateDescriptionWithAI } from './ai_description'
 import type { BookmarkDescriptionReturn } from './validators'
@@ -86,7 +90,13 @@ export async function runBookmarkDescriptionFlow(
         }
       )
 
-      title = tweetData.author ? `Tweet by ${tweetData.author}` : undefined
+      const handleFromUrl = extractTwitterHandleFromUrl(url)
+      const authorLabel = tweetData.author?.trim()
+      title = authorLabel
+        ? `Tweet by ${authorLabel}`
+        : handleFromUrl
+          ? `Tweet by @${handleFromUrl}`
+          : 'Post on X'
       content = tweetData.content
       imageUrl = tweetData.urls[0]
     } else if (urlType === 'github') {

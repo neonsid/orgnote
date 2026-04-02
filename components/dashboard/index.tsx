@@ -14,6 +14,7 @@ import { m } from 'motion/react'
 import dynamic from 'next/dynamic'
 import { type Id } from '@/convex/_generated/dataModel'
 import { extractDomain } from '@/lib/domain-utils'
+import { extractTwitterHandleFromUrl } from '@/convex/lib/url_classifier'
 import { useDialogStore } from '@/stores/dialog-store'
 import { useDashboardData } from '@/hooks/use-dashboard-data'
 import { UnsafeBookmarkToastBridge } from '@/hooks/use-unsafe-bookmark-toast'
@@ -106,16 +107,19 @@ export default function DashboardPage() {
       const domain = extractDomain(value)
       const isUrl = domain.includes('.')
 
-      const title = isUrl
-        ? domain.split('.')[0].charAt(0).toUpperCase() +
-          domain.split('.')[0].slice(1)
-        : value
-
       const url = isUrl
         ? value.startsWith('http')
           ? value
           : `https://${value}`
         : '#'
+
+      const twHandle = isUrl ? extractTwitterHandleFromUrl(url) : null
+      const title = isUrl
+        ? twHandle
+          ? `Tweet by @${twHandle}`
+          : domain.split('.')[0].charAt(0).toUpperCase() +
+            domain.split('.')[0].slice(1)
+        : value
 
       const currentGroupId = effectiveGroupId
       if (!currentGroupId) return
