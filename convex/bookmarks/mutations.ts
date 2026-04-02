@@ -420,3 +420,24 @@ export const requestBookmarkDescription = mutation({
     return jobId
   },
 })
+
+export const cancelBookmarkDescriptionJob = mutation({
+  args: { jobId: v.id('bookmarkDescriptionJobs') },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const userId = await requireAuth(ctx)
+    const job = await ctx.db.get(args.jobId)
+    if (!job || job.ownerId !== userId) {
+      return null
+    }
+    if (job.status !== 'pending') {
+      return null
+    }
+    await ctx.db.patch(args.jobId, {
+      status: 'cancelled',
+      success: false,
+      error: 'Generation cancelled.',
+    })
+    return null
+  },
+})

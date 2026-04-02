@@ -249,5 +249,5 @@ pnpm exec convex deploy
 
 - [] Make this next
 - [] Move to convex/helper for authedQuery
-- [] Fix calling useAction on client
+- [x] Fix calling useAction on client
 

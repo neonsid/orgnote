@@ -240,7 +240,11 @@ export const getBookmarkDescriptionJob = query({
       _creationTime: v.number(),
       ownerId: v.string(),
       url: v.string(),
-      status: v.union(v.literal('pending'), v.literal('complete')),
+      status: v.union(
+        v.literal('pending'),
+        v.literal('complete'),
+        v.literal('cancelled')
+      ),
       success: v.optional(v.boolean()),
       title: v.optional(v.string()),
       description: v.optional(v.string()),

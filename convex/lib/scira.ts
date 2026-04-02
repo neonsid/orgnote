@@ -3,7 +3,12 @@ import { generateText } from 'ai'
 import { extractTweetId } from './url_classifier'
 import { GenericMutationCtx } from 'convex/server'
 import { DataModel } from '../_generated/dataModel'
-import { SCIRA_API_URL, SCIRA_DAILY_LIMIT } from './constants'
+import {
+  OPENROUTER_GENERATE_TEXT_TIMEOUT_MS,
+  SCIRA_API_URL,
+  SCIRA_DAILY_LIMIT,
+  SCIRA_FETCH_TIMEOUT_MS,
+} from './constants'
 import { CLEANUP_SYSTEM_PROMPT } from './prompt'
 
 interface SciraResponse {
@@ -43,6 +48,7 @@ async function fetchFromScira(
       body: JSON.stringify({
         query: `Extract summary, key points, and all URLs from this tweet: ${tweetUrl}`,
       }),
+      signal: AbortSignal.timeout(SCIRA_FETCH_TIMEOUT_MS),
     })
 
     if (!response.ok) {
@@ -103,6 +109,8 @@ async function cleanWithOpenRouter(
       system: CLEANUP_SYSTEM_PROMPT,
       prompt: `Clean up this tweet summary data:\n\n${rawContent}`,
       temperature: 0.3,
+      maxRetries: 1,
+      timeout: OPENROUTER_GENERATE_TEXT_TIMEOUT_MS,
     })
 
     console.log('[Scira/OpenRouter] Response received:')

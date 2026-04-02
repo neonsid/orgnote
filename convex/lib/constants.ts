@@ -38,6 +38,25 @@ export const OPEN_GRAPH_FETCH_USER_AGENT =
 export const OPEN_GRAPH_FETCH_ACCEPT_LANGUAGE = 'en-US,en;q=0.9'
 
 export const SCIRA_API_URL = 'https://api.scira.ai/api/xsearch'
+
+function parsePositiveIntEnv(name: string, fallback: number): number {
+  const raw = process.env[name]
+  if (raw === undefined || raw === '') return fallback
+  const n = Number.parseInt(raw, 10)
+  return Number.isFinite(n) && n > 0 ? n : fallback
+}
+
+/** AI SDK `generateText` to OpenRouter — aborts stalled HTTP to the provider. */
+export const OPENROUTER_GENERATE_TEXT_TIMEOUT_MS = parsePositiveIntEnv(
+  'OPENROUTER_GENERATE_TEXT_TIMEOUT_MS',
+  60_000
+)
+
+/** Scira xsearch HTTP `fetch` — endpoints are slow; cap at 1.5 minutes. */
+export const SCIRA_FETCH_TIMEOUT_MS = parsePositiveIntEnv(
+  'SCIRA_FETCH_TIMEOUT_MS',
+  90_000
+)
 export const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID || ''
 export const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || ''
 export const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID || ''
