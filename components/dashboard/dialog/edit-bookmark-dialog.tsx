@@ -1,7 +1,14 @@
 "use client";
 
-import { useReducer, useCallback, useMemo, memo } from "react";
-import { useMutation, useAction } from "convex/react";
+import {
+  useReducer,
+  useCallback,
+  useMemo,
+  memo,
+  useRef,
+  useState,
+} from "react";
+import { useMutation, useConvex } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { type Id } from "@/convex/_generated/dataModel";
 import {
@@ -17,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Loader2, Sparkles, RefreshCw, Pencil } from "lucide-react";
 import { toast } from "@/lib/toast";
+import { waitForBookmarkDescriptionJob } from "@/lib/poll-convex-query";
 
 interface Bookmark {
   id: string;
@@ -113,10 +121,22 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
 }: EditBookmarkDialogProps) {
   const [state, dispatch] = useReducer(reducer, bookmark, dialogStateFromBookmark);
 
+  const convex = useConvex();
   const updateBookmark = useMutation(api.bookmarks.mutations.updateBookmarkDetails);
-  const generateDescription = useAction(
-    api.metadata.generateBookmarkDescription,
+  const requestBookmarkDescription = useMutation(
+    api.bookmarks.mutations.requestBookmarkDescription,
   );
+  const cancelBookmarkDescriptionJob = useMutation(
+    api.bookmarks.mutations.cancelBookmarkDescriptionJob,
+  );
+
+  const descriptionAbortRef = useRef<AbortController | null>(null);
+  const activeDescriptionJobIdRef = useRef<Id<"bookmarkDescriptionJobs"> | null>(
+    null,
+  );
+  const [descriptionJobIdForCancel, setDescriptionJobIdForCancel] = useState<
+    Id<"bookmarkDescriptionJobs"> | null
+  >(null);
 
   // Handle dialog close
   const handleOpenChange = useCallback(
@@ -142,17 +162,39 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
     [],
   );
 
+  const handleStopDescriptionGeneration = useCallback(async () => {
+    const jobId = activeDescriptionJobIdRef.current;
+    if (jobId) {
+      try {
+        await cancelBookmarkDescriptionJob({ jobId });
+      } catch (e) {
+        console.error("Failed to cancel description job:", e);
+      }
+    }
+    descriptionAbortRef.current?.abort();
+  }, [cancelBookmarkDescriptionJob]);
+
   const handleGenerateDescription = useCallback(async () => {
     if (!state.form.url) {
       toast.error("Please enter a URL first");
       return;
     }
 
+    const abort = new AbortController();
+    descriptionAbortRef.current = abort;
+    activeDescriptionJobIdRef.current = null;
+    setDescriptionJobIdForCancel(null);
+
     dispatch({ type: "setGenerating", isGenerating: true });
 
     try {
-      const result = await generateDescription({
+      const jobId = await requestBookmarkDescription({
         url: state.form.url,
+      });
+      activeDescriptionJobIdRef.current = jobId;
+      setDescriptionJobIdForCancel(jobId);
+      const result = await waitForBookmarkDescriptionJob(convex, jobId, {
+        signal: abort.signal,
       });
 
       if (result.success && result.description) {
@@ -170,14 +212,21 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
         toast.error(result.error || "Failed to generate description");
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        toast.info("Generation cancelled");
+        return;
+      }
       console.error("Error generating description:", error);
       toast.error(
         "Failed to generate description. Try again or enter manually.",
       );
     } finally {
+      activeDescriptionJobIdRef.current = null;
+      setDescriptionJobIdForCancel(null);
+      descriptionAbortRef.current = null;
       dispatch({ type: "setGenerating", isGenerating: false });
     }
-  }, [state.form.url, state.form.title, generateDescription]);
+  }, [state.form.url, state.form.title, convex, requestBookmarkDescription]);
 
   const handleSave = useCallback(async () => {
     if (!bookmark) return;
@@ -325,14 +374,36 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
               )}
           </div>
 
-          <Button
-            variant="outline"
-            onClick={handleGenerateDescription}
-            disabled={state.isGenerating || !state.form.url}
-            className="w-full"
-          >
-            {generateButtonContent}
-          </Button>
+          {state.isGenerating ? (
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleStopDescriptionGeneration}
+                disabled={!descriptionJobIdForCancel}
+                className="flex-1"
+              >
+                Stop
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled
+                className="flex-1"
+              >
+                {generateButtonContent}
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={handleGenerateDescription}
+              disabled={!state.form.url}
+              className="w-full"
+            >
+              {generateButtonContent}
+            </Button>
+          )}
         </div>
 
         <DialogFooter>

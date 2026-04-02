@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { useMutation, useAction } from "convex/react";
+import { useMutation, useConvex } from "convex/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useFileUpload, type FileWithPreview } from "@/hooks/use-file-upload";
 import { toast } from "@/lib/toast";
+import { waitForVaultUploadRequest } from "@/lib/poll-convex-query";
 import { uploadFileToPresignedUrl } from "@/lib/upload-to-presigned-url";
 
 export interface UploadFileItem {
@@ -102,7 +103,10 @@ export function useFileUploader({
     }
   }, []);
 
-  const getPresignedUploadUrl = useAction(api.vault_node.getPresignedUploadUrl);
+  const convex = useConvex();
+  const requestPresignedUploadUrl = useMutation(
+    api.vault.mutations.requestPresignedUploadUrl,
+  );
   const saveFileMetadata = useMutation(api.vault.mutations.saveFileMetadata);
 
   const isUploading = uploadFiles.some((f) => f.status === "uploading");
@@ -124,10 +128,14 @@ export function useFileUploader({
       try {
         const file = fileItem.file as File;
 
-        const { uploadUrl, fileUrl } = await getPresignedUploadUrl({
+        const requestId = await requestPresignedUploadUrl({
           fileName: file.name,
           fileType: file.type,
         });
+        const { uploadUrl, fileUrl } = await waitForVaultUploadRequest(
+          convex,
+          requestId,
+        );
 
         await uploadFileToPresignedUrl(file, uploadUrl, (progress) => {
           setUploadFiles((prev) =>
@@ -175,7 +183,8 @@ export function useFileUploader({
       }
     },
     [
-      getPresignedUploadUrl,
+      convex,
+      requestPresignedUploadUrl,
       saveFileMetadata,
       selectedGroupId,
       queryClient,
