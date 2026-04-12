@@ -1,8 +1,8 @@
 import { v } from 'convex/values'
 import { ConvexError } from 'convex/values'
-import { mutation, type MutationCtx } from '../_generated/server'
+import { type MutationCtx } from '../_generated/server'
 import { Id } from '../_generated/dataModel'
-import { requireAuth } from '../lib/auth'
+import { authMutation } from '../lib/auth'
 import {
   faviconUrlForHttpUrl,
   isValidUrl,
@@ -70,7 +70,7 @@ async function scheduleBookmarkMetadata(
   )
 }
 
-export const createBookMark = mutation({
+export const createBookMark = authMutation({
   args: {
     title: v.string(),
     description: v.optional(v.string()),
@@ -81,7 +81,7 @@ export const createBookMark = mutation({
   },
   returns: v.id('bookmarks'),
   handler: async (ctx, args): Promise<Id<'bookmarks'>> => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     if (!args.groupId) {
       throw new ConvexError({
@@ -121,11 +121,11 @@ export const createBookMark = mutation({
   },
 })
 
-export const deleteBookMark = mutation({
+export const deleteBookMark = authMutation({
   args: { bookmarkId: v.id('bookmarks') },
   returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     await verifyBookmarkOwnership(ctx, args.bookmarkId, userId)
 
@@ -134,7 +134,7 @@ export const deleteBookMark = mutation({
   },
 })
 
-export const importBookmarks = mutation({
+export const importBookmarks = authMutation({
   args: {
     groupId: v.id('groups'),
     items: v.array(
@@ -149,7 +149,7 @@ export const importBookmarks = mutation({
     skippedCount: v.number(),
   }),
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
     await verifyGroupOwnership(ctx, args.groupId, userId)
 
     if (args.items.length === 0) {
@@ -195,11 +195,11 @@ export const importBookmarks = mutation({
   },
 })
 
-export const deleteBookmarksBulk = mutation({
+export const deleteBookmarksBulk = authMutation({
   args: { bookmarkIds: v.array(v.id('bookmarks')) },
   returns: v.object({ deletedCount: v.number() }),
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     if (args.bookmarkIds.length === 0) {
       return { deletedCount: 0 }
@@ -222,14 +222,14 @@ export const deleteBookmarksBulk = mutation({
   },
 })
 
-export const renameBookMark = mutation({
+export const renameBookMark = authMutation({
   args: {
     bookmarkId: v.id('bookmarks'),
     title: v.string(),
   },
   returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     await verifyBookmarkOwnership(ctx, args.bookmarkId, userId)
 
@@ -241,11 +241,11 @@ export const renameBookMark = mutation({
   },
 })
 
-export const markAsDone = mutation({
+export const markAsDone = authMutation({
   args: { bookmarkId: v.id('bookmarks') },
   returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     await verifyBookmarkOwnership(ctx, args.bookmarkId, userId)
 
@@ -257,11 +257,11 @@ export const markAsDone = mutation({
   },
 })
 
-export const toggleReadStatus = mutation({
+export const toggleReadStatus = authMutation({
   args: { bookmarkId: v.id('bookmarks') },
   returns: v.object({ success: v.boolean(), doneReading: v.boolean() }),
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     const bookmark = await ctx.db.get(args.bookmarkId)
     if (!bookmark) {
@@ -282,14 +282,14 @@ export const toggleReadStatus = mutation({
   },
 })
 
-export const moveBookMark = mutation({
+export const moveBookMark = authMutation({
   args: {
     bookmarkId: v.id('bookmarks'),
     groupId: v.id('groups'),
   },
   returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     await Promise.all([
       verifyBookmarkOwnership(ctx, args.bookmarkId, userId),
@@ -304,14 +304,14 @@ export const moveBookMark = mutation({
   },
 })
 
-export const moveBookmarksBulk = mutation({
+export const moveBookmarksBulk = authMutation({
   args: {
     bookmarkIds: v.array(v.id('bookmarks')),
     groupId: v.id('groups'),
   },
   returns: v.object({ movedCount: v.number() }),
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     if (args.bookmarkIds.length === 0) {
       return { movedCount: 0 }
@@ -340,7 +340,7 @@ export const moveBookmarksBulk = mutation({
   },
 })
 
-export const updateBookmarkDetails = mutation({
+export const updateBookmarkDetails = authMutation({
   args: {
     bookmarkId: v.id('bookmarks'),
     title: v.optional(v.string()),
@@ -349,7 +349,7 @@ export const updateBookmarkDetails = mutation({
   },
   returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     await verifyBookmarkOwnership(ctx, args.bookmarkId, userId)
 
@@ -401,11 +401,11 @@ export const updateBookmarkDetails = mutation({
 })
 
 /** Edit dialog: records intent and schedules AI work (prefer over client `useAction`). */
-export const requestBookmarkDescription = mutation({
+export const requestBookmarkDescription = authMutation({
   args: { url: v.string() },
   returns: v.id('bookmarkDescriptionJobs'),
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     const jobId = await ctx.db.insert('bookmarkDescriptionJobs', {
       ownerId: userId,
@@ -421,11 +421,11 @@ export const requestBookmarkDescription = mutation({
   },
 })
 
-export const cancelBookmarkDescriptionJob = mutation({
+export const cancelBookmarkDescriptionJob = authMutation({
   args: { jobId: v.id('bookmarkDescriptionJobs') },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
     const job = await ctx.db.get(args.jobId)
     if (!job || job.ownerId !== userId) {
       return null

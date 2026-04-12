@@ -1,8 +1,7 @@
 import { v } from 'convex/values'
-import { query } from '../_generated/server'
-import { requireAuth } from '../lib/auth'
+import { authQuery } from '../lib/auth'
 
-export const getVaultUploadRequest = query({
+export const getVaultUploadRequest = authQuery({
   args: { requestId: v.id('vaultUploadRequests') },
   returns: v.union(
     v.null(),
@@ -24,7 +23,7 @@ export const getVaultUploadRequest = query({
     })
   ),
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
     const row = await ctx.db.get(args.requestId)
     if (!row || row.ownerId !== userId) {
       return null
@@ -33,10 +32,10 @@ export const getVaultUploadRequest = query({
   },
 })
 
-export const getFiles = query({
+export const getFiles = authQuery({
   args: { groupId: v.optional(v.id('vaultGroups')) },
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     if (args.groupId !== undefined) {
       const files = await ctx.db
@@ -57,10 +56,10 @@ export const getFiles = query({
   },
 })
 
-export const getVaultGroups = query({
+export const getVaultGroups = authQuery({
   args: {},
   handler: async (ctx) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
     return await ctx.db
       .query('vaultGroups')
       .withIndex('by_userId', (q) => q.eq('userId', userId))
@@ -68,10 +67,10 @@ export const getVaultGroups = query({
   },
 })
 
-export const getVaultData = query({
+export const getVaultData = authQuery({
   args: {},
   handler: async (ctx) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
     const [groups, files] = await Promise.all([
       ctx.db
         .query('vaultGroups')

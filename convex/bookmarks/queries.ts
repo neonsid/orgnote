@@ -2,7 +2,7 @@ import { v } from 'convex/values'
 import { GenericQueryCtx } from 'convex/server'
 import { query } from '../_generated/server'
 import { DataModel, Id } from '../_generated/dataModel'
-import { requireAuth } from '../lib/auth'
+import { authQuery } from '../lib/auth'
 import {
   verifyGroupOwnership,
   fetchGroupBookmarksByGroupId,
@@ -53,10 +53,10 @@ async function buildPublicBookmarkList(
   return bookmarks
 }
 
-export const listBookMarks = query({
+export const listBookMarks = authQuery({
   args: { groupId: v.id('groups') },
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     await verifyGroupOwnership(ctx, args.groupId, userId)
 
@@ -64,10 +64,10 @@ export const listBookMarks = query({
   },
 })
 
-export const listBookmarksMinimal = query({
+export const listBookmarksMinimal = authQuery({
   args: { groupId: v.id('groups') },
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     await verifyGroupOwnership(ctx, args.groupId, userId)
 
@@ -84,10 +84,10 @@ export const listBookmarksMinimal = query({
   },
 })
 
-export const getDashboardData = query({
+export const getDashboardData = authQuery({
   args: {},
   handler: async (ctx) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     const groups = await ctx.db
       .query('groups')
@@ -119,10 +119,10 @@ export const getDashboardData = query({
   },
 })
 
-export const getBookmarksByGroupIds = query({
+export const getBookmarksByGroupIds = authQuery({
   args: { groupIds: v.array(v.id('groups')) },
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     const bookmarks: Array<{
       _id: string
@@ -153,10 +153,10 @@ export const getBookmarksByGroupIds = query({
   },
 })
 
-export const getBookmarkCountsByUser = query({
+export const getBookmarkCountsByUser = authQuery({
   args: {},
   handler: async (ctx) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     const groups = await ctx.db
       .query('groups')
@@ -172,10 +172,10 @@ export const getBookmarkCountsByUser = query({
   },
 })
 
-export const getAllUserBookmarks = query({
+export const getAllUserBookmarks = authQuery({
   args: {},
   handler: async (ctx) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     const groups = await ctx.db
       .query('groups')
@@ -231,7 +231,7 @@ export const getPublicBookmarksByUsername = query({
   },
 })
 
-export const getBookmarkDescriptionJob = query({
+export const getBookmarkDescriptionJob = authQuery({
   args: { jobId: v.id('bookmarkDescriptionJobs') },
   returns: v.union(
     v.null(),
@@ -254,7 +254,7 @@ export const getBookmarkDescriptionJob = query({
     })
   ),
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
     const job = await ctx.db.get(args.jobId)
     if (!job || job.ownerId !== userId) {
       return null

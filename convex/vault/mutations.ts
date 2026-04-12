@@ -1,6 +1,5 @@
 import { v } from 'convex/values'
-import { mutation } from '../_generated/server'
-import { requireAuth } from '../lib/auth'
+import { authMutation } from '../lib/auth'
 import { ConvexError } from 'convex/values'
 import { internal } from '../_generated/api'
 import {
@@ -28,11 +27,11 @@ function validateFileNameAndType(fileName: string, fileType: string): void {
 }
 
 /** Client calls this instead of a public action; intent is stored then an internal action runs. */
-export const requestPresignedUploadUrl = mutation({
+export const requestPresignedUploadUrl = authMutation({
   args: { fileName: v.string(), fileType: v.string() },
   returns: v.id('vaultUploadRequests'),
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
     validateFileNameAndType(args.fileName, args.fileType)
 
     const requestId = await ctx.db.insert('vaultUploadRequests', {
@@ -50,11 +49,11 @@ export const requestPresignedUploadUrl = mutation({
   },
 })
 
-export const deleteFile = mutation({
+export const deleteFile = authMutation({
   args: { fileId: v.id('vaultFiles') },
   returns: v.object({ success: v.boolean() }),
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     const file = await ctx.db.get(args.fileId)
     if (!file) {
@@ -81,7 +80,7 @@ export const deleteFile = mutation({
   },
 })
 
-export const saveFileMetadata = mutation({
+export const saveFileMetadata = authMutation({
   args: {
     fileName: v.string(),
     fileType: v.string(),
@@ -91,7 +90,7 @@ export const saveFileMetadata = mutation({
     groupId: v.optional(v.id('vaultGroups')),
   },
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     const fileId = await ctx.db.insert('vaultFiles', {
       name: args.fileName,
@@ -107,10 +106,10 @@ export const saveFileMetadata = mutation({
   },
 })
 
-export const createVaultGroup = mutation({
+export const createVaultGroup = authMutation({
   args: { title: v.string(), color: v.string() },
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
     const groupId = await ctx.db.insert('vaultGroups', {
       title: args.title,
       color: args.color,
@@ -120,10 +119,10 @@ export const createVaultGroup = mutation({
   },
 })
 
-export const deleteVaultGroup = mutation({
+export const deleteVaultGroup = authMutation({
   args: { groupId: v.id('vaultGroups') },
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
     const group = await ctx.db.get(args.groupId)
     if (!group) {
       throw new ConvexError('Vault group not found')

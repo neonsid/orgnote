@@ -1,8 +1,7 @@
 import { v, ConvexError } from 'convex/values'
-import { mutation } from '../_generated/server'
-import { requireAuth } from '../lib/auth'
+import { authMutation } from '../lib/auth'
 
-export const upsertProfile = mutation({
+export const upsertProfile = authMutation({
   args: {
     username: v.optional(v.string()),
     bio: v.optional(v.string()),
@@ -21,7 +20,7 @@ export const upsertProfile = mutation({
     isPublic: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     if (args.username) {
       const existingUserWithUsername = await ctx.db
@@ -65,12 +64,12 @@ export const upsertProfile = mutation({
   },
 })
 
-export const updateUsername = mutation({
+export const updateUsername = authMutation({
   args: {
     username: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     const existingUserWithUsername = await ctx.db
       .query('userProfile')
@@ -106,12 +105,12 @@ export const updateUsername = mutation({
   },
 })
 
-export const updateBio = mutation({
+export const updateBio = authMutation({
   args: {
     bio: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     const existingProfile = await ctx.db
       .query('userProfile')
@@ -130,7 +129,7 @@ export const updateBio = mutation({
   },
 })
 
-export const updateSocialLinks = mutation({
+export const updateSocialLinks = authMutation({
   args: {
     links: v.array(
       v.object({
@@ -144,7 +143,7 @@ export const updateSocialLinks = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     const existingProfile = await ctx.db
       .query('userProfile')
@@ -163,12 +162,12 @@ export const updateSocialLinks = mutation({
   },
 })
 
-export const switchProfileStatus = mutation({
+export const switchProfileStatus = authMutation({
   args: {
     isPublic: v.boolean(),
   },
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     const existingProfile = await ctx.db
       .query('userProfile')
