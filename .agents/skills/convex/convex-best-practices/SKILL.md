@@ -1,7 +1,7 @@
 ---
-name: convex-best-practices
+
+## name: convex-best-practices
 description: Guidelines for building production-ready Convex apps covering function organization, query patterns, validation, TypeScript usage, error handling, and the Zen of Convex design philosophy
----
 
 # Convex Best Practices
 
@@ -27,6 +27,7 @@ export default defineConfig([
 
 The plugin enforces four rules:
 
+
 | Rule                                | What it enforces                  |
 | ----------------------------------- | --------------------------------- |
 | `no-old-registered-function-syntax` | Object syntax with `handler`      |
@@ -34,16 +35,17 @@ The plugin enforces four rules:
 | `explicit-table-ids`                | Table name in db operations       |
 | `import-wrong-runtime`              | No Node imports in Convex runtime |
 
-Docs: https://docs.convex.dev/eslint
+
+Docs: [https://docs.convex.dev/eslint](https://docs.convex.dev/eslint)
 
 ## Documentation Sources
 
 Before implementing, do not assume; fetch the latest documentation:
 
-- Primary: https://docs.convex.dev/understanding/best-practices/
-- Error Handling: https://docs.convex.dev/functions/error-handling
-- Write Conflicts: https://docs.convex.dev/error#1
-- For broader context: https://docs.convex.dev/llms.txt
+- Primary: [https://docs.convex.dev/understanding/best-practices/](https://docs.convex.dev/understanding/best-practices/)
+- Error Handling: [https://docs.convex.dev/functions/error-handling](https://docs.convex.dev/functions/error-handling)
+- Write Conflicts: [https://docs.convex.dev/error#1](https://docs.convex.dev/error#1)
+- For broader context: [https://docs.convex.dev/llms.txt](https://docs.convex.dev/llms.txt)
 
 ## Instructions
 
@@ -363,8 +365,9 @@ export const remove = mutation({
 
 ## References
 
-- Convex Documentation: https://docs.convex.dev/
-- Convex LLMs.txt: https://docs.convex.dev/llms.txt
-- Best Practices: https://docs.convex.dev/understanding/best-practices/
-- Error Handling: https://docs.convex.dev/functions/error-handling
-- Write Conflicts: https://docs.convex.dev/error#1
+- Convex Documentation: [https://docs.convex.dev/](https://docs.convex.dev/)
+- Convex LLMs.txt: [https://docs.convex.dev/llms.txt](https://docs.convex.dev/llms.txt)
+- Best Practices: [https://docs.convex.dev/understanding/best-practices/](https://docs.convex.dev/understanding/best-practices/)
+- Error Handling: [https://docs.convex.dev/functions/error-handling](https://docs.convex.dev/functions/error-handling)
+- Write Conflicts: [https://docs.convex.dev/error#1](https://docs.convex.dev/error#1)
+

@@ -1,16 +1,16 @@
 import { v } from 'convex/values'
 import { query } from '../_generated/server'
-import { requireAuth } from '../lib/auth'
+import { authQuery } from '../lib/auth'
 import {
   fetchGroupBookmarks,
   bookmarkIsVisibleOnPublicListing,
 } from '../bookmarks/helpers'
 import { MAX_GROUPS_PER_QUERY } from '../lib/constants'
 
-export const getProfile = query({
+export const getProfile = authQuery({
   args: {},
   handler: async (ctx) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     const profile = await ctx.db
       .query('userProfile')

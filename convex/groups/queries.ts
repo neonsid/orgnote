@@ -1,12 +1,12 @@
 import { v } from 'convex/values'
 import { query } from '../_generated/server'
-import { requireAuth } from '../lib/auth'
+import { authQuery } from '../lib/auth'
 import { MAX_GROUPS_PER_QUERY } from '../lib/constants'
 
-export const list = query({
+export const list = authQuery({
   args: {},
   handler: async (ctx) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
     return await ctx.db
       .query('groups')
       .withIndex('by_userId_and_isPublic', (q) => q.eq('userId', userId))
