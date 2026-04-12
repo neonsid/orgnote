@@ -1,15 +1,14 @@
 import { v, ConvexError } from 'convex/values'
-import { mutation } from '../_generated/server'
-import { requireAuth } from '../lib/auth'
+import { authMutation } from '../lib/auth'
 
-export const create = mutation({
+export const create = authMutation({
   args: {
     title: v.string(),
     color: v.string(),
   },
   returns: v.id('groups'),
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
 
     return await ctx.db.insert('groups', {
       title: args.title,
@@ -20,14 +19,14 @@ export const create = mutation({
   },
 })
 
-export const renameGroup = mutation({
+export const renameGroup = authMutation({
   args: {
     title: v.string(),
     groupId: v.id('groups'),
     color: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
     const currentTime = Date.now()
     const group = await ctx.db.get(args.groupId)
     if (!group) {
@@ -52,13 +51,13 @@ export const renameGroup = mutation({
   },
 })
 
-export const deleteGroup = mutation({
+export const deleteGroup = authMutation({
   args: {
     groupId: v.id('groups'),
   },
   returns: v.object({ success: v.boolean(), deletedId: v.id('groups') }),
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
     const group = await ctx.db.get(args.groupId)
 
     if (!group) {
@@ -78,13 +77,13 @@ export const deleteGroup = mutation({
   },
 })
 
-export const toggleGroupPublic = mutation({
+export const toggleGroupPublic = authMutation({
   args: {
     groupId: v.id('groups'),
   },
   returns: v.object({ success: v.boolean(), isPublic: v.boolean() }),
   handler: async (ctx, args) => {
-    const userId = await requireAuth(ctx)
+    const { userId } = ctx
     const group = await ctx.db.get(args.groupId)
 
     if (!group) {
