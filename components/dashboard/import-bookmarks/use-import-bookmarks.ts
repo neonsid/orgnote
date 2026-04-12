@@ -29,7 +29,7 @@ const MAX_IMPORT_BATCH = 100
 export function useImportBookmarks() {
   const router = useRouter()
   const groups = useQuery(api.groups.queries.list)
-  const dashboardData = useQuery(api.bookmarks.queries.getDashboardData, {})
+  const importUrlKeys = useQuery(api.bookmarks.queries.getBookmarkUrlKeysForImport, {})
   const importBookmarksMutation = useMutation(api.bookmarks.mutations.importBookmarks)
   const setSelectedGroupId = useDashboardStore((s) => s.setSelectedGroupId)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -58,9 +58,9 @@ export function useImportBookmarks() {
   } = state
 
   const existingKeysByGroupId = useMemo(() => {
-    if (!dashboardData?.bookmarks) return new Map<string, Set<string>>()
-    return buildExistingKeysByGroupId(dashboardData.bookmarks)
-  }, [dashboardData])
+    if (!importUrlKeys) return new Map<string, Set<string>>()
+    return buildExistingKeysByGroupId(importUrlKeys)
+  }, [importUrlKeys])
 
   const duplicatePartitions = useMemo((): Record<
     string,
@@ -122,7 +122,7 @@ export function useImportBookmarks() {
 
   const importButtonLabel = isImporting
     ? 'Importing…'
-    : totalPendingCount > 0 && dashboardData === undefined
+    : totalPendingCount > 0 && importUrlKeys === undefined
       ? 'Loading bookmarks…'
       : `Import selected (${totalPendingCount})`
 
@@ -344,7 +344,7 @@ export function useImportBookmarks() {
       toast.error('Add links to at least one of your groups first')
       return
     }
-    if (dashboardData === undefined) {
+    if (importUrlKeys === undefined) {
       toast.error('Loading your bookmarks… try again in a moment')
       return
     }
@@ -354,7 +354,7 @@ export function useImportBookmarks() {
       return
     }
     void runImport(pendingByGroup, 'full')
-  }, [pendingByGroup, dashboardData, existingKeysByGroupId, runImport])
+  }, [pendingByGroup, importUrlKeys, existingKeysByGroupId, runImport])
 
   const handleImportAllDuplicates = useCallback(() => {
     void runImport(pendingByGroup, 'full')
@@ -409,7 +409,7 @@ export function useImportBookmarks() {
     newOnlyImportCount,
     importButtonLabel,
     hasFile,
-    dashboardData,
+    importUrlKeys,
     // handlers
     handleFileChange,
     handleDrop,

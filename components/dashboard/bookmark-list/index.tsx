@@ -2,6 +2,7 @@
 
 import { useReducer, useRef, useCallback, memo } from 'react'
 import { useMountEffect } from '@/hooks/use-mount-effect'
+import { Loader2 } from 'lucide-react'
 import { m, AnimatePresence } from 'motion/react'
 import { useIsSmallMobile } from '@/hooks/use-mobile'
 import { BookmarkItem } from './bookmark-item'
@@ -11,11 +12,15 @@ import type { Bookmark } from './types'
 import type { ConvexGroup } from '../group-selector'
 import type { Id } from '@/convex/_generated/dataModel'
 import { cn } from '@/lib/utils'
+import type { PaginationStatus } from 'convex/react'
 
 interface BookmarkListProps {
   bookmarks: Bookmark[]
   groups: ConvexGroup[]
   loading: boolean
+  /** When set, enables infinite scroll for Convex-paginated lists. */
+  bookmarkPaginationStatus?: PaginationStatus
+  onLoadMoreBookmarks?: () => void
   effectiveGroupId: Id<'groups'>
   multiSelectMode: boolean
   selectedBookmarkIds: Set<Id<'bookmarks'>>
@@ -35,10 +40,45 @@ interface BookmarkListProps {
   onToggleRead: (bookmarkId: Id<'bookmarks'>) => void
 }
 
+/**
+ * Only mounted while `CanLoadMore` — unmount disconnects the observer.
+ * Latest `onVisible` via ref (parent callback identity may change).
+ */
+function BookmarkPaginatedLoadSentinel({
+  onVisible,
+}: {
+  onVisible: () => void
+}) {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const onVisibleRef = useRef(onVisible)
+  // eslint-disable-next-line react-hooks/refs -- latest handler for mount-only observer
+  onVisibleRef.current = onVisible
+
+  useMountEffect(() => {
+    const el = rootRef.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          onVisibleRef.current()
+        }
+      },
+      { root: null, rootMargin: '120px', threshold: 0 },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  })
+
+  return <div ref={rootRef} className="h-1 w-full shrink-0" aria-hidden />
+}
+
 export const BookmarkList = memo(function BookmarkList({
   bookmarks,
   groups,
   loading,
+  bookmarkPaginationStatus,
+  onLoadMoreBookmarks,
   effectiveGroupId,
   multiSelectMode,
   selectedBookmarkIds,
@@ -297,6 +337,16 @@ export const BookmarkList = memo(function BookmarkList({
           />
         ))}
       </AnimatePresence>
+
+      {bookmarkPaginationStatus === 'LoadingMore' ? (
+        <div className="flex justify-center py-4" aria-busy="true">
+          <Loader2 className="size-6 text-muted-foreground animate-spin" />
+        </div>
+      ) : null}
+
+      {bookmarkPaginationStatus === 'CanLoadMore' && onLoadMoreBookmarks ? (
+        <BookmarkPaginatedLoadSentinel onVisible={onLoadMoreBookmarks} />
+      ) : null}
 
       {multiSelectMode && (
         <MultiSelectToolbar
