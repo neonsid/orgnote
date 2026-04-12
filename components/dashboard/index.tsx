@@ -31,8 +31,7 @@ const EditBookmarkDialog = dynamic(
 )
 
 const DeleteBookmarkDialog = dynamic(
-  () =>
-    import('@/components/dialogs').then((m) => m.DeleteBookmarkDialog),
+  () => import('@/components/dialogs').then((m) => m.DeleteBookmarkDialog),
   { ssr: false }
 )
 
@@ -50,7 +49,7 @@ export default function DashboardPage() {
         title: b.title,
         publicListingBlockedForUrlSafety: b.publicListingBlockedForUrlSafety,
       })),
-    [bookmarks],
+    [bookmarks]
   )
 
   const [debouncedQuery, setDebouncedQuery] = useState('')
@@ -87,10 +86,12 @@ export default function DashboardPage() {
   const deleteBookmarksBulk = useMutation(
     api.bookmarks.mutations.deleteBookmarksBulk
   )
+
   const moveBookmark = useMutation(api.bookmarks.mutations.moveBookMark)
   const moveBookmarksBulk = useMutation(
     api.bookmarks.mutations.moveBookmarksBulk
   )
+
   const toggleReadStatus = useMutation(api.bookmarks.mutations.toggleReadStatus)
   const createGroup = useMutation(api.groups.mutations.create)
 
@@ -211,7 +212,7 @@ export default function DashboardPage() {
     () =>
       filteredBookmarks.length > 0 &&
       filteredBookmarks.every((b) => selectedBookmarkIds.has(b.id)),
-    [filteredBookmarks, selectedBookmarkIds],
+    [filteredBookmarks, selectedBookmarkIds]
   )
 
   const selectAllVisibleBookmarks = useCallback(() => {
@@ -234,9 +235,7 @@ export default function DashboardPage() {
       const n = ids.length
       try {
         await moveBookmarksBulk({ bookmarkIds: ids, groupId: newGroupId })
-        toast.success(
-          `Moved ${n} bookmark${n === 1 ? '' : 's'}`,
-        )
+        toast.success(`Moved ${n} bookmark${n === 1 ? '' : 's'}`)
         exitMultiSelect()
       } catch {
         toast.error('Failed to move bookmarks')
@@ -308,9 +307,7 @@ export default function DashboardPage() {
     const n = bulkDeleteIds.length
     try {
       await deleteBookmarksBulk({ bookmarkIds: bulkDeleteIds })
-      toast.success(
-        `Deleted ${n} bookmark${n === 1 ? '' : 's'}`,
-      )
+      toast.success(`Deleted ${n} bookmark${n === 1 ? '' : 's'}`)
       exitMultiSelect()
     } catch {
       toast.error('Failed to delete bookmarks')
