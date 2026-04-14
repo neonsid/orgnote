@@ -67,7 +67,7 @@ const SECTIONS = [
   {
     title: '12. Contact',
     content:
-      'If you have any questions about these Terms of Service, please contact us at legal@orgnote.app.',
+      'If you have any questions about these Terms of Service, please contact us at legal@orgnote.store.',
   },
 ]
 

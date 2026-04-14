@@ -2,6 +2,8 @@
 
 ## Project skills
 
+See **[skills.md](./skills.md)** for a short index of **local** skills (below) and **official Expo skills** ([expo/skills](https://github.com/expo/skills)) for Expo Router, EAS, and native app work.
+
 Extended, task-specific guidance lives under **`.agents/skills/`**. Read the relevant `SKILL.md` before deep work in that area:
 
 | Area | Path | When to read |
