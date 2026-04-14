@@ -1,13 +1,23 @@
-import { defineConfig } from "eslint/config";
+import { defineConfig, globalIgnores } from "eslint/config";
 import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 import nextTypescript from "eslint-config-next/typescript";
 import convexPlugin from "@convex-dev/eslint-plugin";
 
+const webFiles = ["apps/web/**/*.{js,jsx,ts,tsx,mjs,cjs}"];
+
 export default defineConfig([
-  ...nextCoreWebVitals,
-  ...nextTypescript,
+  globalIgnores([
+    "**/node_modules/**",
+    "convex/_generated/**",
+    "apps/web/.next/**",
+    "apps/mobile/.expo/**",
+    "apps/mobile/node_modules/**",
+  ]),
+  ...nextCoreWebVitals.map((config) => ({ ...config, files: webFiles })),
+  ...nextTypescript.map((config) => ({ ...config, files: webFiles })),
   ...convexPlugin.configs.recommended,
   {
+    files: webFiles,
     rules: {
       "@typescript-eslint/no-unused-vars": [
         "error",
@@ -32,8 +42,5 @@ export default defineConfig([
         },
       ],
     },
-  },
-  {
-    ignores: [".next/**", "node_modules/**", "convex/_generated/**"],
   },
 ]);

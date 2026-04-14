@@ -20,6 +20,7 @@ import type * as lib_openrouter_helpers from "../lib/openrouter_helpers.js";
 import type * as lib_prompt from "../lib/prompt.js";
 import type * as lib_scira from "../lib/scira.js";
 import type * as lib_url_classifier from "../lib/url_classifier.js";
+import type * as lib_url_limits from "../lib/url_limits.js";
 import type * as metadata from "../metadata.js";
 import type * as metadata_ai_description from "../metadata/ai_description.js";
 import type * as metadata_bookmark_description from "../metadata/bookmark_description.js";
@@ -56,6 +57,7 @@ declare const fullApi: ApiFromModules<{
   "lib/prompt": typeof lib_prompt;
   "lib/scira": typeof lib_scira;
   "lib/url_classifier": typeof lib_url_classifier;
+  "lib/url_limits": typeof lib_url_limits;
   metadata: typeof metadata;
   "metadata/ai_description": typeof metadata_ai_description;
   "metadata/bookmark_description": typeof metadata_bookmark_description;
