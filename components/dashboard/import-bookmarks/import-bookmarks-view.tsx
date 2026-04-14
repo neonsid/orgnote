@@ -36,7 +36,7 @@ export const ImportBookmarksView = memo(function ImportBookmarksView() {
     newOnlyImportCount,
     importButtonLabel,
     hasFile,
-    dashboardData,
+    importUrlKeys,
     handleFileChange,
     handleDrop,
     handleDragOver,
@@ -58,7 +58,7 @@ export const ImportBookmarksView = memo(function ImportBookmarksView() {
     isImporting ||
     totalPendingCount === 0 ||
     !parsedItems?.length ||
-    (totalPendingCount > 0 && dashboardData === undefined) ||
+    (totalPendingCount > 0 && importUrlKeys === undefined) ||
     duplicateReviewVisible
 
   return (

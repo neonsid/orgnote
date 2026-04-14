@@ -10,6 +10,7 @@ export const list = authQuery({
     return await ctx.db
       .query('groups')
       .withIndex('by_userId_and_isPublic', (q) => q.eq('userId', userId))
+      .order('desc')
       .take(MAX_GROUPS_PER_QUERY)
   },
 })

@@ -1,9 +1,10 @@
-import { useQuery } from "convex/react";
+import { useQuery, usePaginatedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useMemo, useCallback } from "react";
 import { extractDomain, COLORS } from "@/lib/domain-utils";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useDashboardStore } from "@/stores/dashboard-store";
+import { BOOKMARKS_PAGE_SIZE } from "@/convex/lib/constants";
 
 interface Bookmark {
   id: Id<"bookmarks">;
@@ -22,43 +23,46 @@ interface Bookmark {
 export function useDashboardData(isAuthenticated: boolean = true) {
   const { selectedGroupId, setSelectedGroupId } = useDashboardStore();
 
-  const dashboardData = useQuery(
-    api.bookmarks.queries.getDashboardData,
+  const groups = useQuery(
+    api.groups.queries.list,
     isAuthenticated ? {} : "skip",
   );
 
-  const isLoading = dashboardData === undefined;
+  const isGroupsLoading = groups === undefined;
 
-  const groups = useMemo(() => dashboardData?.groups ?? [], [dashboardData]);
-
-  // Auto-select first group if none selected
   const effectiveGroupId = useMemo(() => {
-    if (selectedGroupId && groups.some((g) => g._id === selectedGroupId)) {
+    const list = groups ?? [];
+    if (selectedGroupId && list.some((g) => g._id === selectedGroupId)) {
       return selectedGroupId;
     }
-    return groups[0]?._id ?? "";
+    return list[0]?._id ?? "";
   }, [selectedGroupId, groups]);
 
-  // Transform bookmarks for the selected group
-  const bookmarks = useMemo((): Bookmark[] => {
-    if (!dashboardData?.bookmarks) return [];
+  const { results, status, loadMore } = usePaginatedQuery(
+    api.bookmarks.queries.listBookmarksForGroupPaginated,
+    isAuthenticated && effectiveGroupId
+      ? { groupId: effectiveGroupId as Id<"groups"> }
+      : "skip",
+    { initialNumItems: BOOKMARKS_PAGE_SIZE },
+  );
 
-    return dashboardData.bookmarks
-      .filter((b) => b.groupId === effectiveGroupId)
-      .map((b) => ({
-        id: b._id,
-        title: b.title,
-        domain: extractDomain(b.url),
-        url: b.url,
-        favicon: `https://www.google.com/s2/favicons?domain=${extractDomain(b.url)}&sz=64`,
-        fallbackColor: COLORS[b.title.charCodeAt(0) % COLORS.length],
-        createdAt: new Date(b._creationTime).toISOString().split("T")[0],
-        groupId: b.groupId,
-        doneReading: b.doneReading,
-        description: b.description,
-        publicListingBlockedForUrlSafety: b.publicListingBlockedForUrlSafety,
-      }));
-  }, [dashboardData, effectiveGroupId]);
+  const bookmarks = useMemo((): Bookmark[] => {
+    if (!effectiveGroupId) return [];
+
+    return results.map((b) => ({
+      id: b._id,
+      title: b.title,
+      domain: extractDomain(b.url),
+      url: b.url,
+      favicon: `https://www.google.com/s2/favicons?domain=${extractDomain(b.url)}&sz=64`,
+      fallbackColor: COLORS[b.title.charCodeAt(0) % COLORS.length],
+      createdAt: new Date(b._creationTime).toISOString().split("T")[0],
+      groupId: b.groupId,
+      doneReading: b.doneReading,
+      description: b.description,
+      publicListingBlockedForUrlSafety: b.publicListingBlockedForUrlSafety,
+    }));
+  }, [effectiveGroupId, results]);
 
   const selectGroup = useCallback(
     (id: Id<"groups"> | Id<"vaultGroups">) => {
@@ -67,11 +71,25 @@ export function useDashboardData(isAuthenticated: boolean = true) {
     [setSelectedGroupId],
   );
 
+  const bookmarkPaginationStatus = effectiveGroupId ? status : undefined;
+
+  const isLoading =
+    isGroupsLoading ||
+    (!!effectiveGroupId && status === "LoadingFirstPage");
+
+  const loadMoreBookmarks = useCallback(() => {
+    if (effectiveGroupId) {
+      loadMore(BOOKMARKS_PAGE_SIZE);
+    }
+  }, [effectiveGroupId, loadMore]);
+
   return {
-    groups,
+    groups: groups ?? [],
     bookmarks,
     effectiveGroupId,
     selectGroup,
     isLoading,
+    bookmarkPaginationStatus,
+    loadMoreBookmarks,
   };
 }
