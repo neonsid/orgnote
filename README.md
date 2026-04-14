@@ -28,6 +28,7 @@ AI-powered bookmark manager: save links, get instant summaries, organize groups,
 | X/Twitter content | Scira API |
 | Object storage | Cloudflare R2 (`@aws-sdk/client-s3`) |
 | Package manager | **pnpm** (required) |
+| Mobile | Expo SDK 52 + Expo Router (see `apps/mobile`) |
 
 ## Repository layout
 
@@ -36,41 +37,26 @@ High-level structure (generated files and dependencies omitted):
 ```text
 .
 ├── .agents/skills/              # Agent/cursor skills (see AGENTS.md)
-│   ├── convex/convex-best-practices/
-│   └── frontend/use-effect/
-├── app/                         # Next.js App Router
-│   ├── api/download-vault-file/ # Proxied vault downloads (R2 allowlist)
-│   ├── dashboard/               # Authenticated bookmark UI
-│   ├── vault/                   # File vault UI
-│   ├── u/[username]/            # Public profile pages
-│   ├── layout.tsx
-│   ├── page.tsx                 # Landing
-│   └── globals.css
-├── components/                  # React components
-│   ├── dashboard/               # Bookmark dashboard, settings, dialogs
-│   ├── dialogs/                 # Shared modals
-│   ├── landing/
-│   ├── layout/
-│   ├── providers/               # Clerk, Convex, theme, React Query
-│   ├── ui/                      # shadcn primitives
-│   ├── u/                       # Public profile UI
-│   └── vault/                   # Upload, gallery, lightbox
-├── convex/                      # Convex backend
-│   ├── bookmark_metadata/       # OG, GitHub, Scira, OpenRouter pipelines
+├── apps/
+│   ├── web/                     # Next.js 16 app (Orgnote UI)
+│   │   ├── app/                 # App Router, API routes, pages
+│   │   ├── components/          # shadcn + feature components
+│   │   ├── hooks/ lib/ providers/ stores/ types/ public/
+│   │   ├── proxy.ts             # Clerk middleware (route protection)
+│   │   └── components.json      # shadcn config
+│   └── mobile/                  # Expo + React Native (Convex + Clerk)
+│       ├── app/                 # Expo Router screens
+│       └── components/          # Native-only UI
+├── convex/                      # Shared Convex backend (web + mobile)
+│   ├── bookmark_metadata/
 │   ├── bookmarks/ groups/ profile/ vault/
-│   ├── lib/                     # Auth helpers, R2 constants, classifiers
+│   ├── lib/
 │   ├── schema.ts
 │   ├── auth.config.ts
-│   └── vault_node.ts            # Node actions (S3/R2)
-├── hooks/                       # Shared React hooks
-├── lib/                         # Client utilities (upload, validation, etc.)
-├── providers/
-├── public/                      # Static assets
-├── stores/                      # Zustand (dashboard, dialogs, vault)
-├── proxy.ts                     # Clerk middleware (route protection)
-├── AGENTS.md                    # Rules + pointers to .agents skills
-├── components.json              # shadcn config
-└── package.json
+│   └── vault_node.ts
+├── pnpm-workspace.yaml
+├── AGENTS.md
+└── package.json                 # Root scripts (dev, convex, lint, typecheck)
 ```
 
 ## Prerequisites
@@ -131,6 +117,25 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+### 7. Mobile app (Expo)
+
+1. Copy env for the native app (same Convex URL and Clerk **publishable** key as the web app):
+
+   ```bash
+   cp apps/mobile/.env.example apps/mobile/.env
+   ```
+
+   Set `EXPO_PUBLIC_CONVEX_URL` and `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` in `apps/mobile/.env`.
+
+2. From the repo root, install (if you have not already) and start Metro:
+
+   ```bash
+   pnpm install
+   pnpm dev:mobile
+   ```
+
+   Keep `pnpm dev:backend` (or `pnpm dev`) running in another terminal so Convex stays in sync.
+
 ---
 
 ## Environment variables
@@ -138,6 +143,8 @@ Open [http://localhost:3000](http://localhost:3000).
 Variables are split by **where** they are read: Next.js (`.env.local` / Vercel) vs **Convex dashboard**.
 
 ### Next.js — `.env.local` (development)
+
+These variables live in the **repo root** `.env.local` (or `.env`). `apps/web/next.config.ts` loads env from the monorepo root so you can keep one file next to `convex/`.
 
 | Variable | Required | Description |
 | -------- | -------- | ----------- |

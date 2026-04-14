@@ -1,4 +1,4 @@
-import { MAX_BOOKMARK_URL_LENGTH } from '../../lib/url-limits'
+import { MAX_BOOKMARK_URL_LENGTH } from './url_limits'
 
 export const ALLOWED_FILE_TYPES = [
   'image/',
