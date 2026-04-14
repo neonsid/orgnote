@@ -1,5 +1,5 @@
 import { v } from 'convex/values'
-import { GenericQueryCtx } from 'convex/server'
+import { GenericQueryCtx, paginationOptsValidator } from 'convex/server'
 import { query } from '../_generated/server'
 import { DataModel, Id } from '../_generated/dataModel'
 import { authQuery } from '../lib/auth'
@@ -84,7 +84,44 @@ export const listBookmarksMinimal = authQuery({
   },
 })
 
-export const getDashboardData = authQuery({
+/** Dashboard infinite scroll — one page of bookmarks for a single group. */
+export const listBookmarksForGroupPaginated = authQuery({
+  args: {
+    groupId: v.id('groups'),
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    const { userId } = ctx
+
+    await verifyGroupOwnership(ctx, args.groupId, userId)
+
+    const page = await ctx.db
+      .query('bookmarks')
+      .withIndex('by_groupId', (q) => q.eq('groupId', args.groupId))
+      .order('desc')
+      .paginate(args.paginationOpts)
+
+    return {
+      ...page,
+      page: page.page.map((bookmark) => ({
+        _id: bookmark._id,
+        title: bookmark.title,
+        url: bookmark.url,
+        description: bookmark.description,
+        doneReading: bookmark.doneReading,
+        _creationTime: bookmark._creationTime,
+        groupId: bookmark.groupId,
+        publicListingBlockedForUrlSafety:
+          bookmark.publicListingBlockedForUrlSafety,
+      })),
+    }
+  },
+})
+
+/**
+ * Minimal rows for import duplicate detection (same per-group cap as legacy dashboard fetch).
+ */
+export const getBookmarkUrlKeysForImport = authQuery({
   args: {},
   handler: async (ctx) => {
     const { userId } = ctx
@@ -95,27 +132,16 @@ export const getDashboardData = authQuery({
       .order('desc')
       .take(MAX_GROUPS_PER_QUERY)
 
-    const bookmarkLists = await Promise.all(
-      groups.map((group) => fetchGroupBookmarks(ctx, group._id))
-    )
+    const out: { groupId: Id<'groups'>; url: string }[] = []
 
-    const allBookmarks = bookmarkLists.flat().map((bookmark) => ({
-      _id: bookmark._id,
-      title: bookmark.title,
-      url: bookmark.url,
-      description: bookmark.description,
-      doneReading: bookmark.doneReading,
-      _creationTime: bookmark._creationTime,
-      groupId: bookmark.groupId,
-      publicListingBlockedForUrlSafety:
-        bookmark.publicListingBlockedForUrlSafety,
-      urlSafetyCheckedAt: bookmark.urlSafetyCheckedAt,
-    }))
-
-    return {
-      groups,
-      bookmarks: allBookmarks,
+    for (const group of groups) {
+      const bookmarks = await fetchGroupBookmarks(ctx, group._id)
+      for (const b of bookmarks) {
+        out.push({ groupId: b.groupId, url: b.url })
+      }
     }
+
+    return out
   },
 })
 

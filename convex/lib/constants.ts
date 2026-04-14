@@ -79,6 +79,9 @@ export const MAX_GROUPS_PER_QUERY = 500
  */
 export const MAX_BOOKMARKS_PER_QUERY = 100
 
+/** Dashboard infinite scroll: bookmarks per page from Convex pagination. */
+export const BOOKMARKS_PAGE_SIZE = 20
+
 export const twitterHosts = [
   'twitter.com',
   'www.twitter.com',

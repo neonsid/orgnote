@@ -39,8 +39,15 @@ export default function DashboardPage() {
   const { user, isLoaded: isUserLoaded } = useUser()
   const searchInputRef = useRef<HTMLInputElement>(null)
 
-  const { groups, bookmarks, effectiveGroupId, selectGroup, isLoading } =
-    useDashboardData(!!user)
+  const {
+    groups,
+    bookmarks,
+    effectiveGroupId,
+    selectGroup,
+    isLoading,
+    bookmarkPaginationStatus,
+    loadMoreBookmarks,
+  } = useDashboardData(!!user)
 
   const bookmarkSafetyWatch = useMemo(
     () =>
@@ -378,6 +385,8 @@ export default function DashboardPage() {
           loading={isLoading}
           groups={groups}
           bookmarks={filteredBookmarks}
+          bookmarkPaginationStatus={bookmarkPaginationStatus}
+          onLoadMoreBookmarks={loadMoreBookmarks}
           effectiveGroupId={effectiveGroupId as Id<'groups'>}
           multiSelectMode={multiSelectMode}
           selectedBookmarkIds={selectedBookmarkIds}
