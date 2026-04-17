@@ -1,7 +1,7 @@
 import { useAuth } from "@clerk/expo";
 import { useConvexAuth, usePaginatedQuery, useQuery } from "convex/react";
 import { useCallback, useMemo, useState } from "react";
-import { Linking, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAppTheme } from "@/contexts/app-theme";
@@ -24,6 +24,7 @@ import {
 } from "@/components/dialogs";
 import { Loading, EmptyState } from "@/components/ui";
 import { useBookmarkSelection } from "@/hooks";
+import { openInAppBrowser } from "@/lib/open-in-app-browser";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
@@ -114,7 +115,7 @@ function BookmarksContent() {
       if (isSelecting) {
         toggleSelection(bookmark._id);
       } else {
-        Linking.openURL(bookmark.url);
+        void openInAppBrowser(bookmark.url, bookmark.title);
       }
     },
     [isSelecting, toggleSelection]

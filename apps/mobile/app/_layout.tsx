@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ConvexClerkProvider } from "@/components/convex-clerk-provider";
+import { RuntimeErrorBoundary } from "@/components/runtime-error-boundary";
 import { ThemeRoot } from "@/components/theme-root";
 import { useAppTheme } from "@/contexts/app-theme";
 import { AppThemeProvider } from "@/contexts/app-theme";
@@ -20,8 +21,25 @@ if (Platform.OS !== "web") {
 
 WebBrowser.maybeCompleteAuthSession();
 
+function maskPublishableKey(value: string) {
+  if (!value) {
+    return "<missing>";
+  }
+  if (value.length <= 12) {
+    return value;
+  }
+  return `${value.slice(0, 8)}...${value.slice(-4)}`;
+}
+
 const clerkPublishableKey =
   process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
+const convexUrl = process.env.EXPO_PUBLIC_CONVEX_URL ?? "";
+
+console.log("[mobile env]", {
+  platform: Platform.OS,
+  convexUrl: convexUrl || "<missing>",
+  clerkPublishableKey: maskPublishableKey(clerkPublishableKey),
+});
 
 let tokenCache: TokenCache | undefined;
 if (Platform.OS !== "web") {
@@ -55,6 +73,7 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="sso-callback" />
       <Stack.Screen name="+not-found" />
+      <Stack.Screen name="browser" />
       <Stack.Screen name="profile/[username]" />
 
       <Stack.Protected guard={!auth.isSignedIn}>
@@ -86,10 +105,12 @@ function AppContent() {
 
 export default function RootLayout() {
   return (
-    <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
-      <ConvexClerkProvider>
-        <AppContent />
-      </ConvexClerkProvider>
-    </ClerkProvider>
+    <RuntimeErrorBoundary>
+      <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
+        <ConvexClerkProvider>
+          <AppContent />
+        </ConvexClerkProvider>
+      </ClerkProvider>
+    </RuntimeErrorBoundary>
   );
 }

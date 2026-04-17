@@ -1,4 +1,6 @@
 import { useAuth, useSSO } from "@clerk/expo";
+import { AntDesign } from "@expo/vector-icons";
+import Constants from "expo-constants";
 import * as AuthSession from "expo-auth-session";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
@@ -7,6 +9,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OrgNoteLogo } from "@/components/ui/orgnote-logo";
 import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/contexts/themed-alert";
+
+/** Expo Go cannot use your app.json `scheme`; OAuth must use `exp://…` from makeRedirectUri. */
+function oauthRedirectUrl() {
+  const isExpoGo = Constants.appOwnership === "expo";
+  if (isExpoGo) {
+    return AuthSession.makeRedirectUri({ path: "sso-callback" });
+  }
+  return AuthSession.makeRedirectUri({
+    scheme: "orgnote",
+    path: "sso-callback",
+  });
+}
 
 function SignInPanel() {
   const { colors, isDark } = useAppTheme();
@@ -18,10 +32,7 @@ function SignInPanel() {
     try {
       const { createdSessionId, setActive } = await startSSOFlow({
         strategy: "oauth_google",
-        redirectUrl: AuthSession.makeRedirectUri({
-          scheme: "orgnote",
-          path: "sso-callback",
-        }),
+        redirectUrl: oauthRedirectUrl(),
       });
       if (createdSessionId && setActive) {
         await setActive({ session: createdSessionId });
@@ -115,6 +126,12 @@ function SignInPanel() {
           paddingVertical: 16,
           alignItems: "center",
         },
+        googleButtonContent: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 10,
+        },
         googleButtonText: {
           color: isDark ? "#18181b" : "#fafafa",
           fontSize: 16,
@@ -138,11 +155,6 @@ function SignInPanel() {
           <OrgNoteLogo size={72} />
         </View>
         <Text style={styles.logoText}>OrgNote</Text>
-        <Text style={styles.headline}>Bookmarks you&apos;ll actually find</Text>
-        <Text style={styles.logoSubtext}>
-          Forget where you saved that link? OrgNote remembers—with instant AI summaries
-          so every bookmark makes sense at a glance.
-        </Text>
       </View>
 
       <View style={styles.signInCard}>
@@ -166,7 +178,14 @@ function SignInPanel() {
               color={isDark ? "#18181b" : "#fafafa"}
             />
           ) : (
-            <Text style={styles.googleButtonText}>Continue with Google</Text>
+            <View style={styles.googleButtonContent}>
+              <AntDesign
+                name="google"
+                size={18}
+                color={isDark ? "#18181b" : "#fafafa"}
+              />
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </View>
           )}
         </Pressable>
       </View>

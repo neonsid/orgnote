@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Loading, EmptyState } from "@/components/ui";
 import { useAppTheme } from "@/contexts/app-theme";
 import { spacing, borderRadius } from "@/lib/constants";
+import { openInAppBrowser } from "@/lib/open-in-app-browser";
 import type { AppColors } from "@/lib/theme-colors";
 import { getHostname } from "@/lib/utils";
 import { api } from "../../../../convex/_generated/api";
@@ -312,7 +313,7 @@ function BookmarkItem({
   return (
     <Pressable
       style={({ pressed }) => [styles.bookmarkCard, pressed && styles.bookmarkCardPressed]}
-      onPress={() => Linking.openURL(bookmark.url)}
+      onPress={() => void openInAppBrowser(bookmark.url, bookmark.title)}
     >
       <View style={styles.bookmarkHeader}>
         <Text style={styles.bookmarkTitle} numberOfLines={2}>

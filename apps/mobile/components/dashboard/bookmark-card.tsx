@@ -57,18 +57,18 @@ export function BookmarkCard({
           borderColor: colors.selection,
         },
         faviconContainer: {
-          width: 22,
-          height: 22,
+          width: 26,
+          height: 26,
           borderRadius: borderRadius.sm,
           backgroundColor: colors.muted,
           alignItems: "center",
           justifyContent: "center",
           overflow: "hidden",
-          marginTop: 2,
+          marginTop: 1,
         },
         favicon: {
-          width: 18,
-          height: 18,
+          width: 22,
+          height: 22,
         },
         checkboxContainer: {
           width: 22,

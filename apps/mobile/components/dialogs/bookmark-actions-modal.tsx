@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useMutation } from "convex/react";
 import * as Clipboard from "expo-clipboard";
 
@@ -8,6 +8,7 @@ import { EditBookmarkModal } from "@/components/dialogs/edit-bookmark-modal";
 import { Modal } from "@/components/ui";
 import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/contexts/themed-alert";
+import { openInAppBrowser } from "@/lib/open-in-app-browser";
 import type { AppColors } from "@/lib/theme-colors";
 import { borderRadius, spacing } from "@/lib/constants";
 import { api } from "../../../../convex/_generated/api";
@@ -68,7 +69,7 @@ export function BookmarkActionsModal({
   const b = bookmark;
 
   async function handleOpenUrl() {
-    await Linking.openURL(b.url);
+    await openInAppBrowser(b.url, b.title);
     onClose();
   }
 
