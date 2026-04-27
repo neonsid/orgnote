@@ -273,7 +273,4 @@ pnpm exec convex deploy
 - **[minimal.so](https://minimal.so)** — Inspiration for bookmark UX and structure.
 - **[Kilo Code](https://kilo.ai)** — Kimi K2.5 access during development.
 
-- [] Make this next
-- [] Move to convex/helper for authedQuery
-- [x] Fix calling useAction on client
 
