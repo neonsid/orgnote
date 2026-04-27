@@ -52,7 +52,7 @@ const SECTIONS = [
   {
     title: '9. Contact Us',
     content:
-      'If you have any questions about this Privacy Policy, please contact us at privacy@orgnote.store.',
+      'If you have any questions about this Privacy Policy, please contact us at privacy@orgnote.app.',
   },
 ]
 

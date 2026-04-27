@@ -28,7 +28,7 @@ AI-powered bookmark manager: save links, get instant summaries, organize groups,
 | X/Twitter content | Scira API |
 | Object storage | Cloudflare R2 (`@aws-sdk/client-s3`) |
 | Package manager | **pnpm** (required) |
-| Mobile | Expo SDK 54 + Expo Router (see `apps/mobile`) |
+| Mobile | Expo SDK 52 + Expo Router (see `apps/mobile`) |
 
 ## Repository layout
 
@@ -135,25 +135,6 @@ Open [http://localhost:3000](http://localhost:3000).
    ```
 
    Keep `pnpm dev:backend` (or `pnpm dev`) running in another terminal so Convex stays in sync.
-
-### Local production APK (Android)
-
-From the **repository root**, generate native projects and build a release APK (requires Android SDK / JDK; `ANDROID_HOME` set). Use the same `apps/mobile` env (`.env`) you use for dev so signing and package id match your setup.
-
-```bash
-cd apps/mobile
-npx expo prebuild
-cd android
-./gradlew assembleRelease
-```
-
-The unsigned (or your keystore-configured) APK is typically at:
-
-`apps/mobile/android/app/build/outputs/apk/release/app-release.apk`
-
-For signing and Play-ready builds, use **EAS Build** (see `apps/mobile/package.json` scripts such as `eas:build:android:production`) or follow Android’s [app signing](https://developer.android.com/studio/publish/app-signing) docs after `prebuild`.
-
-After dependency or native changes, run `npx expo doctor` in `apps/mobile` and fix any reported version mismatches.
 
 ---
 
