@@ -9,13 +9,16 @@ import { showThemedAlert } from "@/contexts/themed-alert";
 import { GROUP_COLORS } from "@/lib/group-colors";
 import { spacing } from "@/lib/constants";
 import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
 
 interface CreateGroupModalProps {
   visible: boolean;
   onClose: () => void;
+  /** Called with the new group id so the list can select it. */
+  onCreated?: (groupId: Id<"groups">) => void;
 }
 
-export function CreateGroupModal({ visible, onClose }: CreateGroupModalProps) {
+export function CreateGroupModal({ visible, onClose, onCreated }: CreateGroupModalProps) {
   const { colors } = useAppTheme();
   const [title, setTitle] = useState("");
   const [selectedColor, setSelectedColor] = useState<string>(GROUP_COLORS[0].value);
@@ -27,9 +30,10 @@ export function CreateGroupModal({ visible, onClose }: CreateGroupModalProps) {
 
     setLoading(true);
     try {
-      await createGroup({ title: title.trim(), color: selectedColor });
+      const groupId = await createGroup({ title: title.trim(), color: selectedColor });
       setTitle("");
       setSelectedColor(GROUP_COLORS[0].value);
+      onCreated?.(groupId);
       onClose();
     } catch (err) {
       showThemedAlert("Error", err instanceof Error ? err.message : "Failed to create collection");

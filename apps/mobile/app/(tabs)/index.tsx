@@ -1,10 +1,11 @@
 import { useAuth } from "@clerk/expo";
-import { useConvexAuth, usePaginatedQuery, useQuery } from "convex/react";
-import { useCallback, useMemo, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { useConvexAuth, useMutation, usePaginatedQuery, useQuery } from "convex/react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AppState, type AppStateStatus, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAppTheme } from "@/contexts/app-theme";
+import { showThemedAlert } from "@/contexts/themed-alert";
 
 import {
   Header,
@@ -25,12 +26,16 @@ import {
 import { Loading, EmptyState } from "@/components/ui";
 import { useBookmarkSelection } from "@/hooks";
 import { openInAppBrowser } from "@/lib/open-in-app-browser";
+import { loadPersistedSelectedGroupId, savePersistedSelectedGroupId } from "@/lib/persisted-selected-group";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 function BookmarksContent() {
+  const { userId } = useAuth();
   const groups = useQuery(api.groups.queries.list);
   const [selectedGroupId, setSelectedGroupId] = useState<Id<"groups"> | null>(null);
+  /** False until we have tried loading the last-opened group from storage (avoids clobbering it on first paint). */
+  const [groupPreferenceRestored, setGroupPreferenceRestored] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
 
@@ -40,6 +45,7 @@ function BookmarksContent() {
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [selectedBookmark, setSelectedBookmark] = useState<BookmarkData | null>(null);
   const [toolbarEditBookmark, setToolbarEditBookmark] = useState<BookmarkData | null>(null);
+  const toggleRead = useMutation(api.bookmarks.mutations.toggleReadStatus);
 
   const effectiveGroupId = useMemo(() => {
     if (!groups || groups.length === 0) return null;
@@ -56,7 +62,9 @@ function BookmarksContent() {
 
   const { results: bookmarks, status, loadMore } = usePaginatedQuery(
     api.bookmarks.queries.listBookmarksForGroupPaginated,
-    effectiveGroupId ? { groupId: effectiveGroupId } : "skip",
+    userId && effectiveGroupId && groupPreferenceRestored
+      ? { groupId: effectiveGroupId }
+      : "skip",
     { initialNumItems: 20 }
   );
 
@@ -139,6 +147,64 @@ function BookmarksContent() {
     [toggleSelection]
   );
 
+  const handleToggleRead = useCallback(
+    async (bookmark: BookmarkData) => {
+      try {
+        await toggleRead({ bookmarkId: bookmark._id });
+      } catch {
+        showThemedAlert(
+          "Error",
+          bookmark.doneReading ? "Failed to mark bookmark as unread" : "Failed to mark bookmark as read"
+        );
+      }
+    },
+    [toggleRead]
+  );
+
+  useEffect(() => {
+    setGroupPreferenceRestored(false);
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    if (!groups || groups.length === 0) {
+      setGroupPreferenceRestored(false);
+      return;
+    }
+    if (groupPreferenceRestored) return;
+    let cancelled = false;
+    void (async () => {
+      const stored = await loadPersistedSelectedGroupId(userId);
+      if (cancelled) return;
+      if (stored && groups.some((g) => g._id === stored)) {
+        setSelectedGroupId(stored as Id<"groups">);
+      }
+      setGroupPreferenceRestored(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, groups, groupPreferenceRestored]);
+
+  useEffect(() => {
+    if (!userId || !effectiveGroupId || !groupPreferenceRestored) return;
+    void savePersistedSelectedGroupId(userId, effectiveGroupId);
+  }, [userId, effectiveGroupId, groupPreferenceRestored]);
+
+  useEffect(() => {
+    if (!userId || !effectiveGroupId || !groupPreferenceRestored) return;
+    const sub = AppState.addEventListener("change", (s: AppStateStatus) => {
+      if (s === "background" || s === "inactive") {
+        void savePersistedSelectedGroupId(userId, effectiveGroupId);
+      }
+    });
+    return () => sub.remove();
+  }, [userId, effectiveGroupId, groupPreferenceRestored]);
+
+  const onGroupCreated = useCallback((id: Id<"groups">) => {
+    setSelectedGroupId(id);
+  }, []);
+
   if (!groups) {
     return <Loading message="Loading..." />;
   }
@@ -156,6 +222,7 @@ function BookmarksContent() {
         <CreateGroupModal
           visible={showCreateGroup}
           onClose={() => setShowCreateGroup(false)}
+          onCreated={onGroupCreated}
         />
       </>
     );
@@ -203,11 +270,12 @@ function BookmarksContent() {
 
       <BookmarkList
         bookmarks={filteredBookmarks}
-        loading={status === "LoadingFirstPage"}
+        loading={!groupPreferenceRestored || status === "LoadingFirstPage"}
         loadingMore={status === "LoadingMore"}
         onLoadMore={handleLoadMore}
         onBookmarkPress={handleBookmarkPress}
         onBookmarkLongPress={isSelecting ? handleBookmarkLongPress : startSelection}
+        onToggleRead={handleToggleRead}
         emptyMessage={emptyMessage}
         isSelecting={isSelecting}
         isSelected={isSelected}
@@ -241,6 +309,7 @@ function BookmarksContent() {
       <CreateGroupModal
         visible={showCreateGroup}
         onClose={() => setShowCreateGroup(false)}
+        onCreated={onGroupCreated}
       />
 
       <BookmarkActionsModal

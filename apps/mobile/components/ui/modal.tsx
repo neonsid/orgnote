@@ -1,6 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo } from "react";
-import { Modal as RNModal, Pressable, StyleSheet, Text, View, type ModalProps as RNModalProps } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Modal as RNModal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type ModalProps as RNModalProps,
+} from "react-native";
 
 import { useAppTheme } from "@/contexts/app-theme";
 import { borderRadius, spacing } from "@/lib/constants";
@@ -23,6 +32,9 @@ export function Modal({
   const styles = useMemo(
     () =>
       StyleSheet.create({
+        kav: {
+          flex: 1,
+        },
         overlay: {
           flex: 1,
           backgroundColor: colors.overlay,
@@ -86,26 +98,33 @@ export function Modal({
 
   return (
     <RNModal transparent animationType={variant === "bottom" ? "slide" : "fade"} onRequestClose={onClose} {...props}>
-      <Pressable
-        style={[styles.overlay, variant === "bottom" && styles.overlayBottom]}
-        onPress={onClose}
+      <KeyboardAvoidingView
+        style={styles.kav}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        enabled={Platform.OS === "ios"}
+        keyboardVerticalOffset={0}
       >
         <Pressable
-          style={[styles.container, variant === "bottom" && styles.containerBottom]}
-          onPress={(e) => e.stopPropagation()}
+          style={[styles.overlay, variant === "bottom" && styles.overlayBottom]}
+          onPress={onClose}
         >
-          {variant === "bottom" && <View style={styles.handle} />}
-          {title && (
-            <View style={styles.header}>
-              <Text style={styles.title}>{title}</Text>
-              <Pressable style={styles.closeButton} onPress={onClose} hitSlop={8}>
-                <Ionicons name="close" size={20} color={colors.textSecondary} />
-              </Pressable>
-            </View>
-          )}
-          {children}
+          <Pressable
+            style={[styles.container, variant === "bottom" && styles.containerBottom]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            {variant === "bottom" && <View style={styles.handle} />}
+            {title && (
+              <View style={styles.header}>
+                <Text style={styles.title}>{title}</Text>
+                <Pressable style={styles.closeButton} onPress={onClose} hitSlop={8}>
+                  <Ionicons name="close" size={20} color={colors.textSecondary} />
+                </Pressable>
+              </View>
+            )}
+            {children}
+          </Pressable>
         </Pressable>
-      </Pressable>
+      </KeyboardAvoidingView>
     </RNModal>
   );
 }

@@ -15,6 +15,7 @@ interface BookmarkListProps {
   onLoadMore: () => void;
   onBookmarkPress: (bookmark: BookmarkData) => void;
   onBookmarkLongPress: (bookmark: BookmarkData) => void;
+  onToggleRead?: (bookmark: BookmarkData) => void;
   emptyMessage?: string;
   isSelecting?: boolean;
   isSelected?: (id: Id<"bookmarks">) => boolean;
@@ -27,6 +28,7 @@ export function BookmarkList({
   onLoadMore,
   onBookmarkPress,
   onBookmarkLongPress,
+  onToggleRead,
   emptyMessage = "No bookmarks",
   isSelecting = false,
   isSelected,
@@ -104,6 +106,7 @@ export function BookmarkList({
           bookmark={item}
           onPress={() => onBookmarkPress(item)}
           onLongPress={() => onBookmarkLongPress(item)}
+          onToggleRead={onToggleRead}
           isSelecting={isSelecting}
           isSelected={isSelected?.(item._id)}
         />

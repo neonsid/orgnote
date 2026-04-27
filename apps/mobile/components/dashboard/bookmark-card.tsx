@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View, type GestureResponderEvent } from "react-native";
 
 import { useAppTheme } from "@/contexts/app-theme";
 import { borderRadius, spacing } from "@/lib/constants";
@@ -21,6 +21,7 @@ interface BookmarkCardProps {
   bookmark: BookmarkData;
   onPress: () => void;
   onLongPress: () => void;
+  onToggleRead?: (bookmark: BookmarkData) => void;
   isSelecting?: boolean;
   isSelected?: boolean;
 }
@@ -29,6 +30,7 @@ export function BookmarkCard({
   bookmark,
   onPress,
   onLongPress,
+  onToggleRead,
   isSelecting = false,
   isSelected = false,
 }: BookmarkCardProps) {
@@ -116,9 +118,21 @@ export function BookmarkCard({
           marginLeft: spacing.xs,
           paddingTop: 2,
         },
+        readToggle: {
+          width: 28,
+          height: 28,
+          borderRadius: 999,
+          alignItems: "center",
+          justifyContent: "center",
+        },
       }),
     [colors]
   );
+
+  function handleToggleRead(event: GestureResponderEvent) {
+    event.stopPropagation();
+    onToggleRead?.(bookmark);
+  }
 
   return (
     <Pressable
@@ -159,9 +173,15 @@ export function BookmarkCard({
         ) : null}
       </View>
 
-      {bookmark.doneReading && !isSelecting && (
+      {!isSelecting && onToggleRead && (
         <View style={styles.trailing}>
-          <Ionicons name="checkmark-circle" size={18} color={colors.success} />
+          <Pressable onPress={handleToggleRead} hitSlop={6} style={styles.readToggle}>
+            <Ionicons
+              name={bookmark.doneReading ? "checkmark-circle" : "checkmark-circle-outline"}
+              size={20}
+              color={bookmark.doneReading ? colors.success : colors.textMuted}
+            />
+          </Pressable>
         </View>
       )}
     </Pressable>

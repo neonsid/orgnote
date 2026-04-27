@@ -2,7 +2,7 @@
 
 ## This repo (local)
 
-Task-specific instructions live under **`.agents/skills/`** — see the table in **[AGENTS.md](./AGENTS.md)** (Convex, React effects, large prop lists, etc.). Each skill is a **`SKILL.md`** in its folder.
+Task-specific instructions live under **`.agents/skills/`** — see the table in **[AGENTS.md](./AGENTS.md)** (Convex, React effects, large prop lists, Expo mobile workflow, etc.). Each skill is a **`SKILL.md`** in its folder.
 
 ## Expo & React Native (official)
 
