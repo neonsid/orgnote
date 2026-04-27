@@ -41,3 +41,6 @@ app-example
 # generated native folders
 /ios
 /android
+
+# personal / local assets not meant for the repo
+assets/images/SiddharthMethiya-Tut7-32548-Cmp01.pdf
