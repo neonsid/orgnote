@@ -11,15 +11,9 @@ import { Label } from '@/components/ui/label'
 
 interface GeneralSettingsProps {
   nameForm: ReturnType<typeof import('@/hooks/use-name-form').useNameForm>
-  onExportClick: () => void
-  onImportClick: () => void
 }
 
-export function GeneralSettings({
-  nameForm,
-  onExportClick,
-  onImportClick,
-}: GeneralSettingsProps) {
+export function GeneralSettings({ nameForm }: GeneralSettingsProps) {
   const { user } = useUser()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -112,28 +106,6 @@ export function GeneralSettings({
         />
       </div>
 
-      {/* Data Section */}
-      <div className="space-y-3">
-        <Label>Data</Label>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onImportClick}
-            className="gap-2"
-          >
-            Import Bookmarks
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onExportClick}
-            className="gap-2"
-          >
-            Export Bookmarks
-          </Button>
-        </div>
-      </div>
     </div>
   )
 }

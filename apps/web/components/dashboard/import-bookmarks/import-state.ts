@@ -12,6 +12,8 @@ export type ImportViewState = {
   isImporting: boolean;
   duplicateReviewVisible: boolean;
   pendingGroupExpanded: Record<string, boolean>;
+  /** After `fileParsed`, user reviews URLs vs all groups before assign-to-group staging. */
+  libraryCompareDismissed: boolean;
 };
 
 export type ImportViewAction =
@@ -32,6 +34,7 @@ export type ImportViewAction =
   | { type: "setPendingGroupExpanded"; groupId: string; expanded: boolean }
   | { type: "setDuplicateReviewVisible"; visible: boolean }
   | { type: "setImporting"; importing: boolean }
+  | { type: "dismissLibraryCompare" }
   | {
       type: "applyAfterImport";
       parsedItems: ParsedImportItem[] | null;
@@ -49,6 +52,7 @@ export const INITIAL_IMPORT_VIEW_STATE: ImportViewState = {
   isImporting: false,
   duplicateReviewVisible: false,
   pendingGroupExpanded: {},
+  libraryCompareDismissed: false,
 };
 
 export function importViewReducer(
@@ -66,6 +70,7 @@ export function importViewReducer(
         chromeFolderKeys: keys,
         loadedFileLabel: action.fileName,
         chromeFolderKey: keys[0] ?? UNCATEGORIZED_CHROME_FOLDER,
+        libraryCompareDismissed: false,
       };
     }
     case "setChromeFolder":
@@ -129,6 +134,8 @@ export function importViewReducer(
       return { ...state, duplicateReviewVisible: action.visible };
     case "setImporting":
       return { ...state, isImporting: action.importing };
+    case "dismissLibraryCompare":
+      return { ...state, libraryCompareDismissed: true };
     case "applyAfterImport":
       return {
         ...state,
@@ -138,6 +145,7 @@ export function importViewReducer(
         pendingGroupExpanded: {},
         selectedIds: [],
         isImporting: false,
+        libraryCompareDismissed: true,
       };
   }
 }

@@ -10,16 +10,26 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import type { ReturnValue } from "@/hooks/use-public-profile-form";
+import { BookmarksDataActions } from "./bookmarks-data-actions";
 
 interface PublicProfileSettingsProps {
   profileForm: ReturnValue;
+  onImportClick: () => void;
+  onExportClick: () => void;
 }
 
 export function PublicProfileSettings({
   profileForm,
+  onImportClick,
+  onExportClick,
 }: PublicProfileSettingsProps) {
   return (
     <div className="space-y-6">
+      <BookmarksDataActions
+        onImportClick={onImportClick}
+        onExportClick={onExportClick}
+      />
+
       {/* Public Profile Toggle */}
       <profileForm.Field
         name="isPublic"
