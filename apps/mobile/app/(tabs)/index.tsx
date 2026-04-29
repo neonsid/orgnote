@@ -19,6 +19,8 @@ import {
   FilterModal,
   AddBookmarkModal,
   CreateGroupModal,
+  EditGroupModal,
+  DeleteGroupModal,
   BookmarkActionsModal,
   EditBookmarkModal,
   type FilterType,
@@ -43,6 +45,8 @@ function BookmarksContent() {
   const [showFilter, setShowFilter] = useState(false);
   const [showAddBookmark, setShowAddBookmark] = useState(false);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [showEditGroup, setShowEditGroup] = useState(false);
+  const [showDeleteGroup, setShowDeleteGroup] = useState(false);
   const [selectedBookmark, setSelectedBookmark] = useState<BookmarkData | null>(null);
   const [toolbarEditBookmark, setToolbarEditBookmark] = useState<BookmarkData | null>(null);
   const toggleRead = useMutation(api.bookmarks.mutations.toggleReadStatus);
@@ -291,6 +295,14 @@ function BookmarksContent() {
           setShowGroupSelector(false);
           setShowCreateGroup(true);
         }}
+        onRenameGroup={() => {
+          setShowGroupSelector(false);
+          setShowEditGroup(true);
+        }}
+        onDeleteGroup={() => {
+          setShowGroupSelector(false);
+          setShowDeleteGroup(true);
+        }}
       />
 
       <FilterModal
@@ -310,6 +322,23 @@ function BookmarksContent() {
         visible={showCreateGroup}
         onClose={() => setShowCreateGroup(false)}
         onCreated={onGroupCreated}
+      />
+
+      <EditGroupModal
+        visible={showEditGroup}
+        onClose={() => setShowEditGroup(false)}
+        group={selectedGroup}
+      />
+
+      <DeleteGroupModal
+        visible={showDeleteGroup}
+        onClose={() => setShowDeleteGroup(false)}
+        group={selectedGroup}
+        onDeleted={(deletedId) => {
+          if (selectedGroupId === deletedId) {
+            setSelectedGroupId(null);
+          }
+        }}
       />
 
       <BookmarkActionsModal

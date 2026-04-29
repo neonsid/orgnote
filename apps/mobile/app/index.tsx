@@ -1,9 +1,17 @@
 import { useAuth, useSSO } from "@clerk/expo";
+import { AuthView } from "@clerk/expo/native";
 import { AntDesign } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import * as AuthSession from "expo-auth-session";
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { OrgNoteLogo } from "@/components/ui/orgnote-logo";
@@ -20,6 +28,14 @@ function oauthRedirectUrl() {
     scheme: "orgnote",
     path: "sso-callback",
   });
+}
+
+/**
+ * Native AuthView needs a dev client / production build with the @clerk/expo prebuild plugin.
+ * Expo Go has no Clerk native UI — it crashes if we mount AuthView. Web has no native view either.
+ */
+function useBrowserOAuthInsteadOfNativeAuthView() {
+  return Platform.OS === "web" || Constants.appOwnership === "expo";
 }
 
 function SignInPanel() {
@@ -76,22 +92,6 @@ function SignInPanel() {
           color: colors.text,
           letterSpacing: -0.5,
         },
-        headline: {
-          fontSize: 22,
-          fontWeight: "700",
-          color: colors.text,
-          textAlign: "center",
-          marginTop: 12,
-          lineHeight: 28,
-          letterSpacing: -0.3,
-        },
-        logoSubtext: {
-          fontSize: 15,
-          color: colors.textSecondary,
-          marginTop: 10,
-          textAlign: "center",
-          lineHeight: 22,
-        },
         signInCard: {
           backgroundColor: colors.surface,
           borderRadius: 20,
@@ -145,7 +145,7 @@ function SignInPanel() {
           opacity: 0.7,
         },
       }),
-    [colors, isDark]
+    [colors, isDark],
   );
 
   return (
@@ -197,6 +197,7 @@ export default function IndexScreen() {
   const insets = useSafeAreaInsets();
   const { isLoaded } = useAuth();
   const { colors } = useAppTheme();
+  const browserAuth = useBrowserOAuthInsteadOfNativeAuthView();
 
   const screenStyles = useMemo(
     () =>
@@ -210,8 +211,35 @@ export default function IndexScreen() {
           alignItems: "center",
           justifyContent: "center",
         },
+        content: {
+          flex: 1,
+        },
+        brand: {
+          alignItems: "center",
+          paddingTop: 24,
+          paddingBottom: 12,
+          paddingHorizontal: 24,
+        },
+        logoMark: {
+          padding: 10,
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: colors.border,
+          backgroundColor: colors.surface,
+          marginBottom: 10,
+        },
+        logoText: {
+          fontSize: 22,
+          fontWeight: "700",
+          color: colors.text,
+          letterSpacing: -0.4,
+        },
+        authHost: {
+          flex: 1,
+          minHeight: 0,
+        },
       }),
-    [colors]
+    [colors],
   );
 
   if (!isLoaded) {
@@ -228,6 +256,19 @@ export default function IndexScreen() {
     );
   }
 
+  if (browserAuth) {
+    return (
+      <View
+        style={[
+          screenStyles.screen,
+          { paddingTop: insets.top, paddingBottom: insets.bottom },
+        ]}
+      >
+        <SignInPanel />
+      </View>
+    );
+  }
+
   return (
     <View
       style={[
@@ -235,7 +276,17 @@ export default function IndexScreen() {
         { paddingTop: insets.top, paddingBottom: insets.bottom },
       ]}
     >
-      <SignInPanel />
+      <View style={screenStyles.content}>
+        <View style={screenStyles.brand}>
+          <View style={screenStyles.logoMark}>
+            <OrgNoteLogo size={48} />
+          </View>
+          <Text style={screenStyles.logoText}>OrgNote</Text>
+        </View>
+        <View style={screenStyles.authHost}>
+          <AuthView mode="signInOrUp" isDismissable={false} />
+        </View>
+      </View>
     </View>
   );
 }

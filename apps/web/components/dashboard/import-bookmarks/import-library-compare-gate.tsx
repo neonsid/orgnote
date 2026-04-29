@@ -108,7 +108,7 @@ const FILTER_TABS: {
   {
     id: 'existing',
     label: 'In library — already saved',
-    short: 'In library',
+    short: 'Saved',
     icon: BookMarked,
     activeClass:
       'bg-amber-500/12 text-amber-950 dark:text-amber-100 shadow-sm ring-1 ring-amber-500/25',
@@ -224,7 +224,7 @@ export const ImportLibraryCompareGate = memo(function ImportLibraryCompareGate({
                 </div>
                 <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.07] px-3 py-3 text-left sm:px-4">
                   <p className="text-[11px] font-medium uppercase tracking-wide text-amber-900/70 dark:text-amber-200/80">
-                    In library
+                    Saved
                   </p>
                   <p className="mt-1 text-2xl font-semibold tabular-nums text-amber-950 dark:text-amber-50">
                     {stats.existingCount}
@@ -235,7 +235,7 @@ export const ImportLibraryCompareGate = memo(function ImportLibraryCompareGate({
               <div
                 role="tablist"
                 aria-label="Filter by library match"
-                className="flex rounded-xl bg-muted/50 p-1 ring-1 ring-border/50"
+                className="flex gap-0.5 rounded-xl bg-muted/50 p-1 ring-1 ring-border/50 sm:gap-0"
               >
                 {FILTER_TABS.map((tab) => {
                   const count =
@@ -255,28 +255,30 @@ export const ImportLibraryCompareGate = memo(function ImportLibraryCompareGate({
                       title={tab.label}
                       onClick={() => setFilter(tab.id)}
                       className={cn(
-                        'flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition-all sm:gap-2 sm:px-3 sm:text-sm',
+                        'flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-2 text-[10px] font-medium transition-all sm:flex-row sm:gap-1.5 sm:rounded-lg sm:px-2.5 sm:py-2 sm:text-xs md:text-sm',
                         active ? tab.activeClass : 'text-muted-foreground hover:text-foreground',
                       )}
                     >
                       <Icon className="size-3.5 shrink-0 sm:size-4" />
-                      <span className="min-w-0 whitespace-nowrap text-[11px] sm:text-sm">
-                        {tab.short}
-                      </span>
-                      <span
-                        className={cn(
-                          'tabular-nums',
-                          active ? 'opacity-100' : 'opacity-80',
-                        )}
-                      >
-                        ({count})
+                      <span className="flex min-w-0 max-w-full flex-col items-center gap-0 leading-tight sm:flex-row sm:gap-1">
+                        <span className="max-w-full text-center sm:whitespace-nowrap">
+                          {tab.short}
+                        </span>
+                        <span
+                          className={cn(
+                            'tabular-nums sm:whitespace-nowrap',
+                            active ? 'opacity-100' : 'opacity-80',
+                          )}
+                        >
+                          ({count})
+                        </span>
                       </span>
                     </button>
                   )
                 })}
               </div>
 
-              <p className="text-[11px] leading-relaxed text-muted-foreground">
+              <p className="px-0.5 text-[10px] leading-snug text-muted-foreground sm:px-0 sm:text-[11px] sm:leading-relaxed">
                 Matches use at most the first 100 bookmarks per group; very
                 large groups may miss some duplicates.
               </p>
@@ -304,7 +306,7 @@ export const ImportLibraryCompareGate = memo(function ImportLibraryCompareGate({
               </p>
               <p className="max-w-sm text-xs text-muted-foreground leading-relaxed">
                 {filter === 'new'
-                  ? 'Switch to “In library” to see where those links live, or continue to assign folders anyway.'
+                  ? 'Switch to “Saved” to see where those links live, or continue to assign folders anyway.'
                   : filter === 'existing'
                     ? 'All links look new — try the “New” tab.'
                     : 'Try another filter above.'}
@@ -339,7 +341,7 @@ export const ImportLibraryCompareGate = memo(function ImportLibraryCompareGate({
                                 : 'bg-amber-500/15 text-amber-950 dark:text-amber-100',
                             )}
                           >
-                            {row.isNew ? 'New' : 'In library'}
+                            {row.isNew ? 'New' : 'Saved'}
                           </span>
                           {row.inFileCount > 1 && (
                             <span className="text-[10px] font-medium text-muted-foreground">

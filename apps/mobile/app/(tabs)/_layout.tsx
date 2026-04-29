@@ -25,7 +25,7 @@ export default function TabLayout() {
   const { colors } = useAppTheme();
 
   const bottomInset = Math.max(insets.bottom, Platform.OS === "android" ? 12 : 0);
-  const tabBarHeight = 48 + bottomInset + 6;
+  const tabBarHeight = 30 + bottomInset + 6;
 
   return (
     <SwipeableTabs

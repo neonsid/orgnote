@@ -94,15 +94,6 @@ const SOURCE_FILTER_TABS: {
   },
 ]
 
-const listItemVariants = {
-  hidden: { opacity: 0, y: 4 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: Math.min(i * 0.02, 0.4), duration: 0.2 },
-  }),
-}
-
 export const BookmarkImportStagingPanel = memo(function BookmarkImportStagingPanel({
   folderKeys,
   effectiveChromeFolderKey,
@@ -130,7 +121,7 @@ export const BookmarkImportStagingPanel = memo(function BookmarkImportStagingPan
   folderVsTargetSummary,
 }: BookmarkImportStagingPanelProps) {
   const [sourceFilter, setSourceFilter] = useState<SourceListFilter>('all')
-  const selectedSet = new Set(selectedIds)
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds])
 
   const sourceCounts = useMemo(() => {
     const all = availableInFolder.length
@@ -157,6 +148,17 @@ export const BookmarkImportStagingPanel = memo(function BookmarkImportStagingPan
       return effectiveSourceFilter === 'new' ? !inG : inG
     })
   }, [availableInFolder, effectiveSourceFilter, targetGroupExistingUrlKeys])
+
+  /** Per-row New/In group badge is redundant when a matching tab is selected. */
+  const showRowStatusBadge = effectiveSourceFilter === 'all'
+
+  const allFilteredSelected = useMemo(() => {
+    if (filteredAvailable.length === 0) return false
+    for (const item of filteredAvailable) {
+      if (!selectedSet.has(item.id)) return false
+    }
+    return true
+  }, [filteredAvailable, selectedSet])
 
   function sourceRowBadge(item: ParsedImportItem) {
     if (targetGroupExistingUrlKeys === undefined) {
@@ -241,33 +243,39 @@ export const BookmarkImportStagingPanel = memo(function BookmarkImportStagingPan
         </Select>
       </div>
 
-      <div className="flex max-h-[min(52vh,28rem)] sm:max-h-[min(50vh,26rem)] min-h-[10rem] flex-col overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-b from-muted/35 via-background to-background shadow-sm">
-        <div className="flex shrink-0 flex-col gap-2 border-b border-border/60 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4">
-          <div className="flex flex-wrap items-center gap-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-9 px-2.5 text-xs"
-              onClick={() =>
-                onSelectAllInSubset(filteredAvailable.map((i) => i.id))
-              }
-              disabled={filteredAvailable.length === 0}
-            >
-              Select all
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-9 px-2.5 text-xs"
-              onClick={onSelectNone}
-              disabled={availableInFolder.length === 0}
-            >
-              None
-            </Button>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+      <div className="flex max-h-[min(58vh,32rem)] min-h-[7rem] flex-col overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-b from-muted/35 via-background to-background shadow-sm sm:max-h-[min(50vh,26rem)] sm:min-h-[10rem]">
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/60 px-2 py-2 sm:px-4 sm:py-2.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 shrink-0 px-2 text-xs sm:h-9 sm:px-2.5"
+            disabled={filteredAvailable.length === 0}
+            aria-pressed={allFilteredSelected}
+            title={
+              allFilteredSelected
+                ? 'Clear the current selection'
+                : 'Select every link in the current tab (replaces selection)'
+            }
+            onClick={() => {
+              if (allFilteredSelected) onSelectNone()
+              else onSelectAllInSubset(filteredAvailable.map((i) => i.id))
+            }}
+          >
+            {allFilteredSelected ? (
+              <>
+                <span className="sm:hidden">Clear</span>
+                <span className="hidden sm:inline">Clear selection</span>
+              </>
+            ) : (
+              <>
+                <span className="sm:hidden">Select all</span>
+                <span className="hidden sm:inline">Select all in view</span>
+              </>
+            )}
+          </Button>
+          {/* Counts live in tabs below on mobile; keep this line for desktop / filtered subset */}
+          <div className="hidden text-xs text-muted-foreground sm:block">
             <span className="tabular-nums">
               <span className="font-medium text-foreground">
                 {filteredAvailable.length}
@@ -286,13 +294,21 @@ export const BookmarkImportStagingPanel = memo(function BookmarkImportStagingPan
               )}
             </span>
           </div>
+          {filteredAvailable.length !== availableInFolder.length && (
+            <span className="tabular-nums text-[11px] text-muted-foreground sm:hidden">
+              <span className="font-medium text-foreground">
+                {filteredAvailable.length}
+              </span>
+              /{availableInFolder.length}
+            </span>
+          )}
         </div>
 
         {sourceCounts.ready && availableInFolder.length > 0 && (
           <div
             role="tablist"
             aria-label="Filter links by match with assign target"
-            className="mx-3 mt-2 flex rounded-xl bg-muted/50 p-1 ring-1 ring-border/50 sm:mx-4"
+            className="mx-2 mt-1.5 flex rounded-lg bg-muted/50 p-0.5 ring-1 ring-border/50 sm:mx-4 sm:mt-2 sm:rounded-xl sm:p-1"
           >
             {SOURCE_FILTER_TABS.map((tab) => {
               const count =
@@ -309,20 +325,30 @@ export const BookmarkImportStagingPanel = memo(function BookmarkImportStagingPan
                   type="button"
                   role="tab"
                   aria-selected={active}
+                  title={
+                    tab.id === 'in-group'
+                      ? 'Already in assign target group'
+                      : undefined
+                  }
                   disabled={!sourceCounts.ready}
                   onClick={() => setSourceFilter(tab.id)}
                   className={cn(
-                    'flex min-w-0 flex-1 items-center justify-center gap-1 rounded-lg px-1.5 py-2 text-[11px] font-medium transition-all sm:gap-1.5 sm:px-2 sm:text-xs',
+                    'flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-medium transition-all sm:flex-row sm:gap-1.5 sm:rounded-lg sm:px-2 sm:py-2 sm:text-xs',
                     active
                       ? tab.activeClass
                       : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
                   <Icon className="size-3.5 shrink-0 sm:size-4" />
-                  <span className="whitespace-nowrap leading-tight">
-                    {tab.short}
+                  <span className="flex min-w-0 max-w-full flex-col items-center gap-0 leading-tight sm:flex-row sm:gap-1 sm:whitespace-nowrap">
+                    <span className="max-w-full text-center sm:text-left">
+                      <span className="sm:hidden">
+                        {tab.id === 'in-group' ? 'Have' : tab.short}
+                      </span>
+                      <span className="hidden sm:inline">{tab.short}</span>
+                    </span>
+                    <span className="tabular-nums">({count})</span>
                   </span>
-                  <span className="tabular-nums">({count})</span>
                 </button>
               )
             })}
@@ -331,14 +357,13 @@ export const BookmarkImportStagingPanel = memo(function BookmarkImportStagingPan
 
         {folderVsTargetSummary.state === 'loading' &&
           availableInFolder.length > 0 && (
-            <p className="border-b border-border/60 px-3 py-2 text-[11px] text-muted-foreground sm:px-4">
-              Checking which links are already in &ldquo;{targetGroupTitle}
-              &rdquo;…
+            <p className="border-b border-border/60 px-2 py-1.5 text-[10px] text-muted-foreground sm:px-4 sm:py-2 sm:text-[11px]">
+              Checking &ldquo;{targetGroupTitle}&rdquo;…
             </p>
           )}
         {folderVsTargetSummary.state === 'ready' &&
           availableInFolder.length > 0 && (
-            <div className="grid grid-cols-2 gap-2 border-b border-border/60 px-3 py-2.5 sm:grid-cols-3 sm:px-4">
+            <div className="hidden border-b border-border/60 sm:grid sm:grid-cols-3 sm:gap-2 sm:px-4 sm:py-2.5">
               <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-2.5 py-2 sm:px-3">
                 <p className="text-[10px] font-medium uppercase tracking-wide text-emerald-800/80 dark:text-emerald-200/80">
                   New
@@ -355,9 +380,9 @@ export const BookmarkImportStagingPanel = memo(function BookmarkImportStagingPan
                   {folderVsTargetSummary.alreadyInGroup}
                 </p>
               </div>
-              <div className="col-span-2 flex items-center rounded-lg border border-border/70 bg-muted/30 px-2.5 py-2 sm:col-span-1 sm:flex-col sm:items-stretch sm:justify-center sm:px-3">
+              <div className="flex flex-col justify-center rounded-lg border border-border/70 bg-muted/30 px-2.5 py-2 sm:px-3">
                 <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                  Total in view
+                  In folder
                 </p>
                 <p className="text-lg font-semibold tabular-nums text-foreground sm:mt-0.5">
                   {availableInFolder.length}
@@ -366,7 +391,7 @@ export const BookmarkImportStagingPanel = memo(function BookmarkImportStagingPan
             </div>
           )}
 
-        <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-2 py-2 sm:px-3 sm:py-3 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/25">
+        <ul className="min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain px-2 pb-2 pt-1 sm:space-y-2 sm:px-3 sm:py-3 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/25">
           {availableInFolder.length === 0 ? (
             <li className="p-6 text-center text-sm text-muted-foreground">
               No links left in this folder — change folder or remove some from
@@ -381,15 +406,11 @@ export const BookmarkImportStagingPanel = memo(function BookmarkImportStagingPan
                   : 'Nothing to show.'}
             </li>
           ) : (
-            filteredAvailable.map((item, i) => (
-              <m.li
+            filteredAvailable.map((item) => (
+              <li
                 key={item.id}
-                custom={i}
-                variants={listItemVariants}
-                initial="hidden"
-                animate="visible"
                 className={cn(
-                  'cursor-pointer rounded-xl border px-3 py-3 transition-colors sm:px-3.5 sm:py-3',
+                  'cursor-pointer rounded-lg border px-2.5 py-2.5 transition-colors sm:rounded-xl sm:px-3.5 sm:py-3',
                   'active:bg-muted/50',
                   targetGroupExistingUrlKeys?.has(normalizeUrlKey(item.url))
                     ? 'border-amber-500/15 bg-amber-500/[0.04] hover:bg-amber-500/[0.07]'
@@ -417,13 +438,15 @@ export const BookmarkImportStagingPanel = memo(function BookmarkImportStagingPan
                           {item.url}
                         </p>
                       </div>
-                      <div className="flex shrink-0 sm:items-start sm:pt-0.5">
-                        {sourceRowBadge(item)}
-                      </div>
+                      {showRowStatusBadge && (
+                        <div className="flex shrink-0 sm:items-start sm:pt-0.5">
+                          {sourceRowBadge(item)}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
-              </m.li>
+              </li>
             ))
           )}
         </ul>
