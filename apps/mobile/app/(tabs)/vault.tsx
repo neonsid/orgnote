@@ -7,6 +7,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FileTile } from "@/components/vault";
 import {
+  VaultGroupSelectorModal,
+  EditGroupModal,
+  DeleteGroupModal,
+} from "@/components/dialogs";
+import {
   Modal,
   Loading,
   EmptyState,
@@ -108,47 +113,6 @@ function makeVaultStyles(colors: AppColors) {
       justifyContent: "space-between",
     },
 
-    modalHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.md,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    modalTitle: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.text,
-    },
-    modalList: {
-      maxHeight: 300,
-    },
-    modalItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingHorizontal: spacing.lg,
-      paddingVertical: 12,
-    },
-    modalItemActive: {
-      backgroundColor: colors.muted,
-    },
-    modalItemContent: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.sm,
-      flex: 1,
-    },
-    modalItemText: {
-      fontSize: 14,
-      color: colors.text,
-      flex: 1,
-    },
-    modalItemTextActive: {
-      fontWeight: "600",
-    },
     createContent: {
       padding: spacing.lg,
       gap: spacing.md,
@@ -294,92 +258,11 @@ function VaultHeader({
           ]}
         />
         <Text style={styles.groupText} numberOfLines={1}>
-          {selectedGroup?.title ?? "All Files"}
+          {selectedGroup?.title ?? "No groups"}
         </Text>
         <Ionicons name="chevron-expand" size={16} color={colors.textMuted} />
       </Pressable>
     </View>
-  );
-}
-
-function VaultGroupSelectorModal({
-  visible,
-  onClose,
-  groups,
-  selectedGroupId,
-  onSelectGroup,
-  onCreateGroup,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  groups: Array<{ _id: Id<"vaultGroups">; title: string }>;
-  selectedGroupId: Id<"vaultGroups"> | null;
-  onSelectGroup: (id: Id<"vaultGroups"> | null) => void;
-  onCreateGroup: () => void;
-}) {
-  const { colors } = useAppTheme();
-  const styles = useMemo(() => makeVaultStyles(colors), [colors]);
-
-  return (
-    <Modal visible={visible} onClose={onClose}>
-      <View style={styles.modalHeader}>
-        <Text style={styles.modalTitle}>Vault Collections</Text>
-        <Pressable onPress={onCreateGroup} hitSlop={8}>
-          <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
-        </Pressable>
-      </View>
-      <ScrollView style={styles.modalList}>
-        <Pressable
-          style={[styles.modalItem, !selectedGroupId && styles.modalItemActive]}
-          onPress={() => {
-            onSelectGroup(null);
-            onClose();
-          }}
-        >
-          <View style={styles.modalItemContent}>
-            <Ionicons
-              name="folder-outline"
-              size={16}
-              color={!selectedGroupId ? colors.primary : colors.textSecondary}
-            />
-            <Text
-              style={[styles.modalItemText, !selectedGroupId && styles.modalItemTextActive]}
-            >
-              All Files
-            </Text>
-          </View>
-          {!selectedGroupId && <Ionicons name="checkmark" size={20} color={colors.primary} />}
-        </Pressable>
-        {groups.map((group) => {
-          const isSelected = group._id === selectedGroupId;
-          return (
-            <Pressable
-              key={group._id}
-              style={[styles.modalItem, isSelected && styles.modalItemActive]}
-              onPress={() => {
-                onSelectGroup(group._id);
-                onClose();
-              }}
-            >
-              <View style={styles.modalItemContent}>
-                <Ionicons
-                  name="folder-outline"
-                  size={16}
-                  color={isSelected ? colors.primary : colors.textSecondary}
-                />
-                <Text
-                  style={[styles.modalItemText, isSelected && styles.modalItemTextActive]}
-                  numberOfLines={1}
-                >
-                  {group.title}
-                </Text>
-              </View>
-              {isSelected && <Ionicons name="checkmark" size={20} color={colors.primary} />}
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-    </Modal>
   );
 }
 
@@ -548,6 +431,8 @@ function VaultContent() {
   const [selectedGroupId, setSelectedGroupId] = useState<Id<"vaultGroups"> | null>(null);
   const [showGroupSelector, setShowGroupSelector] = useState(false);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [showEditGroup, setShowEditGroup] = useState(false);
+  const [showDeleteGroup, setShowDeleteGroup] = useState(false);
   const [selectedFile, setSelectedFile] = useState<{
     _id: Id<"vaultFiles">;
     name: string;
@@ -660,11 +545,38 @@ function VaultContent() {
           setShowGroupSelector(false);
           setShowCreateGroup(true);
         }}
+        onRenameGroup={() => {
+          setShowGroupSelector(false);
+          setShowEditGroup(true);
+        }}
+        onDeleteGroup={() => {
+          setShowGroupSelector(false);
+          setShowDeleteGroup(true);
+        }}
       />
 
       <CreateVaultGroupModal
         visible={showCreateGroup}
         onClose={() => setShowCreateGroup(false)}
+      />
+
+      <EditGroupModal
+        visible={showEditGroup}
+        onClose={() => setShowEditGroup(false)}
+        groupKind="vault"
+        group={selectedGroup}
+      />
+
+      <DeleteGroupModal
+        visible={showDeleteGroup}
+        onClose={() => setShowDeleteGroup(false)}
+        groupKind="vault"
+        group={selectedGroup}
+        onDeleted={(deletedId) => {
+          if (selectedGroupId === deletedId) {
+            setSelectedGroupId(null);
+          }
+        }}
       />
 
       <FileActionsModal

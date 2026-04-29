@@ -119,6 +119,29 @@ export const createVaultGroup = authMutation({
   },
 })
 
+export const renameVaultGroup = authMutation({
+  args: {
+    groupId: v.id('vaultGroups'),
+    title: v.string(),
+    color: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { userId } = ctx
+    const group = await ctx.db.get(args.groupId)
+    if (!group) {
+      throw new ConvexError('Vault group not found')
+    }
+    if (group.userId !== userId) {
+      throw new ConvexError('Not authorized')
+    }
+    await ctx.db.patch(args.groupId, {
+      title: args.title,
+      color: args.color,
+    })
+    return true
+  },
+})
+
 export const deleteVaultGroup = authMutation({
   args: { groupId: v.id('vaultGroups') },
   handler: async (ctx, args) => {

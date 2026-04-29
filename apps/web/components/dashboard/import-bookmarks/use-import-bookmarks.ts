@@ -12,7 +12,9 @@ import {
   buildNewOnlyPendingByGroup,
   hasImportDuplicateConflict,
   itemsInChromeFolder,
+  normalizeUrlKey,
   partitionPendingImport,
+  partitionStagedItemsForGroup,
   totalPartitionSkips,
   type ParsedImportItem,
   type StagedImportPartition,
@@ -55,6 +57,7 @@ export function useImportBookmarks() {
     isImporting,
     duplicateReviewVisible,
     pendingGroupExpanded,
+    libraryCompareDismissed,
   } = state
 
   const existingKeysByGroupId = useMemo(() => {
@@ -120,6 +123,53 @@ export function useImportBookmarks() {
     selectedIds.includes(i.id)
   ).length
 
+  /** Per staged row: new URL for that group, already saved in group, or repeated in this import batch. */
+  const pendingRowStatusByGroup = useMemo(() => {
+    if (importUrlKeys === undefined) return {}
+    const out: Record<
+      string,
+      Map<string, 'new' | 'in-group' | 'batch-dup'>
+    > = {}
+    for (const [gid, items] of Object.entries(pendingByGroup)) {
+      if (items.length === 0) continue
+      const p = partitionStagedItemsForGroup(gid, items, existingKeysByGroupId)
+      const m = new Map<string, 'new' | 'in-group' | 'batch-dup'>()
+      for (const i of p.newItems) m.set(i.id, 'new')
+      for (const i of p.dbDuplicates) m.set(i.id, 'in-group')
+      for (const i of p.batchDuplicates) m.set(i.id, 'batch-dup')
+      out[gid] = m
+    }
+    return out
+  }, [pendingByGroup, existingKeysByGroupId, importUrlKeys])
+
+  const targetGroupExistingUrlKeys = useMemo(() => {
+    if (importUrlKeys === undefined) return undefined
+    return existingKeysByGroupId.get(effectiveTargetGroupId) ?? new Set<string>()
+  }, [importUrlKeys, existingKeysByGroupId, effectiveTargetGroupId])
+
+  /** How many links in the current Chrome folder are already in the selected target group vs new. */
+  const folderVsTargetSummary = useMemo(() => {
+    if (importUrlKeys === undefined) return { state: 'loading' as const }
+    if (!effectiveTargetGroupId) return { state: 'idle' as const }
+    const keys = targetGroupExistingUrlKeys ?? new Set<string>()
+    let alreadyInGroup = 0
+    let notInGroup = 0
+    for (const item of availableInFolder) {
+      if (keys.has(normalizeUrlKey(item.url))) alreadyInGroup += 1
+      else notInGroup += 1
+    }
+    return {
+      state: 'ready' as const,
+      alreadyInGroup,
+      notInGroup,
+    }
+  }, [
+    availableInFolder,
+    effectiveTargetGroupId,
+    targetGroupExistingUrlKeys,
+    importUrlKeys,
+  ])
+
   const importButtonLabel = isImporting
     ? 'Importing…'
     : totalPendingCount > 0 && importUrlKeys === undefined
@@ -131,6 +181,10 @@ export function useImportBookmarks() {
   const resetAll = useCallback(() => {
     dispatch({ type: 'reset' })
     if (fileInputRef.current) fileInputRef.current.value = ''
+  }, [])
+
+  const dismissLibraryCompare = useCallback(() => {
+    dispatch({ type: 'dismissLibraryCompare' })
   }, [])
 
   function scrollToRef(ref: React.RefObject<HTMLElement | null>) {
@@ -193,12 +247,9 @@ export function useImportBookmarks() {
     dispatch({ type: 'toggleSelectedId', id })
   }, [])
 
-  const handleSelectAll = useCallback(() => {
-    dispatch({
-      type: 'selectAllInFolder',
-      ids: availableInFolder.map((i) => i.id),
-    })
-  }, [availableInFolder])
+  const handleSelectAllInSubset = useCallback((ids: string[]) => {
+    dispatch({ type: 'selectAllInFolder', ids: [...ids] })
+  }, [])
 
   const handleSelectNone = useCallback(() => {
     dispatch({ type: 'selectNone' })
@@ -410,13 +461,19 @@ export function useImportBookmarks() {
     importButtonLabel,
     hasFile,
     importUrlKeys,
+    existingKeysByGroupId,
+    libraryCompareDismissed,
+    targetGroupExistingUrlKeys,
+    pendingRowStatusByGroup,
+    folderVsTargetSummary,
+    dismissLibraryCompare,
     // handlers
     handleFileChange,
     handleDrop,
     handleDragOver,
     handleChromeFolderChange,
     handleToggleRow,
-    handleSelectAll,
+    handleSelectAllInSubset,
     handleSelectNone,
     handleTargetGroupChange,
     handlePendingGroupExpandedChange,

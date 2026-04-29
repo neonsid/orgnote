@@ -11,6 +11,8 @@ import {
   Loader2,
   Vault,
   LayoutGrid,
+  FileUp,
+  FileDown,
 } from "lucide-react";
 import { useUser, useClerk } from "@clerk/react";
 import { useRouter } from "next/navigation";
@@ -107,6 +109,7 @@ export const UserInfo = memo(function UserInfo({
       case "openExportBookmarks":
         return {
           ...state,
+          open: false,
           settingsOpen: false,
           exportBookmarksOpen: true,
         };
@@ -251,6 +254,31 @@ export const UserInfo = memo(function UserInfo({
                 Settings
                 <Settings className="size-4 text-muted-foreground" />
               </button>
+              {variant === "dashboard" && (
+                <>
+                  <button
+                    id="user-import-bookmarks-button"
+                    type="button"
+                    onClick={() => {
+                      dispatch({ type: "setMenuOpen", open: false });
+                      router.push("/dashboard/import");
+                    }}
+                    className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                  >
+                    Import bookmarks
+                    <FileUp className="size-4 text-muted-foreground" />
+                  </button>
+                  <button
+                    id="user-export-bookmarks-button"
+                    type="button"
+                    onClick={() => dispatch({ type: "openExportBookmarks" })}
+                    className="flex w-full items-center justify-between gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                  >
+                    Export bookmarks
+                    <FileDown className="size-4 text-muted-foreground" />
+                  </button>
+                </>
+              )}
               {hasPublicProfile && variant === "dashboard" && (
                 <button
                   id="public-profile"

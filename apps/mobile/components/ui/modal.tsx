@@ -18,7 +18,7 @@ interface ModalProps extends RNModalProps {
   title?: string;
   onClose: () => void;
   children: React.ReactNode;
-  variant?: "center" | "bottom";
+  variant?: "center" | "bottom" | "top";
 }
 
 export function Modal({
@@ -44,6 +44,9 @@ export function Modal({
         overlayBottom: {
           justifyContent: "flex-end",
         },
+        overlayTop: {
+          justifyContent: "flex-start",
+        },
         container: {
           backgroundColor: colors.surface,
           borderRadius: borderRadius.lg,
@@ -61,6 +64,15 @@ export function Modal({
           borderBottomRightRadius: 0,
           paddingBottom: spacing.xxxl,
         },
+        containerTop: {
+          width: "100%",
+          maxWidth: "100%",
+          borderTopLeftRadius: 0,
+          borderTopRightRadius: 0,
+          borderBottomLeftRadius: borderRadius.xl,
+          borderBottomRightRadius: borderRadius.xl,
+          paddingTop: spacing.xxxl,
+        },
         handle: {
           width: 36,
           height: 4,
@@ -69,6 +81,10 @@ export function Modal({
           alignSelf: "center",
           marginTop: spacing.sm,
           marginBottom: spacing.xs,
+        },
+        handleBottom: {
+          marginTop: spacing.xs,
+          marginBottom: spacing.sm,
         },
         header: {
           flexDirection: "row",
@@ -96,8 +112,10 @@ export function Modal({
     [colors]
   );
 
+  const isEdgeVariant = variant === "bottom" || variant === "top";
+
   return (
-    <RNModal transparent animationType={variant === "bottom" ? "slide" : "fade"} onRequestClose={onClose} {...props}>
+    <RNModal transparent animationType={isEdgeVariant ? "slide" : "fade"} onRequestClose={onClose} {...props}>
       <KeyboardAvoidingView
         style={styles.kav}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -105,11 +123,19 @@ export function Modal({
         keyboardVerticalOffset={0}
       >
         <Pressable
-          style={[styles.overlay, variant === "bottom" && styles.overlayBottom]}
+          style={[
+            styles.overlay,
+            variant === "bottom" && styles.overlayBottom,
+            variant === "top" && styles.overlayTop,
+          ]}
           onPress={onClose}
         >
           <Pressable
-            style={[styles.container, variant === "bottom" && styles.containerBottom]}
+            style={[
+              styles.container,
+              variant === "bottom" && styles.containerBottom,
+              variant === "top" && styles.containerTop,
+            ]}
             onPress={(e) => e.stopPropagation()}
           >
             {variant === "bottom" && <View style={styles.handle} />}
@@ -122,6 +148,7 @@ export function Modal({
               </View>
             )}
             {children}
+            {variant === "top" && <View style={[styles.handle, styles.handleBottom]} />}
           </Pressable>
         </Pressable>
       </KeyboardAvoidingView>

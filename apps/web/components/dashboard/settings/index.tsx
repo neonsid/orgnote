@@ -22,16 +22,26 @@ import type { Doc } from "@/convex/_generated/dataModel";
 function PublicProfileFormHost({
   existingProfile,
   formRef,
+  onImportClick,
+  onExportClick,
 }: {
   existingProfile: Doc<"userProfile"> | undefined | null;
   formRef: React.MutableRefObject<
     ReturnType<typeof usePublicProfileForm> | null
   >;
+  onImportClick: () => void;
+  onExportClick: () => void;
 }) {
   const profileForm = usePublicProfileForm({ existingProfile });
   // eslint-disable-next-line react-hooks/refs -- expose form to parent for save/reset
   formRef.current = profileForm;
-  return <PublicProfileSettings profileForm={profileForm} />;
+  return (
+    <PublicProfileSettings
+      profileForm={profileForm}
+      onImportClick={onImportClick}
+      onExportClick={onExportClick}
+    />
+  );
 }
 
 interface UserSettingsDialogProps {
@@ -177,11 +187,7 @@ export function UserSettingsDialog({
 
           <div className="mt-6">
             {state.activeTab === "general" && (
-              <GeneralSettings
-                nameForm={nameForm}
-                onExportClick={onExportClick}
-                onImportClick={onImportClick}
-              />
+              <GeneralSettings nameForm={nameForm} />
             )}
 
             <div
@@ -199,6 +205,8 @@ export function UserSettingsDialog({
                 }
                 existingProfile={existingProfile}
                 formRef={profileFormRef}
+                onImportClick={onImportClick}
+                onExportClick={onExportClick}
               />
             </div>
           </div>

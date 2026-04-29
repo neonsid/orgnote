@@ -9,6 +9,7 @@ import { BookmarkImportStagingPanel } from './staging-panel'
 import { ImportHeader } from './import-header'
 import { ImportActionBar } from './import-action-bar'
 import { UploadDropZone } from './upload-drop-zone'
+import { ImportLibraryCompareGate } from './import-library-compare-gate'
 import { useImportBookmarks } from './use-import-bookmarks'
 
 export const ImportBookmarksView = memo(function ImportBookmarksView() {
@@ -37,12 +38,18 @@ export const ImportBookmarksView = memo(function ImportBookmarksView() {
     importButtonLabel,
     hasFile,
     importUrlKeys,
+    existingKeysByGroupId,
+    libraryCompareDismissed,
+    targetGroupExistingUrlKeys,
+    pendingRowStatusByGroup,
+    folderVsTargetSummary,
+    dismissLibraryCompare,
     handleFileChange,
     handleDrop,
     handleDragOver,
     handleChromeFolderChange,
     handleToggleRow,
-    handleSelectAll,
+    handleSelectAllInSubset,
     handleSelectNone,
     handleTargetGroupChange,
     handlePendingGroupExpandedChange,
@@ -96,6 +103,17 @@ export const ImportBookmarksView = memo(function ImportBookmarksView() {
                 onDragOver={handleDragOver}
               />
             </m.div>
+          ) : !libraryCompareDismissed && parsedItems ? (
+            <ImportLibraryCompareGate
+              key="library-compare"
+              fileLabel={loadedFileLabel}
+              parsedItems={parsedItems}
+              groups={groups}
+              existingKeysByGroupId={existingKeysByGroupId}
+              importUrlKeysLoaded={importUrlKeys !== undefined}
+              onContinue={dismissLibraryCompare}
+              onPickDifferentFile={() => fileInputRef.current?.click()}
+            />
           ) : (
             <m.div
               key="staging"
@@ -128,7 +146,7 @@ export const ImportBookmarksView = memo(function ImportBookmarksView() {
                 availableInFolder={availableInFolder}
                 selectedIds={selectedIds}
                 onToggleRow={handleToggleRow}
-                onSelectAll={handleSelectAll}
+                onSelectAllInSubset={handleSelectAllInSubset}
                 onSelectNone={handleSelectNone}
                 groups={groups}
                 effectiveTargetGroupId={effectiveTargetGroupId}
@@ -143,6 +161,9 @@ export const ImportBookmarksView = memo(function ImportBookmarksView() {
                 onRemoveFromPending={handleRemoveFromPending}
                 totalPendingCount={totalPendingCount}
                 pendingSectionRef={pendingSectionRef}
+                targetGroupExistingUrlKeys={targetGroupExistingUrlKeys}
+                pendingRowStatusByGroup={pendingRowStatusByGroup}
+                folderVsTargetSummary={folderVsTargetSummary}
               />
 
               <AnimatePresence>

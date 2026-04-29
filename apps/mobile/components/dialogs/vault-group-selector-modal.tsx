@@ -8,7 +8,7 @@ import type { AppColors } from "@/lib/theme-colors";
 import { spacing, borderRadius } from "@/lib/constants";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
-/** Matches `apps/web/components/dashboard/group-selector.tsx` */
+/** Matches `apps/web/components/dashboard/group-selector.tsx` (vault uses same list pattern). */
 const FALLBACK_COLORS = [
   "#f59e0b",
   "#3b82f6",
@@ -20,24 +20,24 @@ const FALLBACK_COLORS = [
   "#f97316",
 ];
 
-interface Group {
-  _id: Id<"groups">;
+export interface VaultGroupRow {
+  _id: Id<"vaultGroups">;
   title: string;
   color?: string;
 }
 
-interface GroupSelectorModalProps {
+interface VaultGroupSelectorModalProps {
   visible: boolean;
   onClose: () => void;
-  groups: Group[];
-  selectedGroupId: Id<"groups"> | null;
-  onSelectGroup: (id: Id<"groups">) => void;
+  groups: VaultGroupRow[];
+  selectedGroupId: Id<"vaultGroups"> | null;
+  onSelectGroup: (id: Id<"vaultGroups">) => void;
   onCreateGroup: () => void;
   onRenameGroup?: () => void;
   onDeleteGroup?: () => void;
 }
 
-export function GroupSelectorModal({
+export function VaultGroupSelectorModal({
   visible,
   onClose,
   groups,
@@ -46,9 +46,9 @@ export function GroupSelectorModal({
   onCreateGroup,
   onRenameGroup,
   onDeleteGroup,
-}: GroupSelectorModalProps) {
+}: VaultGroupSelectorModalProps) {
   const { colors } = useAppTheme();
-  const styles = useMemo(() => makeGroupStyles(colors), [colors]);
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const selectedGroup = groups.find((g) => g._id === selectedGroupId) ?? null;
   const showManage =
     groups.length > 0 && selectedGroup && onRenameGroup && onDeleteGroup;
@@ -153,8 +153,8 @@ export function GroupSelectorModal({
   );
 }
 
-function makeGroupStyles(colors: AppColors) {
-  const pad = 6; // web `p-1.5`
+function makeStyles(colors: AppColors) {
+  const pad = 6;
   return StyleSheet.create({
     scroll: {
       maxHeight: 420,

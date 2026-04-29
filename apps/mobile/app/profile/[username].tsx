@@ -110,7 +110,11 @@ function makePublicUserProfileStyles(colors: AppColors) {
       marginBottom: spacing.sm,
     },
     groupChipsContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      flexGrow: 1,
       gap: spacing.sm,
+      paddingRight: spacing.lg,
     },
     chip: {
       paddingHorizontal: spacing.lg,
