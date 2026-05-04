@@ -268,9 +268,4 @@ pnpm exec convex deploy
 
 ---
 
-## Acknowledgments
-
-- **[minimal.so](https://minimal.so)** — Inspiration for bookmark UX and structure.
-- **[Kilo Code](https://kilo.ai)** — Kimi K2.5 access during development.
-
 
