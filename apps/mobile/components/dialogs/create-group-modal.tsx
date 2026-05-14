@@ -55,7 +55,6 @@ export function CreateGroupModal({ visible, onClose, onCreated }: CreateGroupMod
           placeholder="Collection name..."
           value={title}
           onChangeText={setTitle}
-          autoFocus
         />
 
         <Text style={[styles.colorLabel, { color: colors.textSecondary }]}>Color</Text>
@@ -93,7 +92,7 @@ export function CreateGroupModal({ visible, onClose, onCreated }: CreateGroupMod
           loading={loading}
           style={styles.button}
         >
-          Create
+          <Button.Text>Create</Button.Text>
         </Button>
       </View>
     </Modal>

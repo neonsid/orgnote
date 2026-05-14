@@ -63,7 +63,7 @@ export default function PrivacyPage() {
       <main className="flex-1 flex flex-col items-center px-4 sm:px-6 py-14 sm:py-20">
         <div className="w-full max-w-2xl flex flex-col gap-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="flex flex-col gap-3 text-center">
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
               Privacy Policy
             </h1>
             <p className="text-muted-foreground text-sm">

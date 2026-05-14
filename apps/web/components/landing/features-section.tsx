@@ -67,7 +67,7 @@ export function FeaturesSection() {
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-        <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3">
+        <h2 className="text-2xl sm:text-3xl font-semibold text-foreground mb-3">
           The bookmark manager that actually works
         </h2>
         <p className="text-muted-foreground">

@@ -108,7 +108,7 @@ export function DeleteGroupModal(props: DeleteGroupModalProps) {
 
         <View style={styles.actions}>
           <Button variant="ghost" onPress={onClose} disabled={loading} style={styles.actionBtn}>
-            Cancel
+            <Button.Text>Cancel</Button.Text>
           </Button>
           <Button
             variant="destructive"
@@ -116,7 +116,7 @@ export function DeleteGroupModal(props: DeleteGroupModalProps) {
             loading={loading}
             style={styles.actionBtn}
           >
-            Delete
+            <Button.Text>Delete</Button.Text>
           </Button>
         </View>
       </View>

@@ -39,7 +39,7 @@ function EmptyState({
           <h3 className="text-sm font-medium">Gallery</h3>
         </div>
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+          <Loader2 className="text-muted-foreground size-5 animate-spin" />
         </div>
       </div>
     )
@@ -96,12 +96,12 @@ export function VaultUpload({
         <h3 className="text-sm font-medium">Gallery</h3>
         <div className="flex gap-2">
           <Button onClick={openFileDialog} variant="outline" size="sm">
-            <CloudUploadIcon className="h-4 w-4 mr-2" />
+            <CloudUploadIcon className="size-4 mr-2" />
             Add files
           </Button>
           {uploadFiles.length > 0 && (
             <Button onClick={clearAll} variant="outline" size="sm">
-              <Trash2Icon className="h-4 w-4 mr-2" />
+              <Trash2Icon className="size-4 mr-2" />
               Clear
             </Button>
           )}

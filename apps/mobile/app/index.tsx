@@ -30,12 +30,38 @@ function oauthRedirectUrl() {
   });
 }
 
+function clerkGoogleNativeEnv(key: string) {
+  const extra = Constants.expoConfig?.extra as Record<string, string | undefined> | undefined;
+  return String(extra?.[key] ?? process.env[key] ?? "").trim();
+}
+
+/**
+ * Clerk's native Google flow (used by `@clerk/expo/native` AuthView on iOS/Android) needs the same
+ * Sign in with Google env vars as `useSignInWithGoogle`; otherwise Credential Manager surfaces errors
+ * like "Error retrieving Google ID token: No credentials available". Without complete config we use
+ * browser SSO like Expo Go (`useSSO` + `oauth_google`).
+ *
+ * Docs: https://clerk.com/docs/expo/guides/configure/auth-strategies/sign-in-with-google
+ */
+function clerkNativeGoogleConfiguredForPlatform(): boolean {
+  const web = clerkGoogleNativeEnv("EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID");
+  if (!web) return false;
+  if (Platform.OS === "ios") {
+    return Boolean(clerkGoogleNativeEnv("EXPO_PUBLIC_CLERK_GOOGLE_IOS_CLIENT_ID"));
+  }
+  return true;
+}
+
 /**
  * Native AuthView needs a dev client / production build with the @clerk/expo prebuild plugin.
  * Expo Go has no Clerk native UI — it crashes if we mount AuthView. Web has no native view either.
  */
 function useBrowserOAuthInsteadOfNativeAuthView() {
-  return Platform.OS === "web" || Constants.appOwnership === "expo";
+  return (
+    Platform.OS === "web" ||
+    Constants.appOwnership === "expo" ||
+    !clerkNativeGoogleConfiguredForPlatform()
+  );
 }
 
 function SignInPanel() {

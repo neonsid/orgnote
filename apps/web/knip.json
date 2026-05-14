@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": ["app/**/*.{ts,tsx}"],
+  "project": ["**/*.{ts,tsx}"],
+  "ignore": [
+    "components/ui/**",
+    "components/dashboard/bookmark-list/constants.ts",
+    "components/dashboard/settings/types.ts",
+    "components/vault/file-type-utils.tsx",
+    "**/staging-panel.tsx",
+    "**/vault-file-gallery.tsx",
+    "**/gallery/vault-file-gallery.tsx",
+    "hooks/use-file-upload.ts",
+    "lib/bookmark-export.ts",
+    "lib/bookmark-import.ts",
+    "lib/download-file.ts",
+    "lib/dummy-data.ts",
+    "lib/toast.ts",
+    "lib/validation.ts",
+    "stores/dialog-store/**"
+  ]
+}

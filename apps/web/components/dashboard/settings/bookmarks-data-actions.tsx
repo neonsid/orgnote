@@ -14,7 +14,7 @@ export function BookmarksDataActions({
   onExportClick,
 }: BookmarksDataActionsProps) {
   return (
-    <div className="space-y-3 rounded-xl border border-border/80 bg-muted/30 px-4 py-4">
+    <div className="space-y-3 rounded-xl border border-border/80 bg-muted/30 p-4">
       <div>
         <Label className="text-sm font-medium">Bookmarks</Label>
         <p className="mt-1 text-xs text-muted-foreground leading-relaxed">

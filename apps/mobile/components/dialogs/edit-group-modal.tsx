@@ -98,7 +98,6 @@ export function EditGroupModal(props: EditGroupModalProps) {
           placeholder={groupKind === "vault" ? "Group name..." : "Collection name..."}
           value={title}
           onChangeText={setTitle}
-          autoFocus
         />
 
         <Text style={[styles.colorLabel, { color: colors.textSecondary }]}>Color</Text>
@@ -132,7 +131,7 @@ export function EditGroupModal(props: EditGroupModalProps) {
 
         <View style={styles.actions}>
           <Button variant="outline" onPress={handleClose} disabled={loading} style={styles.actionBtn}>
-            Cancel
+            <Button.Text>Cancel</Button.Text>
           </Button>
           <Button
             onPress={() => void handleSave()}
@@ -140,7 +139,7 @@ export function EditGroupModal(props: EditGroupModalProps) {
             loading={loading}
             style={styles.actionBtn}
           >
-            Save
+            <Button.Text>Save</Button.Text>
           </Button>
         </View>
       </View>

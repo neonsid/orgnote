@@ -58,6 +58,7 @@ function ThemedAlertHost() {
   const { colors } = useAppTheme();
   const [payload, setPayload] = useState<ThemedAlertPayload | null>(null);
 
+  // TODO: Improve this
   useEffect(() => {
     setAlertGlobal = setPayload;
     return () => {

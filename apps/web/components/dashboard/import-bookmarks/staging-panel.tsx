@@ -394,7 +394,7 @@ export const BookmarkImportStagingPanel = memo(function BookmarkImportStagingPan
         <ul className="min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain px-2 pb-2 pt-1 sm:space-y-2 sm:px-3 sm:py-3 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/25">
           {availableInFolder.length === 0 ? (
             <li className="p-6 text-center text-sm text-muted-foreground">
-              No links left in this folder — change folder or remove some from
+              No links left in this folder; change folder or remove some from
               the staged list below.
             </li>
           ) : filteredAvailable.length === 0 ? (
@@ -409,6 +409,8 @@ export const BookmarkImportStagingPanel = memo(function BookmarkImportStagingPan
             filteredAvailable.map((item) => (
               <li
                 key={item.id}
+                role="button"
+                tabIndex={0}
                 className={cn(
                   'cursor-pointer rounded-lg border px-2.5 py-2.5 transition-colors sm:rounded-xl sm:px-3.5 sm:py-3',
                   'active:bg-muted/50',
@@ -417,6 +419,12 @@ export const BookmarkImportStagingPanel = memo(function BookmarkImportStagingPan
                     : 'border-emerald-500/15 bg-emerald-500/[0.04] hover:bg-emerald-500/[0.07]',
                 )}
                 onClick={() => onToggleRow(item.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    onToggleRow(item.id)
+                  }
+                }}
               >
                 <div className="flex gap-3 sm:items-start">
                   <Checkbox

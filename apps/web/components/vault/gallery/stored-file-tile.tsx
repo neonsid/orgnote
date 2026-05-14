@@ -228,7 +228,7 @@ export function StoredFileTile({
 
       <div className="rounded-b-lg absolute right-0 bottom-0 left-0 bg-black/70 p-2 text-white opacity-100 md:opacity-0 md:group-hover/item:opacity-100 transition-opacity z-20">
         <p className="truncate text-xs font-medium">{file.name}</p>
-        <p className="text-xs text-gray-300">{formatBytes(file.size)}</p>
+        <p className="text-xs text-zinc-300">{formatBytes(file.size)}</p>
       </div>
     </>
   );

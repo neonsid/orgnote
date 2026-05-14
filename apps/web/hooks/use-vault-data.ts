@@ -39,21 +39,25 @@ export function useVaultData(isAuthenticated: boolean = true) {
     return vaultData.groups;
   }, [vaultData]);
 
-  const effectiveGroupId = useMemo(() => {
+  const effectiveGroupId = useMemo((): Id<"vaultGroups"> | null => {
     if (selectedGroupId && groups.some((g) => g._id === selectedGroupId)) {
       return selectedGroupId;
     }
-    const latestGroup = [...groups].sort(
-      (a, b) => b._creationTime - a._creationTime,
-    )[0];
-    return latestGroup?._id ?? "";
+    let latest: VaultGroup | undefined;
+    for (const g of groups) {
+      if (!latest || g._creationTime > latest._creationTime) {
+        latest = g;
+      }
+    }
+    return latest?._id ?? null;
   }, [selectedGroupId, groups]);
 
   const files = useMemo((): VaultFile[] => {
-    if (!vaultData?.files) return [];
-    return vaultData.files
-      .filter((f) => f.groupId === effectiveGroupId)
-      .map((f) => ({
+    if (!vaultData?.files || effectiveGroupId === null) return [];
+    const out: VaultFile[] = [];
+    for (const f of vaultData.files) {
+      if (f.groupId !== effectiveGroupId) continue;
+      out.push({
         _id: f._id,
         name: f.name,
         type: f.type,
@@ -63,7 +67,9 @@ export function useVaultData(isAuthenticated: boolean = true) {
         groupId: f.groupId,
         ownerId: f.ownerId,
         _creationTime: f._creationTime,
-      }));
+      });
+    }
+    return out;
   }, [vaultData, effectiveGroupId]);
 
   const selectGroup = useCallback(

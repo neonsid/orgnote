@@ -31,9 +31,8 @@ export function PublicProfileSettings({
       />
 
       {/* Public Profile Toggle */}
-      <profileForm.Field
-        name="isPublic"
-        children={(field) => (
+      <profileForm.Field name="isPublic">
+        {(field) => (
           <div className="flex items-center justify-between">
             <Label htmlFor="public-profile-toggle" className="font-medium">
               Public Profile
@@ -45,12 +44,11 @@ export function PublicProfileSettings({
             />
           </div>
         )}
-      />
+      </profileForm.Field>
 
       {/* Username Field */}
-      <profileForm.Field
-        name="username"
-        children={(field) => (
+      <profileForm.Field name="username">
+        {(field) => (
           <div className="space-y-3">
             <Label htmlFor="username">Username</Label>
             <div className="relative">
@@ -76,12 +74,11 @@ export function PublicProfileSettings({
             )}
           </div>
         )}
-      />
+      </profileForm.Field>
 
       {/* Bio Field */}
-      <profileForm.Field
-        name="bio"
-        children={(field) => (
+      <profileForm.Field name="bio">
+        {(field) => (
           <div className="space-y-3">
             <Label htmlFor="bio">Bio</Label>
             <Textarea
@@ -100,12 +97,11 @@ export function PublicProfileSettings({
             )}
           </div>
         )}
-      />
+      </profileForm.Field>
 
       {/* GitHub Field */}
-      <profileForm.Field
-        name="github"
-        children={(field) => (
+      <profileForm.Field name="github">
+        {(field) => (
           <div className="space-y-3">
             <Label htmlFor="github">GitHub</Label>
             <Input
@@ -123,12 +119,11 @@ export function PublicProfileSettings({
             )}
           </div>
         )}
-      />
+      </profileForm.Field>
 
       {/* Twitter Field */}
-      <profileForm.Field
-        name="twitter"
-        children={(field) => (
+      <profileForm.Field name="twitter">
+        {(field) => (
           <div className="space-y-3">
             <Label htmlFor="twitter">X (Twitter)</Label>
             <Input
@@ -146,12 +141,11 @@ export function PublicProfileSettings({
             )}
           </div>
         )}
-      />
+      </profileForm.Field>
 
       {/* Website Field */}
-      <profileForm.Field
-        name="website"
-        children={(field) => (
+      <profileForm.Field name="website">
+        {(field) => (
           <div className="space-y-3">
             <Label htmlFor="website">Website</Label>
             <div className="flex">
@@ -175,12 +169,13 @@ export function PublicProfileSettings({
             )}
           </div>
         )}
-      />
+      </profileForm.Field>
 
       {/* Action Buttons */}
       <profileForm.Subscribe
-        selector={(state) => [state.values.username]}
-        children={([username]) => (
+        selector={(state) => [state.values.username] as const}
+      >
+        {([username]) => (
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -210,7 +205,7 @@ export function PublicProfileSettings({
             </Button>
           </div>
         )}
-      />
+      </profileForm.Subscribe>
     </div>
   );
 }

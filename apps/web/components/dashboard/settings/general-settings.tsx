@@ -8,6 +8,7 @@ import { useUser } from '@clerk/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PasswordSection } from './password-section'
 
 interface GeneralSettingsProps {
   nameForm: ReturnType<typeof import('@/hooks/use-name-form').useNameForm>
@@ -72,9 +73,8 @@ export function GeneralSettings({ nameForm }: GeneralSettingsProps) {
       </div>
 
       {/* Name Field */}
-      <nameForm.Field
-        name="name"
-        children={(field) => (
+      <nameForm.Field name="name">
+        {(field) => (
           <div className="space-y-3">
             <Label htmlFor="name">Name</Label>
             <Input
@@ -92,7 +92,7 @@ export function GeneralSettings({ nameForm }: GeneralSettingsProps) {
             )}
           </div>
         )}
-      />
+      </nameForm.Field>
 
       {/* Email Field (Read-only) */}
       <div className="space-y-3">
@@ -104,6 +104,10 @@ export function GeneralSettings({ nameForm }: GeneralSettingsProps) {
           disabled
           className="bg-muted"
         />
+      </div>
+
+      <div className="border-t pt-6">
+        <PasswordSection />
       </div>
 
     </div>

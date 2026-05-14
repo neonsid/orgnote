@@ -309,7 +309,6 @@ function CreateVaultGroupModal({
           placeholder="Collection name..."
           value={title}
           onChangeText={setTitle}
-          autoFocus
         />
         <Text style={{ fontSize: 13, fontWeight: "600", color: colors.textSecondary }}>
           Color
@@ -336,7 +335,7 @@ function CreateVaultGroupModal({
           })}
         </ScrollView>
         <Button onPress={handleCreate} disabled={!title.trim()} loading={loading}>
-          Create
+          <Button.Text>Create</Button.Text>
         </Button>
       </View>
     </Modal>
@@ -487,7 +486,7 @@ function VaultContent() {
             variant="outline"
             style={{ flexShrink: 0 }}
           >
-            Add files
+            <Button.Text>Add files</Button.Text>
           </Button>
           <Text style={styles.uploadHint}>
             {effectiveGroupId

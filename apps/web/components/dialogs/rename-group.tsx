@@ -67,21 +67,20 @@ export function RenameGroupDialog({
         <DialogHeader>
           <DialogTitle>Rename Group</DialogTitle>
         </DialogHeader>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            form.handleSubmit()
-          }}
-        >
+        <div className="flex flex-col">
           <div className="py-4 flex flex-col gap-6">
-            <form.Field
-              name="title"
-              children={(field) => (
+            <form.Field name="title">
+              {(field) => (
                 <>
                   <Input
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
+                    onKeyDown={(e) => {
+                      if (e.key !== 'Enter') return
+                      e.preventDefault()
+                      void form.handleSubmit()
+                    }}
                     placeholder="Bookmark title"
                     aria-invalid={field.state.meta.errors.length > 0}
                   />
@@ -92,10 +91,9 @@ export function RenameGroupDialog({
                   )}
                 </>
               )}
-            />
-            <form.Field
-              name="color"
-              children={(field) => (
+            </form.Field>
+            <form.Field name="color">
+              {(field) => (
                 <div className="grid gap-2">
                   <div className="flex flex-wrap gap-2">
                     {GROUP_COLORS.map((color) => (
@@ -118,7 +116,7 @@ export function RenameGroupDialog({
                   </div>
                 </div>
               )}
-            />
+            </form.Field>
           </div>
           <DialogFooter>
             <Button
@@ -128,16 +126,19 @@ export function RenameGroupDialog({
             >
               Cancel
             </Button>
-            <form.Subscribe
-              selector={(state) => state.canSubmit}
-              children={(canSubmit) => (
-                <Button type="submit" disabled={!canSubmit}>
+            <form.Subscribe selector={(state) => state.canSubmit}>
+              {(canSubmit) => (
+                <Button
+                  type="button"
+                  disabled={!canSubmit}
+                  onClick={() => void form.handleSubmit()}
+                >
                   Save
                 </Button>
               )}
-            />
+            </form.Subscribe>
           </DialogFooter>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   )

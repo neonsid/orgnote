@@ -70,7 +70,6 @@ export function LandingRenameBookmarkDialog({
             onChange={(e) => setEditedTitle(e.target.value)}
             placeholder="Bookmark title"
             onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
-            autoFocus={open}
           />
         </div>
         <DialogFooter>

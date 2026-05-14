@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -6,8 +6,8 @@ import {
   Text,
   type PressableProps,
   type StyleProp,
-  type ViewStyle,
   type TextStyle,
+  type ViewStyle,
 } from "react-native";
 
 import { useAppTheme } from "@/contexts/app-theme";
@@ -15,6 +15,30 @@ import { borderRadius } from "@/lib/constants";
 
 type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "destructive";
 type ButtonSize = "sm" | "md" | "lg";
+
+type ButtonTextContextValue = {
+  textStyles: StyleProp<TextStyle>;
+};
+
+const ButtonTextContext = createContext<ButtonTextContextValue | null>(null);
+
+function useOptionalButtonTextContext() {
+  return useContext(ButtonTextContext);
+}
+
+export function ButtonText({
+  children,
+  style,
+}: {
+  children: ReactNode;
+  style?: StyleProp<TextStyle>;
+}) {
+  const ctx = useOptionalButtonTextContext();
+  if (!ctx) {
+    throw new Error("Button.Text must be used inside <Button>");
+  }
+  return <Text style={[ctx.textStyles, style]}>{children}</Text>;
+}
 
 interface ButtonProps extends Omit<PressableProps, "style"> {
   variant?: ButtonVariant;
@@ -25,7 +49,7 @@ interface ButtonProps extends Omit<PressableProps, "style"> {
   textStyle?: StyleProp<TextStyle>;
 }
 
-export function Button({
+function ButtonRoot({
   variant = "primary",
   size = "md",
   loading = false,
@@ -73,26 +97,35 @@ export function Button({
   const spinnerColor =
     variant === "primary" || variant === "destructive" ? colors.surface : colors.text;
 
+  const textContext = useMemo<ButtonTextContextValue>(
+    () => ({
+      textStyles: [styles.text, styles[`text_${variant}`], textStyle],
+    }),
+    [styles, variant, textStyle]
+  );
+
   return (
-    <Pressable
-      {...props}
-      disabled={isDisabled}
-      style={({ pressed }) => [
-        styles.base,
-        styles[variant],
-        styles[`size_${size}`],
-        pressed && styles.pressed,
-        isDisabled && styles.disabled,
-        style,
-      ]}
-    >
-      {loading ? (
-        <ActivityIndicator size="small" color={spinnerColor} />
-      ) : typeof children === "string" ? (
-        <Text style={[styles.text, styles[`text_${variant}`], textStyle]}>{children}</Text>
-      ) : (
-        children
-      )}
-    </Pressable>
+    <ButtonTextContext.Provider value={textContext}>
+      <Pressable
+        {...props}
+        disabled={isDisabled}
+        style={({ pressed }) => [
+          styles.base,
+          styles[variant],
+          styles[`size_${size}`],
+          pressed && styles.pressed,
+          isDisabled && styles.disabled,
+          style,
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator size="small" color={spinnerColor} />
+        ) : (
+          children
+        )}
+      </Pressable>
+    </ButtonTextContext.Provider>
   );
 }
+
+export const Button = Object.assign(ButtonRoot, { Text: ButtonText });

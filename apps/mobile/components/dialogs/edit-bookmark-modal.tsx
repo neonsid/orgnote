@@ -182,11 +182,11 @@ export function EditBookmarkModal({
               disabled={generating || loading || !url.trim()}
               loading={generating}
             >
-              {genLabel}
+              <Button.Text>{genLabel}</Button.Text>
             </Button>
           </View>
           <Button onPress={handleSave} disabled={loading || generating || !title.trim() || !url.trim()} loading={loading}>
-            Save
+            <Button.Text>Save</Button.Text>
           </Button>
         </View>
       </ScrollView>

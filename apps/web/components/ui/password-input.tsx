@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type KeyboardEventHandler } from "react";
 import { Eye, EyeOff, Check, X } from "lucide-react";
 import { Input } from "./input";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ interface PasswordInputProps {
   value: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
+  onKeyDown?: KeyboardEventHandler<HTMLInputElement>;
   placeholder: string;
   id?: string;
   disabled?: boolean;
@@ -20,6 +21,7 @@ export function PasswordInput({
   value,
   onChange,
   onBlur,
+  onKeyDown,
   placeholder,
   id,
   disabled,
@@ -37,6 +39,7 @@ export function PasswordInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
+        onKeyDown={onKeyDown}
         disabled={disabled}
         aria-invalid={error}
         className="pr-10"

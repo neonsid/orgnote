@@ -91,11 +91,11 @@ const HeroSection = memo(function HeroSection() {
           className="flex flex-col gap-3 sm:gap-4"
           variants={itemVariants}
         >
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.1]">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground leading-[1.1]">
             Bookmarks you&apos;ll actually find
           </h1>
           <p className="text-base sm:text-lg md:text-xl text-muted-foreground font-normal max-w-lg mx-auto leading-relaxed">
-            Forget where you saved that link? Orgnote remembers for you—with
+            Forget where you saved that link? Orgnote remembers for you, with
             instant AI summaries so every bookmark makes sense at a glance.
           </p>
         </m.div>

@@ -1,12 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import {
-  anchoredToastManager,
-  toastManager,
-} from "@/components/ui/toast";
-
-export { anchoredToastManager, toastManager };
+import { toastManager } from "@/components/ui/toast";
 
 export type ToastOptions = {
   description?: ReactNode;

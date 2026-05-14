@@ -1,10 +1,8 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useRef, useState, startTransition } from 'react'
 import { useMountEffect } from '@/hooks/use-mount-effect'
 import { Moon, Sun } from 'lucide-react'
-import { flushSync } from 'react-dom'
-
 import { cn } from '@/lib/utils'
 
 interface AnimatedThemeTogglerProps extends React.ComponentPropsWithoutRef<'button'> {
@@ -63,9 +61,11 @@ export const AnimatedThemeToggler = ({
         ).startViewTransition
       ) {
         // Fallback for browsers without startViewTransition
-        setIsDark(newTheme)
-        document.documentElement.classList.toggle('dark')
-        localStorage.setItem('theme', newTheme ? 'dark' : 'light')
+        startTransition(() => {
+          setIsDark(newTheme)
+          document.documentElement.classList.toggle('dark')
+          localStorage.setItem('theme', newTheme ? 'dark' : 'light')
+        })
         setIsTransitioning(false)
         return
       }
@@ -77,7 +77,7 @@ export const AnimatedThemeToggler = ({
           }
         }
       ).startViewTransition(() => {
-        flushSync(() => {
+        startTransition(() => {
           setIsDark(newTheme)
           document.documentElement.classList.toggle('dark')
           localStorage.setItem('theme', newTheme ? 'dark' : 'light')

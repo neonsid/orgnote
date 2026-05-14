@@ -256,9 +256,11 @@ export default function DashboardPage() {
       toast.error('Select at least one bookmark')
       return
     }
-    const urls = filteredBookmarks
-      .filter((b) => selectedBookmarkIds.has(b.id))
-      .map((b) => b.url)
+    const urls: string[] = []
+    for (const b of filteredBookmarks) {
+      if (!selectedBookmarkIds.has(b.id)) continue
+      urls.push(b.url)
+    }
     void navigator.clipboard.writeText(urls.join('\n'))
     toast.success(
       urls.length === 1 ? 'URL copied to clipboard' : 'URLs copied to clipboard'

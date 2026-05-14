@@ -17,12 +17,30 @@ import {
   Circle,
   Info,
   Layers,
+  ExternalLink,
 } from 'lucide-react'
 import type { Bookmark } from './types'
 import type { ConvexGroup } from '../group-selector'
 import { FALLBACK_COLORS } from '../group-selector'
 import { KEYBOARD_SHORTCUTS } from './constants'
 import type { Id } from '@/convex/_generated/dataModel'
+
+function buildOtherGroupsForBookmark(
+  groups: ConvexGroup[],
+  bookmarkGroupId: Id<'groups'>,
+): { group: ConvexGroup; fallbackColor: string }[] {
+  const out: { group: ConvexGroup; fallbackColor: string }[] = []
+  let i = 0
+  for (const group of groups) {
+    if (group._id === bookmarkGroupId) continue
+    out.push({
+      group,
+      fallbackColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length],
+    })
+    i++
+  }
+  return out
+}
 
 interface DesktopMenuProps {
   bookmark: Bookmark
@@ -47,7 +65,7 @@ function KeyboardShortcut({
     <ContextMenuShortcut className="flex items-center gap-1">
       {keys.map((key, idx) => (
         <kbd
-          key={`${idPrefix}-${idx}-${key}`}
+          key={`${idPrefix}-${keys.slice(0, idx + 1).join('·')}:${key}`}
           className="inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-md bg-muted border border-border text-xs font-medium text-muted-foreground select-none"
         >
           {key}
@@ -69,13 +87,7 @@ export function DesktopMenu({
   onEnterMultiSelect,
 }: DesktopMenuProps) {
   const otherGroups = useMemo(
-    () =>
-      groups
-        .filter((g) => g._id !== bookmark.groupId)
-        .map((group, i): { group: ConvexGroup; fallbackColor: string } => ({
-          group,
-          fallbackColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length],
-        })),
+    () => buildOtherGroupsForBookmark(groups, bookmark.groupId),
     [groups, bookmark.groupId]
   )
 
@@ -106,7 +118,7 @@ export function DesktopMenu({
 
       <ContextMenuItem onClick={onEdit}>
         <Edit3 className="size-4 mr-2" />
-        Edit...
+        Edit…
         <KeyboardShortcut
           idPrefix={bookmark.id}
           keys={KEYBOARD_SHORTCUTS.edit}
@@ -208,13 +220,7 @@ export function MobileMenu({
   }, [isOpen])
 
   const otherGroups = useMemo(
-    () =>
-      groups
-        .filter((g) => g._id !== bookmark.groupId)
-        .map((group, i): { group: ConvexGroup; fallbackColor: string } => ({
-          group,
-          fallbackColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length],
-        })),
+    () => buildOtherGroupsForBookmark(groups, bookmark.groupId),
     [groups, bookmark.groupId]
   )
 
@@ -237,6 +243,21 @@ export function MobileMenu({
 
   return (
     <div className="w-56 py-1">
+      <button
+        type="button"
+        onClick={() =>
+          handleAction(() => {
+            window.open(bookmark.url, '_blank', 'noopener,noreferrer')
+          })
+        }
+        className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
+      >
+        <ExternalLink className="size-4 mr-2" />
+        Open link
+      </button>
+
+      <div className="h-px bg-border my-1" />
+
       <button
         onClick={() => handleAction(onToggleRead)}
         className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
@@ -269,7 +290,7 @@ export function MobileMenu({
         className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
       >
         <Edit3 className="size-4 mr-2" />
-        Edit...
+        Edit…
       </button>
 
       {bookmark.description && onShowDescription && (
