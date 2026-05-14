@@ -87,17 +87,32 @@ function makePublicProfileModalStyles(colors: AppColors) {
 }
 
 function publicProfileSeed(profile: Doc<"userProfile"> | null) {
-  const links = profile?.links ?? [];
-  const github = links.find((l) => l.label === "GitHub");
-  const twitter = links.find((l) => l.label === "Twitter");
-  const portfolio = links.find((l) => l.label === "Portfolio");
+  let githubUrl = "";
+  let twitterUrl = "";
+  let portfolioUrl = "";
+  for (const link of profile?.links ?? []) {
+    const url = link.url ?? "";
+    switch (link.label) {
+      case "GitHub":
+        if (!githubUrl) githubUrl = url;
+        break;
+      case "Twitter":
+        if (!twitterUrl) twitterUrl = url;
+        break;
+      case "Portfolio":
+        if (!portfolioUrl) portfolioUrl = url;
+        break;
+      default:
+        break;
+    }
+  }
   return {
     isPublic: profile?.isPublic ?? false,
     username: profile?.username ?? "",
     bio: profile?.bio ?? "",
-    githubUrl: github?.url ?? "",
-    twitterUrl: twitter?.url ?? "",
-    portfolioUrl: portfolio?.url ?? "",
+    githubUrl,
+    twitterUrl,
+    portfolioUrl,
   };
 }
 
