@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Component, useEffect, useMemo, useState } from "react";
+import { Component, useMemo, useState } from "react";
 import {
   Platform,
   Pressable,
@@ -9,6 +9,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { useMountEffect } from "@/hooks/use-mount-effect";
 
 type RuntimeErrorDetails = {
   message: string;
@@ -252,8 +254,14 @@ class RuntimeErrorBoundaryInner extends Component<
 export function RuntimeErrorBoundary({ children }: { children: ReactNode }) {
   const [globalError, setGlobalError] = useState<RuntimeErrorDetails | null>(null);
 
-  useEffect(() => subscribeToRuntimeErrors(setGlobalError), []);
-  useEffect(() => installGlobalErrorHandler(), []);
+  useMountEffect(() => {
+    const unsubscribe = subscribeToRuntimeErrors(setGlobalError);
+    const teardownGlobalHandler = installGlobalErrorHandler();
+    return () => {
+      unsubscribe();
+      teardownGlobalHandler();
+    };
+  });
 
   if (globalError) {
     return (

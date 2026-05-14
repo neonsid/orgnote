@@ -49,7 +49,7 @@ export function CreateGroupModal({ visible, onClose, onCreated }: CreateGroupMod
   }
 
   return (
-    <Modal visible={visible} onClose={handleClose} title="Create collection" variant="bottom">
+    <Modal visible={visible} onClose={handleClose} title="Create collection" variant="center">
       <View style={styles.content}>
         <Input
           placeholder="Collection name..."

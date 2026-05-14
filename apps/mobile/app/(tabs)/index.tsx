@@ -1,7 +1,7 @@
 import { useAuth } from "@clerk/expo";
 import { useConvexAuth, useMutation, usePaginatedQuery, useQuery } from "convex/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { AppState, type AppStateStatus, StyleSheet, View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAppTheme } from "@/contexts/app-theme";
@@ -26,18 +26,20 @@ import {
   type FilterType,
 } from "@/components/dialogs";
 import { Loading, EmptyState } from "@/components/ui";
-import { useBookmarkSelection } from "@/hooks";
+import { useBookmarkSelection, usePersistedSelectedGroupId } from "@/hooks";
 import { openInAppBrowser } from "@/lib/open-in-app-browser";
-import { loadPersistedSelectedGroupId, savePersistedSelectedGroupId } from "@/lib/persisted-selected-group";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 function BookmarksContent() {
   const { userId } = useAuth();
   const groups = useQuery(api.groups.queries.list);
-  const [selectedGroupId, setSelectedGroupId] = useState<Id<"groups"> | null>(null);
-  /** False until we have tried loading the last-opened group from storage (avoids clobbering it on first paint). */
-  const [groupPreferenceRestored, setGroupPreferenceRestored] = useState(false);
+  const {
+    selectedGroupId,
+    setSelectedGroupId,
+    groupPreferenceRestored,
+    effectiveGroupId,
+  } = usePersistedSelectedGroupId(userId, groups);
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
 
@@ -50,14 +52,6 @@ function BookmarksContent() {
   const [selectedBookmark, setSelectedBookmark] = useState<BookmarkData | null>(null);
   const [toolbarEditBookmark, setToolbarEditBookmark] = useState<BookmarkData | null>(null);
   const toggleRead = useMutation(api.bookmarks.mutations.toggleReadStatus);
-
-  const effectiveGroupId = useMemo(() => {
-    if (!groups || groups.length === 0) return null;
-    if (selectedGroupId && groups.some((g) => g._id === selectedGroupId)) {
-      return selectedGroupId;
-    }
-    return groups[0]._id;
-  }, [groups, selectedGroupId]);
 
   const selectedGroup = useMemo(() => {
     if (!groups || !effectiveGroupId) return null;
@@ -164,46 +158,6 @@ function BookmarksContent() {
     },
     [toggleRead]
   );
-
-  useEffect(() => {
-    setGroupPreferenceRestored(false);
-  }, [userId]);
-
-  useEffect(() => {
-    if (!userId) return;
-    if (!groups || groups.length === 0) {
-      setGroupPreferenceRestored(false);
-      return;
-    }
-    if (groupPreferenceRestored) return;
-    let cancelled = false;
-    void (async () => {
-      const stored = await loadPersistedSelectedGroupId(userId);
-      if (cancelled) return;
-      if (stored && groups.some((g) => g._id === stored)) {
-        setSelectedGroupId(stored as Id<"groups">);
-      }
-      setGroupPreferenceRestored(true);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [userId, groups, groupPreferenceRestored]);
-
-  useEffect(() => {
-    if (!userId || !effectiveGroupId || !groupPreferenceRestored) return;
-    void savePersistedSelectedGroupId(userId, effectiveGroupId);
-  }, [userId, effectiveGroupId, groupPreferenceRestored]);
-
-  useEffect(() => {
-    if (!userId || !effectiveGroupId || !groupPreferenceRestored) return;
-    const sub = AppState.addEventListener("change", (s: AppStateStatus) => {
-      if (s === "background" || s === "inactive") {
-        void savePersistedSelectedGroupId(userId, effectiveGroupId);
-      }
-    });
-    return () => sub.remove();
-  }, [userId, effectiveGroupId, groupPreferenceRestored]);
 
   const onGroupCreated = useCallback((id: Id<"groups">) => {
     setSelectedGroupId(id);
@@ -371,7 +325,7 @@ function BookmarksContent() {
 export default function BookmarksScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
-  const { isLoaded: clerkLoaded, isSignedIn } = useAuth();
+  const { isLoaded: clerkLoaded, isSignedIn, userId } = useAuth();
   const { isLoading: convexLoading, isAuthenticated } = useConvexAuth();
 
   const styles = useMemo(
@@ -408,7 +362,7 @@ export default function BookmarksScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <BookmarksContent />
+      <BookmarksContent key={userId ?? "unknown-user"} />
     </View>
   );
 }

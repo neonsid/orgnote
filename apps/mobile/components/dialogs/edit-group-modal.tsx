@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation } from "convex/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Button, Input, Modal } from "@/components/ui";
@@ -32,29 +32,28 @@ type EditGroupModalProps = {
   | { groupKind: "vault"; group: EditVaultGroupModalGroup | null }
 );
 
-/**
- * Bookmark collections: `renameGroup`. Vault: `renameVaultGroup`.
- * Mirrors web rename flows.
- */
-export function EditGroupModal(props: EditGroupModalProps) {
-  const { visible, onClose, group, onSaved } = props;
-  const groupKind = props.groupKind === "vault" ? "vault" : "bookmarks";
+function EditGroupFormBody({
+  group,
+  groupKind,
+  onClose,
+  onSaved,
+}: {
+  group: EditGroupModalGroup | EditVaultGroupModalGroup;
+  groupKind: "bookmarks" | "vault";
+  onClose: () => void;
+  onSaved?: () => void;
+}) {
   const { colors } = useAppTheme();
-  const [title, setTitle] = useState("");
-  const [selectedColor, setSelectedColor] = useState<string>(GROUP_COLORS[0].value);
+  const [title, setTitle] = useState(() => group.title);
+  const [selectedColor, setSelectedColor] = useState(
+    () => group.color ?? GROUP_COLORS[0].value
+  );
   const [loading, setLoading] = useState(false);
   const renameGroup = useMutation(api.groups.mutations.renameGroup);
   const renameVaultGroup = useMutation(api.vault.mutations.renameVaultGroup);
 
-  useEffect(() => {
-    if (visible && group) {
-      setTitle(group.title);
-      setSelectedColor(group.color ?? GROUP_COLORS[0].value);
-    }
-  }, [visible, group?._id, group?.title, group?.color]);
-
   async function handleSave() {
-    if (!group || !title.trim()) return;
+    if (!title.trim()) return;
 
     setLoading(true);
     try {
@@ -83,6 +82,68 @@ export function EditGroupModal(props: EditGroupModalProps) {
     }
   }
 
+  return (
+    <View style={styles.content}>
+      <Input
+        placeholder={groupKind === "vault" ? "Group name..." : "Collection name..."}
+        value={title}
+        onChangeText={setTitle}
+      />
+
+      <Text style={[styles.colorLabel, { color: colors.textSecondary }]}>Color</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.colorRow}
+      >
+        {GROUP_COLORS.map((c) => {
+          const selected = selectedColor === c.value;
+          return (
+            <Pressable
+              key={c.value}
+              onPress={() => setSelectedColor(c.value)}
+              style={[
+                styles.colorSwatch,
+                {
+                  backgroundColor: c.value,
+                  borderColor: selected ? colors.text : "transparent",
+                },
+              ]}
+              accessibilityLabel={c.label}
+            >
+              {selected && (
+                <Ionicons name="checkmark" size={20} color="#ffffff" />
+              )}
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      <View style={styles.actions}>
+        <Button variant="outline" onPress={onClose} disabled={loading} style={styles.actionBtn}>
+          <Button.Text>Cancel</Button.Text>
+        </Button>
+        <Button
+          onPress={() => void handleSave()}
+          disabled={!title.trim()}
+          loading={loading}
+          style={styles.actionBtn}
+        >
+          <Button.Text>Save</Button.Text>
+        </Button>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * Bookmark collections: `renameGroup`. Vault: `renameVaultGroup`.
+ * Mirrors web rename flows.
+ */
+export function EditGroupModal(props: EditGroupModalProps) {
+  const { visible, onClose, group, onSaved } = props;
+  const groupKind = props.groupKind === "vault" ? "vault" : "bookmarks";
+
   function handleClose() {
     onClose();
   }
@@ -93,56 +154,13 @@ export function EditGroupModal(props: EditGroupModalProps) {
 
   return (
     <Modal visible={visible} onClose={handleClose} title={modalTitle} variant="center">
-      <View style={styles.content}>
-        <Input
-          placeholder={groupKind === "vault" ? "Group name..." : "Collection name..."}
-          value={title}
-          onChangeText={setTitle}
-        />
-
-        <Text style={[styles.colorLabel, { color: colors.textSecondary }]}>Color</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.colorRow}
-        >
-          {GROUP_COLORS.map((c) => {
-            const selected = selectedColor === c.value;
-            return (
-              <Pressable
-                key={c.value}
-                onPress={() => setSelectedColor(c.value)}
-                style={[
-                  styles.colorSwatch,
-                  {
-                    backgroundColor: c.value,
-                    borderColor: selected ? colors.text : "transparent",
-                  },
-                ]}
-                accessibilityLabel={c.label}
-              >
-                {selected && (
-                  <Ionicons name="checkmark" size={20} color="#ffffff" />
-                )}
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-
-        <View style={styles.actions}>
-          <Button variant="outline" onPress={handleClose} disabled={loading} style={styles.actionBtn}>
-            <Button.Text>Cancel</Button.Text>
-          </Button>
-          <Button
-            onPress={() => void handleSave()}
-            disabled={!title.trim()}
-            loading={loading}
-            style={styles.actionBtn}
-          >
-            <Button.Text>Save</Button.Text>
-          </Button>
-        </View>
-      </View>
+      <EditGroupFormBody
+        key={`${group._id}-${visible}`}
+        group={group}
+        groupKind={groupKind}
+        onClose={handleClose}
+        onSaved={onSaved}
+      />
     </Modal>
   );
 }

@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useConvex, useMutation } from "convex/react";
 
 import { Button, Input, Modal } from "@/components/ui";
 import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/contexts/themed-alert";
+import { useMountEffect } from "@/hooks/use-mount-effect";
 import { waitForBookmarkDescriptionJob } from "@/lib/poll-convex-query";
 import { spacing } from "@/lib/constants";
 import { MAX_DESCRIPTION_LENGTH } from "../../../../convex/lib/constants";
@@ -23,17 +24,18 @@ interface EditBookmarkModalProps {
   } | null;
 }
 
-export function EditBookmarkModal({
-  visible,
+function EditBookmarkFormBody({
+  bookmark,
   onClose,
   onSaved,
-  bookmark,
-}: EditBookmarkModalProps) {
+}: Pick<EditBookmarkModalProps, "bookmark" | "onClose" | "onSaved"> & {
+  bookmark: NonNullable<EditBookmarkModalProps["bookmark"]>;
+}) {
   const { colors } = useAppTheme();
   const convex = useConvex();
-  const [title, setTitle] = useState("");
-  const [url, setUrl] = useState("");
-  const [description, setDescription] = useState("");
+  const [title, setTitle] = useState(() => bookmark.title ?? "");
+  const [url, setUrl] = useState(() => bookmark.url ?? "");
+  const [description, setDescription] = useState(() => bookmark.description ?? "");
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
 
@@ -56,19 +58,11 @@ export function EditBookmarkModal({
     descriptionAbortRef.current?.abort();
   }, [cancelBookmarkDescriptionJob]);
 
-  useEffect(() => {
-    if (bookmark && visible) {
-      setTitle(bookmark.title ?? "");
-      setUrl(bookmark.url ?? "");
-      setDescription(bookmark.description ?? "");
-    }
-  }, [bookmark, visible]);
-
-  useEffect(() => {
+  useMountEffect(() => {
     return () => {
       void cancelGeneration();
     };
-  }, [cancelGeneration]);
+  });
 
   async function handleGenerateDescription() {
     const u = url.trim();
@@ -116,7 +110,6 @@ export function EditBookmarkModal({
   }
 
   async function handleSave() {
-    if (!bookmark) return;
     const t = title.trim();
     const u = url.trim();
     if (!t || !u) {
@@ -141,55 +134,66 @@ export function EditBookmarkModal({
     }
   }
 
-  if (!bookmark) return null;
-
   const hasDescription = Boolean(description.trim());
   const genLabel = generating ? "Generating…" : hasDescription ? "Regenerate with AI" : "Generate with AI";
 
   return (
-    <Modal visible={visible} onClose={onClose} title="Edit bookmark" variant="bottom">
-      <ScrollView
-        style={[styles.scroll, { backgroundColor: colors.surface }]}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.fields}>
-          <Input label="Title" value={title} onChangeText={setTitle} placeholder="Title" />
-          <Input
-            label="URL"
-            value={url}
-            onChangeText={setUrl}
-            placeholder="https://…"
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="url"
-          />
-          <Text style={[styles.descHelp, { color: colors.textMuted }]}>
-            Description (max {MAX_DESCRIPTION_LENGTH} characters) — generate from the URL or edit manually.
-          </Text>
-          <Input
-            label="Description"
-            value={description}
-            onChangeText={(text) => setDescription(text.slice(0, MAX_DESCRIPTION_LENGTH))}
-            placeholder="Optional"
-            multiline
-            numberOfLines={4}
-            style={styles.textArea}
-          />
-          <View style={styles.genRow}>
-            <Button
-              variant="outline"
-              onPress={() => void handleGenerateDescription()}
-              disabled={generating || loading || !url.trim()}
-              loading={generating}
-            >
-              <Button.Text>{genLabel}</Button.Text>
-            </Button>
-          </View>
-          <Button onPress={handleSave} disabled={loading || generating || !title.trim() || !url.trim()} loading={loading}>
-            <Button.Text>Save</Button.Text>
+    <ScrollView
+      style={[styles.scroll, { backgroundColor: colors.surface }]}
+      keyboardShouldPersistTaps="handled"
+    >
+      <View style={styles.fields}>
+        <Input label="Title" value={title} onChangeText={setTitle} placeholder="Title" />
+        <Input
+          label="URL"
+          value={url}
+          onChangeText={setUrl}
+          placeholder="https://…"
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="url"
+        />
+        <Text style={[styles.descHelp, { color: colors.textMuted }]}>
+          Description (max {MAX_DESCRIPTION_LENGTH} characters) — generate from the URL or edit manually.
+        </Text>
+        <Input
+          label="Description"
+          value={description}
+          onChangeText={(text) => setDescription(text.slice(0, MAX_DESCRIPTION_LENGTH))}
+          placeholder="Optional"
+          multiline
+          numberOfLines={4}
+          style={styles.textArea}
+        />
+        <View style={styles.genRow}>
+          <Button
+            variant="outline"
+            onPress={() => void handleGenerateDescription()}
+            disabled={generating || loading || !url.trim()}
+            loading={generating}
+          >
+            <Button.Text>{genLabel}</Button.Text>
           </Button>
         </View>
-      </ScrollView>
+        <Button onPress={handleSave} disabled={loading || generating || !title.trim() || !url.trim()} loading={loading}>
+          <Button.Text>Save</Button.Text>
+        </Button>
+      </View>
+    </ScrollView>
+  );
+}
+
+export function EditBookmarkModal({
+  visible,
+  onClose,
+  onSaved,
+  bookmark,
+}: EditBookmarkModalProps) {
+  if (!bookmark) return null;
+
+  return (
+    <Modal visible={visible} onClose={onClose} title="Edit bookmark" variant="bottom">
+      <EditBookmarkFormBody key={bookmark._id} bookmark={bookmark} onClose={onClose} onSaved={onSaved} />
     </Modal>
   );
 }
