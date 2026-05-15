@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useReducer, useRef } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useConvex, useMutation } from "convex/react";
 
@@ -24,6 +24,62 @@ interface EditBookmarkModalProps {
   } | null;
 }
 
+type EditBookmarkFormState = {
+  title: string;
+  url: string;
+  description: string;
+  loading: boolean;
+  generating: boolean;
+};
+
+type EditBookmarkFormAction =
+  | { type: "setTitle"; title: string }
+  | { type: "setUrl"; url: string }
+  | { type: "setDescription"; description: string }
+  | { type: "setLoading"; loading: boolean }
+  | { type: "setGenerating"; generating: boolean }
+  | { type: "applyGenerated"; description: string; suggestedTitle?: string | null };
+
+function initialEditBookmarkFormState(
+  b: NonNullable<EditBookmarkModalProps["bookmark"]>,
+): EditBookmarkFormState {
+  return {
+    title: b.title ?? "",
+    url: b.url ?? "",
+    description: b.description ?? "",
+    loading: false,
+    generating: false,
+  };
+}
+
+function editBookmarkFormReducer(
+  state: EditBookmarkFormState,
+  action: EditBookmarkFormAction,
+): EditBookmarkFormState {
+  switch (action.type) {
+    case "setTitle":
+      return { ...state, title: action.title };
+    case "setUrl":
+      return { ...state, url: action.url };
+    case "setDescription":
+      return { ...state, description: action.description.slice(0, MAX_DESCRIPTION_LENGTH) };
+    case "setLoading":
+      return { ...state, loading: action.loading };
+    case "setGenerating":
+      return { ...state, generating: action.generating };
+    case "applyGenerated": {
+      const nextDesc = action.description.slice(0, MAX_DESCRIPTION_LENGTH);
+      const nextTitle =
+        action.suggestedTitle && !state.title.trim()
+          ? action.suggestedTitle
+          : state.title;
+      return { ...state, description: nextDesc, title: nextTitle };
+    }
+    default:
+      return state;
+  }
+}
+
 function EditBookmarkFormBody({
   bookmark,
   onClose,
@@ -33,11 +89,8 @@ function EditBookmarkFormBody({
 }) {
   const { colors } = useAppTheme();
   const convex = useConvex();
-  const [title, setTitle] = useState(() => bookmark.title ?? "");
-  const [url, setUrl] = useState(() => bookmark.url ?? "");
-  const [description, setDescription] = useState(() => bookmark.description ?? "");
-  const [loading, setLoading] = useState(false);
-  const [generating, setGenerating] = useState(false);
+  const [state, dispatch] = useReducer(editBookmarkFormReducer, bookmark, initialEditBookmarkFormState);
+  const { title, url, description, loading, generating } = state;
 
   const updateDetails = useMutation(api.bookmarks.mutations.updateBookmarkDetails);
   const requestBookmarkDescription = useMutation(api.bookmarks.mutations.requestBookmarkDescription);
@@ -75,7 +128,7 @@ function EditBookmarkFormBody({
     const abort = new AbortController();
     descriptionAbortRef.current = abort;
     activeJobIdRef.current = null;
-    setGenerating(true);
+    dispatch({ type: "setGenerating", generating: true });
 
     try {
       const jobId = await requestBookmarkDescription({ url: u });
@@ -85,11 +138,11 @@ function EditBookmarkFormBody({
       });
 
       if (result.success && result.description) {
-        const nextDesc = (result.description ?? "").slice(0, MAX_DESCRIPTION_LENGTH);
-        setDescription(nextDesc);
-        if (result.title && !title.trim()) {
-          setTitle(result.title);
-        }
+        dispatch({
+          type: "applyGenerated",
+          description: result.description ?? "",
+          suggestedTitle: result.title ?? null,
+        });
         showThemedAlert("Done", "Description was generated. You can edit it before saving.");
       } else {
         showThemedAlert("Could not generate", result.error ?? "Try again or type a description manually.");
@@ -105,7 +158,7 @@ function EditBookmarkFormBody({
     } finally {
       activeJobIdRef.current = null;
       descriptionAbortRef.current = null;
-      setGenerating(false);
+      dispatch({ type: "setGenerating", generating: false });
     }
   }
 
@@ -117,7 +170,7 @@ function EditBookmarkFormBody({
       return;
     }
 
-    setLoading(true);
+    dispatch({ type: "setLoading", loading: true });
     try {
       await updateDetails({
         bookmarkId: bookmark._id,
@@ -130,7 +183,7 @@ function EditBookmarkFormBody({
     } catch (err) {
       showThemedAlert("Error", err instanceof Error ? err.message : "Failed to save");
     } finally {
-      setLoading(false);
+      dispatch({ type: "setLoading", loading: false });
     }
   }
 
@@ -143,11 +196,16 @@ function EditBookmarkFormBody({
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.fields}>
-        <Input label="Title" value={title} onChangeText={setTitle} placeholder="Title" />
+        <Input
+          label="Title"
+          value={title}
+          onChangeText={(t) => dispatch({ type: "setTitle", title: t })}
+          placeholder="Title"
+        />
         <Input
           label="URL"
           value={url}
-          onChangeText={setUrl}
+          onChangeText={(u) => dispatch({ type: "setUrl", url: u })}
           placeholder="https://…"
           autoCapitalize="none"
           autoCorrect={false}
@@ -159,7 +217,7 @@ function EditBookmarkFormBody({
         <Input
           label="Description"
           value={description}
-          onChangeText={(text) => setDescription(text.slice(0, MAX_DESCRIPTION_LENGTH))}
+          onChangeText={(text) => dispatch({ type: "setDescription", description: text })}
           placeholder="Optional"
           multiline
           numberOfLines={4}

@@ -21,7 +21,7 @@ import {
 } from 'lucide-react'
 import type { Bookmark } from './types'
 import type { ConvexGroup } from '../group-selector'
-import { FALLBACK_COLORS } from '../group-selector'
+import { FALLBACK_COLORS } from '@goldfish/shared'
 import { KEYBOARD_SHORTCUTS } from './constants'
 import type { Id } from '@/convex/_generated/dataModel'
 

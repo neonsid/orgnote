@@ -17,6 +17,7 @@ import {
 import { Copy, Pencil, Trash2, ChevronsRight } from "lucide-react";
 import { formatDate } from "@/components/dashboard/bookmark-list/constants";
 import { useIsSmallMobile } from "@/hooks/use-mobile";
+import { FALLBACK_COLORS } from "@goldfish/shared";
 
 export interface LandingBookmark {
   id: string;
@@ -50,17 +51,6 @@ const KEYBOARD_SHORTCUTS = {
   rename: ["⌘", "E"],
   delete: ["⌘", "⌫"],
 };
-
-const FALLBACK_COLORS = [
-  "#f59e0b",
-  "#3b82f6",
-  "#10b981",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-  "#06b6d4",
-  "#f97316",
-];
 
 const EMPTY_MOVE_TARGETS: Array<{
   group: LandingGroup;

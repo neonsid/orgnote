@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
-import { useMemo, useState } from "react";
+import { useMemo, useReducer } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -118,6 +118,63 @@ function publicProfileSeed(profile: Doc<"userProfile"> | null) {
 
 type LinkLabel = "GitHub" | "Twitter" | "Portfolio";
 
+type PublicProfileFormState = {
+  isPublic: boolean;
+  username: string;
+  bio: string;
+  githubUrl: string;
+  twitterUrl: string;
+  portfolioUrl: string;
+  loading: boolean;
+};
+
+type PublicProfileFormAction =
+  | { type: "setIsPublic"; value: boolean }
+  | { type: "setUsername"; value: string }
+  | { type: "setBio"; value: string }
+  | { type: "setGithubUrl"; value: string }
+  | { type: "setTwitterUrl"; value: string }
+  | { type: "setPortfolioUrl"; value: string }
+  | { type: "setLoading"; loading: boolean };
+
+function publicProfileSeedToFormState(
+  profile: Doc<"userProfile"> | null,
+): Omit<PublicProfileFormState, "loading"> {
+  const s = publicProfileSeed(profile);
+  return {
+    isPublic: s.isPublic,
+    username: s.username,
+    bio: s.bio,
+    githubUrl: s.githubUrl,
+    twitterUrl: s.twitterUrl,
+    portfolioUrl: s.portfolioUrl,
+  };
+}
+
+function publicProfileFormReducer(
+  state: PublicProfileFormState,
+  action: PublicProfileFormAction,
+): PublicProfileFormState {
+  switch (action.type) {
+    case "setIsPublic":
+      return { ...state, isPublic: action.value };
+    case "setUsername":
+      return { ...state, username: action.value };
+    case "setBio":
+      return { ...state, bio: action.value };
+    case "setGithubUrl":
+      return { ...state, githubUrl: action.value };
+    case "setTwitterUrl":
+      return { ...state, twitterUrl: action.value };
+    case "setPortfolioUrl":
+      return { ...state, portfolioUrl: action.value };
+    case "setLoading":
+      return { ...state, loading: action.loading };
+    default:
+      return state;
+  }
+}
+
 function PublicProfileModalSkeleton({ onClose }: { onClose: () => void }) {
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
@@ -151,16 +208,27 @@ function PublicProfileForm({
   const styles = useMemo(() => makePublicProfileModalStyles(colors), [colors]);
   const upsertProfile = useMutation(api.profile.mutations.upsertProfile);
 
-  const [isPublic, setIsPublic] = useState(() => publicProfileSeed(profile).isPublic);
-  const [username, setUsername] = useState(() => publicProfileSeed(profile).username);
-  const [bio, setBio] = useState(() => publicProfileSeed(profile).bio);
-  const [githubUrl, setGithubUrl] = useState(() => publicProfileSeed(profile).githubUrl);
-  const [twitterUrl, setTwitterUrl] = useState(() => publicProfileSeed(profile).twitterUrl);
-  const [portfolioUrl, setPortfolioUrl] = useState(() => publicProfileSeed(profile).portfolioUrl);
-  const [loading, setLoading] = useState(false);
+  const [state, dispatch] = useReducer(
+    publicProfileFormReducer,
+    profile,
+    (p): PublicProfileFormState => ({
+      ...publicProfileSeedToFormState(p ?? null),
+      loading: false,
+    }),
+  );
+
+  const {
+    isPublic,
+    username,
+    bio,
+    githubUrl,
+    twitterUrl,
+    portfolioUrl,
+    loading,
+  } = state;
 
   async function handleSave() {
-    setLoading(true);
+    dispatch({ type: "setLoading", loading: true });
     try {
       const links: { label: LinkLabel; url: string }[] = [];
       if (githubUrl.trim()) {
@@ -184,7 +252,7 @@ function PublicProfileForm({
     } catch (err) {
       showThemedAlert("Error", err instanceof Error ? err.message : "Failed to update profile");
     } finally {
-      setLoading(false);
+      dispatch({ type: "setLoading", loading: false });
     }
   }
 
@@ -214,7 +282,7 @@ function PublicProfileForm({
           </View>
           <Switch
             value={isPublic}
-            onValueChange={setIsPublic}
+            onValueChange={(v) => dispatch({ type: "setIsPublic", value: v })}
             trackColor={{ false: colors.border, true: colors.text }}
             thumbColor="#fff"
           />
@@ -223,7 +291,7 @@ function PublicProfileForm({
         <Input
           label="Username"
           value={username}
-          onChangeText={setUsername}
+          onChangeText={(t) => dispatch({ type: "setUsername", value: t })}
           placeholder="your-username"
           autoCapitalize="none"
           containerStyle={styles.inputContainer}
@@ -232,7 +300,7 @@ function PublicProfileForm({
         <Input
           label="Bio"
           value={bio}
-          onChangeText={setBio}
+          onChangeText={(t) => dispatch({ type: "setBio", value: t })}
           placeholder="Tell others about yourself..."
           multiline
           numberOfLines={3}
@@ -243,7 +311,7 @@ function PublicProfileForm({
         <Input
           label="GitHub URL"
           value={githubUrl}
-          onChangeText={setGithubUrl}
+          onChangeText={(t) => dispatch({ type: "setGithubUrl", value: t })}
           placeholder="https://github.com/username"
           autoCapitalize="none"
           keyboardType="url"
@@ -253,7 +321,7 @@ function PublicProfileForm({
         <Input
           label="Twitter/X URL"
           value={twitterUrl}
-          onChangeText={setTwitterUrl}
+          onChangeText={(t) => dispatch({ type: "setTwitterUrl", value: t })}
           placeholder="https://twitter.com/username"
           autoCapitalize="none"
           keyboardType="url"
@@ -263,7 +331,7 @@ function PublicProfileForm({
         <Input
           label="Portfolio/Website"
           value={portfolioUrl}
-          onChangeText={setPortfolioUrl}
+          onChangeText={(t) => dispatch({ type: "setPortfolioUrl", value: t })}
           placeholder="https://your-website.com"
           autoCapitalize="none"
           keyboardType="url"

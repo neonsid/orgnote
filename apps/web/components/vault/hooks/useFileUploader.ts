@@ -9,6 +9,7 @@ import { useFileUpload, type FileWithPreview } from "@/hooks/use-file-upload";
 import { toast } from "@/lib/toast";
 import { waitForVaultUploadRequest } from "@/lib/poll-convex-query";
 import { uploadFileToPresignedUrl } from "@/lib/upload-to-presigned-url";
+import { VAULT_MAX_FILE_SIZE_BYTES, VAULT_MAX_FILES_PER_BATCH } from "@goldfish/shared";
 
 export interface UploadFileItem {
   id: string;
@@ -62,8 +63,8 @@ function createUploadFile(file: FileWithPreview): UploadFileItem {
 
 export function useFileUploader({
   selectedGroupId,
-  maxFiles = 10,
-  maxSize = 10 * 1024 * 1024,
+  maxFiles = VAULT_MAX_FILES_PER_BATCH,
+  maxSize = VAULT_MAX_FILE_SIZE_BYTES,
 }: UseFileUploaderOptions): UseFileUploaderReturn {
   const queryClient = useQueryClient();
   const [uploadFiles, setUploadFiles] = useState<UploadFileItem[]>([]);

@@ -10,9 +10,10 @@ import {
   isAllowedVaultUploadType,
   normalizeVaultFileTypeForUpload,
 } from "../../../convex/lib/vault_upload_allowed";
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const MAX_FILES_PER_PICK = 10;
+import {
+  VAULT_MAX_FILE_SIZE_BYTES,
+  VAULT_MAX_FILES_PER_BATCH,
+} from "@goldfish/shared";
 
 export type VaultUploadStatus = {
   step: string;
@@ -84,11 +85,11 @@ export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
         return;
       }
 
-      const assets = result.assets.slice(0, MAX_FILES_PER_PICK);
-      if (result.assets.length > MAX_FILES_PER_PICK) {
+      const assets = result.assets.slice(0, VAULT_MAX_FILES_PER_BATCH);
+      if (result.assets.length > VAULT_MAX_FILES_PER_BATCH) {
         showThemedAlert(
           "Too many files",
-          `Only the first ${MAX_FILES_PER_PICK} files were uploaded (max ${MAX_FILES_PER_PICK} per batch).`
+          `Only the first ${VAULT_MAX_FILES_PER_BATCH} files were uploaded (max ${VAULT_MAX_FILES_PER_BATCH} per batch).`
         );
       }
 
@@ -105,8 +106,9 @@ export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
           continue;
         }
         const size = asset.size ?? 0;
-        if (size > MAX_FILE_SIZE) {
-          showThemedAlert("File too large", `"${name}" exceeds the 10 MB limit.`);
+        if (size > VAULT_MAX_FILE_SIZE_BYTES) {
+          const mb = VAULT_MAX_FILE_SIZE_BYTES / (1024 * 1024);
+          showThemedAlert("File too large", `"${name}" exceeds the ${mb} MB limit.`);
           continue;
         }
         const mime = asset.mimeType ?? "";

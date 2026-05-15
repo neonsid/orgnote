@@ -5,6 +5,7 @@ import type { NextConfig } from "next";
 loadEnvConfig(path.join(process.cwd(), "../.."));
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["@goldfish/shared"],
   images: {
     remotePatterns: [
       {

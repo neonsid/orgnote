@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { m } from 'motion/react'
 import { cn } from '@/lib/utils'
+import { VAULT_MAX_FILE_SIZE_BYTES, VAULT_MAX_FILES_PER_BATCH } from '@goldfish/shared'
 import { VaultFileGallery } from './vault-file-gallery'
 import { VaultFile } from '../dashboard/bookmark-list/types'
 import { useFileUploader } from './hooks/useFileUploader'
@@ -56,9 +57,6 @@ function EmptyState({
   )
 }
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024
-const MAX_FILES = 10
-
 export function VaultUpload({
   selectedGroupId,
   groups,
@@ -78,8 +76,8 @@ export function VaultUpload({
     dragHandlers,
   } = useFileUploader({
     selectedGroupId,
-    maxFiles: MAX_FILES,
-    maxSize: MAX_FILE_SIZE,
+    maxFiles: VAULT_MAX_FILES_PER_BATCH,
+    maxSize: VAULT_MAX_FILE_SIZE_BYTES,
   })
 
   if (groups.length === 0 || !selectedGroupId) {

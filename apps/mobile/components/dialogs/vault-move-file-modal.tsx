@@ -6,18 +6,8 @@ import { Modal } from "@/components/ui";
 import { useAppTheme } from "@/contexts/app-theme";
 import type { AppColors } from "@/lib/theme-colors";
 import { spacing, borderRadius } from "@/lib/constants";
+import { FALLBACK_COLORS } from "@goldfish/shared";
 import type { Id } from "../../../../convex/_generated/dataModel";
-
-const FALLBACK_COLORS = [
-  "#f59e0b",
-  "#3b82f6",
-  "#10b981",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-  "#06b6d4",
-  "#f97316",
-];
 
 export interface VaultMoveFileGroupRow {
   _id: Id<"vaultGroups">;

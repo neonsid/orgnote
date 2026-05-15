@@ -1,5 +1,5 @@
 import type { VaultFile } from "@/components/dashboard/bookmark-list/types";
-import { FALLBACK_COLORS } from "@/components/dashboard/group-selector";
+import { FALLBACK_COLORS } from "@goldfish/shared";
 import type { Id } from "@/convex/_generated/dataModel";
 import type { VaultSortType } from "@/components/vault/sort-dropdown";
 import type { UploadFileItem } from "@/components/vault/hooks/useFileUploader";

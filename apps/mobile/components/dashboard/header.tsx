@@ -5,21 +5,13 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { OrgNoteLogo } from "@/components/ui/orgnote-logo";
 import { useAppTheme } from "@/contexts/app-theme";
 import { borderRadius, spacing } from "@/lib/constants";
+import { FALLBACK_COLORS } from "@goldfish/shared";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 interface HeaderProps {
   selectedGroup: { _id: Id<"groups">; title: string; color?: string } | null;
   onOpenGroupSelector: () => void;
 }
-
-const FALLBACK_COLORS = [
-  "#f59e0b",
-  "#3b82f6",
-  "#10b981",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-];
 
 export function Header({ selectedGroup, onOpenGroupSelector }: HeaderProps) {
   const { colors } = useAppTheme();

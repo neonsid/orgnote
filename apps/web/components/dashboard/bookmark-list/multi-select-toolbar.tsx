@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { ConvexGroup } from '@/components/dashboard/group-selector'
-import { FALLBACK_COLORS } from '@/components/dashboard/group-selector'
+import { FALLBACK_COLORS } from '@goldfish/shared'
 import type { Id } from '@/convex/_generated/dataModel'
 import { FileCsvIcon, FileJsIcon } from '@phosphor-icons/react'
 import {

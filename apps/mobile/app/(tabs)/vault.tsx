@@ -1,7 +1,7 @@
 import { useAuth } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
-import { useMemo, useState } from "react";
+import { useMemo, useReducer, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -22,23 +22,19 @@ import {
 } from "@/components/ui";
 import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/contexts/themed-alert";
-import { useVaultUpload } from "@/hooks/use-vault-upload";
+import { useVaultTabUiReducer, useVaultUpload } from "@/hooks";
 import { GROUP_COLORS } from "@/lib/group-colors";
 import { promptOpenExternalUrl } from "@/lib/open-external-url";
 import { downloadAndShareFile } from "@/lib/download-file-native";
 import { spacing, borderRadius } from "@/lib/constants";
 import type { AppColors } from "@/lib/theme-colors";
+import {
+  FALLBACK_COLORS,
+  VAULT_MAX_FILE_SIZE_BYTES,
+  VAULT_MAX_FILES_PER_BATCH,
+} from "@goldfish/shared";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-
-const FALLBACK_COLORS = [
-  "#f59e0b",
-  "#3b82f6",
-  "#10b981",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-];
 
 function makeVaultStyles(colors: AppColors) {
   return StyleSheet.create({
@@ -267,6 +263,42 @@ function VaultHeader({
   );
 }
 
+type CreateVaultGroupState = {
+  title: string;
+  selectedColor: string;
+  loading: boolean;
+};
+
+type CreateVaultGroupAction =
+  | { type: "reset" }
+  | { type: "setTitle"; title: string }
+  | { type: "setColor"; color: string }
+  | { type: "setLoading"; loading: boolean };
+
+const initialCreateVaultGroupState = (): CreateVaultGroupState => ({
+  title: "",
+  selectedColor: GROUP_COLORS[0].value,
+  loading: false,
+});
+
+function createVaultGroupReducer(
+  state: CreateVaultGroupState,
+  action: CreateVaultGroupAction,
+): CreateVaultGroupState {
+  switch (action.type) {
+    case "reset":
+      return initialCreateVaultGroupState();
+    case "setTitle":
+      return { ...state, title: action.title };
+    case "setColor":
+      return { ...state, selectedColor: action.color };
+    case "setLoading":
+      return { ...state, loading: action.loading };
+    default:
+      return state;
+  }
+}
+
 function CreateVaultGroupModal({
   visible,
   onClose,
@@ -276,30 +308,27 @@ function CreateVaultGroupModal({
 }) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeVaultStyles(colors), [colors]);
-  const [title, setTitle] = useState("");
-  const [selectedColor, setSelectedColor] = useState<string>(GROUP_COLORS[0].value);
-  const [loading, setLoading] = useState(false);
+  const [state, dispatch] = useReducer(createVaultGroupReducer, undefined, initialCreateVaultGroupState);
+  const { title, selectedColor, loading } = state;
   const createGroup = useMutation(api.vault.mutations.createVaultGroup);
 
   async function handleCreate() {
     if (!title.trim()) return;
 
-    setLoading(true);
+    dispatch({ type: "setLoading", loading: true });
     try {
       await createGroup({ title: title.trim(), color: selectedColor });
-      setTitle("");
-      setSelectedColor(GROUP_COLORS[0].value);
+      dispatch({ type: "reset" });
       onClose();
     } catch (err) {
       showThemedAlert("Error", err instanceof Error ? err.message : "Failed to create collection");
     } finally {
-      setLoading(false);
+      dispatch({ type: "setLoading", loading: false });
     }
   }
 
   function handleClose() {
-    setTitle("");
-    setSelectedColor(GROUP_COLORS[0].value);
+    dispatch({ type: "reset" });
     onClose();
   }
 
@@ -309,7 +338,7 @@ function CreateVaultGroupModal({
         <Input
           placeholder="Collection name..."
           value={title}
-          onChangeText={setTitle}
+          onChangeText={(t) => dispatch({ type: "setTitle", title: t })}
         />
         <Text style={{ fontSize: 13, fontWeight: "600", color: colors.textSecondary }}>
           Color
@@ -320,7 +349,7 @@ function CreateVaultGroupModal({
             return (
               <Pressable
                 key={c.value}
-                onPress={() => setSelectedColor(c.value)}
+                onPress={() => dispatch({ type: "setColor", color: c.value })}
                 style={[
                   styles.colorSwatch,
                   {
@@ -443,18 +472,16 @@ function VaultContent() {
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeVaultStyles(colors), [colors]);
   const vaultData = useQuery(api.vault.queries.getVaultData);
-  const [selectedGroupId, setSelectedGroupId] = useState<Id<"vaultGroups"> | null>(null);
-  const [showGroupSelector, setShowGroupSelector] = useState(false);
-  const [showCreateGroup, setShowCreateGroup] = useState(false);
-  const [showEditGroup, setShowEditGroup] = useState(false);
-  const [showDeleteGroup, setShowDeleteGroup] = useState(false);
-  const [movePickerOpen, setMovePickerOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<{
-    _id: Id<"vaultFiles">;
-    name: string;
-    url: string;
-    type: string;
-  } | null>(null);
+  const [vaultUi, vaultDispatch] = useVaultTabUiReducer();
+  const {
+    selectedGroupId,
+    showGroupSelector,
+    showCreateGroup,
+    showEditGroup,
+    showDeleteGroup,
+    movePickerOpen,
+    selectedFile,
+  } = vaultUi;
 
   const effectiveGroupId = useMemo(() => {
     if (!vaultData || vaultData.groups.length === 0) return null;
@@ -487,8 +514,7 @@ function VaultContent() {
     if (!selectedFile) return;
     try {
       await moveVaultFile({ fileId: selectedFile._id, groupId });
-      setMovePickerOpen(false);
-      setSelectedFile(null);
+      vaultDispatch({ type: "afterMoveSuccess" });
     } catch {
       showThemedAlert("Error", "Failed to move file");
     }
@@ -502,7 +528,7 @@ function VaultContent() {
     <View style={styles.container}>
       <VaultHeader
         selectedGroup={selectedGroup}
-        onOpenGroupSelector={() => setShowGroupSelector(true)}
+        onOpenGroupSelector={() => vaultDispatch({ type: "setShowGroupSelector", open: true })}
       />
 
       <View style={styles.stats}>
@@ -524,7 +550,7 @@ function VaultContent() {
           </Button>
           <Text style={styles.uploadHint}>
             {effectiveGroupId
-              ? "Up to 10 files per batch, 10 MB each (images, PDF, EPUB, zip, …)."
+              ? `Up to ${VAULT_MAX_FILES_PER_BATCH} files per batch, ${VAULT_MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB each (images, PDF, EPUB, zip, …).`
               : "Select a collection in the header to upload into it."}
           </Text>
         </View>
@@ -556,11 +582,14 @@ function VaultContent() {
             <FileTile
               file={item}
               onLongPress={() =>
-                setSelectedFile({
-                  _id: item._id,
-                  name: item.name,
-                  url: item.url,
-                  type: item.type,
+                vaultDispatch({
+                  type: "setSelectedFile",
+                  file: {
+                    _id: item._id,
+                    name: item.name,
+                    url: item.url,
+                    type: item.type,
+                  },
                 })
               }
             />
@@ -570,59 +599,50 @@ function VaultContent() {
 
       <VaultGroupSelectorModal
         visible={showGroupSelector}
-        onClose={() => setShowGroupSelector(false)}
+        onClose={() => vaultDispatch({ type: "setShowGroupSelector", open: false })}
         groups={vaultData.groups}
         selectedGroupId={effectiveGroupId}
-        onSelectGroup={setSelectedGroupId}
-        onCreateGroup={() => {
-          setShowGroupSelector(false);
-          setShowCreateGroup(true);
-        }}
-        onRenameGroup={() => {
-          setShowGroupSelector(false);
-          setShowEditGroup(true);
-        }}
-        onDeleteGroup={() => {
-          setShowGroupSelector(false);
-          setShowDeleteGroup(true);
-        }}
+        onSelectGroup={(id) => vaultDispatch({ type: "setSelectedGroupId", id })}
+        onCreateGroup={() => vaultDispatch({ type: "groupSelectorToCreate" })}
+        onRenameGroup={() => vaultDispatch({ type: "groupSelectorToEdit" })}
+        onDeleteGroup={() => vaultDispatch({ type: "groupSelectorToDelete" })}
       />
 
       <CreateVaultGroupModal
         visible={showCreateGroup}
-        onClose={() => setShowCreateGroup(false)}
+        onClose={() => vaultDispatch({ type: "setShowCreateGroup", open: false })}
       />
 
       <EditGroupModal
         visible={showEditGroup}
-        onClose={() => setShowEditGroup(false)}
+        onClose={() => vaultDispatch({ type: "setShowEditGroup", open: false })}
         groupKind="vault"
         group={selectedGroup}
       />
 
       <DeleteGroupModal
         visible={showDeleteGroup}
-        onClose={() => setShowDeleteGroup(false)}
+        onClose={() => vaultDispatch({ type: "setShowDeleteGroup", open: false })}
         groupKind="vault"
         group={selectedGroup}
         onDeleted={(deletedId) => {
           if (selectedGroupId === deletedId) {
-            setSelectedGroupId(null);
+            vaultDispatch({ type: "setSelectedGroupId", id: null });
           }
         }}
       />
 
       <FileActionsModal
         visible={!!selectedFile && !movePickerOpen}
-        onClose={() => setSelectedFile(null)}
+        onClose={() => vaultDispatch({ type: "setSelectedFile", file: null })}
         file={selectedFile}
         canMoveToAnotherGroup={moveTargetGroups.length > 0}
-        onRequestMoveToAnotherGroup={() => setMovePickerOpen(true)}
+        onRequestMoveToAnotherGroup={() => vaultDispatch({ type: "openMovePicker" })}
       />
 
       <VaultMoveFileModal
         visible={movePickerOpen && !!selectedFile}
-        onClose={() => setMovePickerOpen(false)}
+        onClose={() => vaultDispatch({ type: "setMovePickerOpen", open: false })}
         fileName={selectedFile?.name ?? ""}
         groups={moveTargetGroups}
         onSelectGroup={(groupId) => void handleSelectMoveTarget(groupId)}
