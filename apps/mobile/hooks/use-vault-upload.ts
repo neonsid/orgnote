@@ -5,10 +5,14 @@ import { showThemedAlert } from "@/contexts/themed-alert";
 import { waitForVaultUploadRequest } from "@/lib/poll-convex-query";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { ALLOWED_FILE_TYPES, MAX_FILENAME_LENGTH } from "../../../convex/lib/constants";
+import { MAX_FILENAME_LENGTH } from "../../../convex/lib/constants";
+import {
+  isAllowedVaultUploadType,
+  normalizeVaultFileTypeForUpload,
+} from "../../../convex/lib/vault_upload_allowed";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const MAX_FILES_PER_PICK = 3;
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_FILES_PER_PICK = 10;
 
 export type VaultUploadStatus = {
   step: string;
@@ -16,10 +20,6 @@ export type VaultUploadStatus = {
   total: number;
   fileName?: string;
 };
-
-function isAllowedVaultMime(mime: string): boolean {
-  return ALLOWED_FILE_TYPES.some((prefix) => mime.startsWith(prefix));
-}
 
 async function getDocumentPicker() {
   try {
@@ -106,14 +106,15 @@ export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
         }
         const size = asset.size ?? 0;
         if (size > MAX_FILE_SIZE) {
-          showThemedAlert("File too large", `"${name}" exceeds the 5 MB limit.`);
+          showThemedAlert("File too large", `"${name}" exceeds the 10 MB limit.`);
           continue;
         }
-        const mime = asset.mimeType ?? "application/octet-stream";
-        if (!isAllowedVaultMime(mime)) {
+        const mime = asset.mimeType ?? "";
+        const fileType = normalizeVaultFileTypeForUpload(name, mime);
+        if (!isAllowedVaultUploadType(name, fileType)) {
           showThemedAlert(
             "Unsupported type",
-            `"${name}" (${mime}) is not allowed. Use images, video, audio, PDF, zip, text, or Word documents.`
+            `"${name}" is not allowed. Use images, video, audio, PDF, EPUB, zip, text, or Word documents.`
           );
           continue;
         }
@@ -121,15 +122,15 @@ export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
         setUploadStatus({ ...progressBase, step: "Preparing upload..." });
         const requestId = await requestPresignedUploadUrl({
           fileName: name,
-          fileType: mime,
+          fileType,
         });
         const { uploadUrl, fileUrl } = await waitForVaultUploadRequest(convex, requestId);
         setUploadStatus({ ...progressBase, step: "Uploading file..." });
-        await uploadFn(asset.uri, mime, uploadUrl);
+        await uploadFn(asset.uri, fileType, uploadUrl);
         setUploadStatus({ ...progressBase, step: "Saving to vault..." });
         await saveFileMetadata({
           fileName: name,
-          fileType: mime,
+          fileType,
           fileSize: size,
           fileUrl,
           groupId,

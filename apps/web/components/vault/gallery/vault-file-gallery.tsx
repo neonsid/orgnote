@@ -9,7 +9,12 @@ import { ImageLightbox } from "@/components/vault/image-lightbox";
 import { SortDropdown, type VaultSortType } from "@/components/vault/sort-dropdown";
 import { useIsSmallMobile } from "@/hooks/use-mobile";
 import type { UploadFileItem } from "@/components/vault/hooks/useFileUploader";
-import { filterUploadsNotYetInFiles, sortVaultFiles } from "./gallery-utils";
+import type { Id } from "@/convex/_generated/dataModel";
+import {
+  filterUploadsNotYetInFiles,
+  sortVaultFiles,
+  type VaultGroupPickRow,
+} from "./gallery-utils";
 import { StoredFileTile } from "./stored-file-tile";
 import { UploadFileTile } from "./upload-file-tile";
 
@@ -18,7 +23,9 @@ export type { UploadFileItem };
 interface VaultFileGalleryProps {
   files: VaultFile[];
   uploadFiles?: UploadFileItem[];
+  vaultGroups: VaultGroupPickRow[];
   onDeleteFileAction: (file: VaultFile) => void;
+  onMoveFileAction: (file: VaultFile, targetGroupId: Id<"vaultGroups">) => void;
   onRemoveUpload?: (fileId: string) => void;
   onRetryUpload?: (fileId: string) => void;
   isLoading?: boolean;
@@ -27,7 +34,9 @@ interface VaultFileGalleryProps {
 export const VaultFileGallery = memo(function VaultFileGallery({
   files,
   uploadFiles = [],
+  vaultGroups,
   onDeleteFileAction,
+  onMoveFileAction,
   onRemoveUpload,
   onRetryUpload,
   isLoading,
@@ -174,7 +183,7 @@ export const VaultFileGallery = memo(function VaultFileGallery({
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         <AnimatePresence mode="popLayout">
-          {sortedFiles.map((file) => (
+          {sortedFiles.map((file, index) => (
             <m.div
               key={file._id}
               layout={false}
@@ -186,7 +195,7 @@ export const VaultFileGallery = memo(function VaultFileGallery({
                 transition: { duration: 0.25, ease: [0.25, 0.1, 0.25, 1] },
               }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="group/item relative aspect-square"
+              className="group/item relative aspect-square overflow-hidden rounded-lg transition-transform duration-200 ease-out hover:z-10 hover:scale-[1.02] focus-within:z-10 focus-within:scale-[1.02] motion-reduce:transform-none"
             >
               <StoredFileTile
                 file={file}
@@ -205,11 +214,14 @@ export const VaultFileGallery = memo(function VaultFileGallery({
                 setDownloadingId={setDownloadingId}
                 openLightbox={openLightbox}
                 closePopover={closePopover}
+                vaultGroups={vaultGroups}
+                onMoveFileAction={onMoveFileAction}
                 onDeleteFileAction={onDeleteFileAction}
+                tileIndex={index}
               />
             </m.div>
           ))}
-          {visibleUploadFiles.map((item) => (
+          {visibleUploadFiles.map((item, uploadIndex) => (
             <m.div
               key={item.id}
               layout={false}
@@ -221,7 +233,7 @@ export const VaultFileGallery = memo(function VaultFileGallery({
                 transition: { duration: 0.25, ease: [0.25, 0.1, 0.25, 1] },
               }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="group/item relative aspect-square"
+              className="group/item relative aspect-square overflow-hidden rounded-lg transition-transform duration-200 ease-out hover:z-10 hover:scale-[1.02] focus-within:z-10 focus-within:scale-[1.02] motion-reduce:transform-none"
             >
               <UploadFileTile
                 item={item}
@@ -241,6 +253,7 @@ export const VaultFileGallery = memo(function VaultFileGallery({
                 closePopover={closePopover}
                 onRemoveUpload={onRemoveUpload}
                 onRetryUpload={onRetryUpload}
+                tileIndex={sortedFiles.length + uploadIndex}
               />
             </m.div>
           ))}

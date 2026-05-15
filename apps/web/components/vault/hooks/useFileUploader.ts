@@ -62,8 +62,8 @@ function createUploadFile(file: FileWithPreview): UploadFileItem {
 
 export function useFileUploader({
   selectedGroupId,
-  maxFiles = 3,
-  maxSize = 5 * 1024 * 1024,
+  maxFiles = 10,
+  maxSize = 10 * 1024 * 1024,
 }: UseFileUploaderOptions): UseFileUploaderReturn {
   const queryClient = useQueryClient();
   const [uploadFiles, setUploadFiles] = useState<UploadFileItem[]>([]);
@@ -127,10 +127,16 @@ export function useFileUploader({
       const isRetry = options?.isRetry ?? false;
       try {
         const file = fileItem.file as File;
+        const trimmedType = file.type.trim();
+        const fileType =
+          trimmedType ||
+          (file.name.toLowerCase().endsWith(".epub")
+            ? "application/epub+zip"
+            : trimmedType);
 
         const requestId = await requestPresignedUploadUrl({
           fileName: file.name,
-          fileType: file.type,
+          fileType,
         });
         const { uploadUrl, fileUrl } = await waitForVaultUploadRequest(
           convex,
@@ -145,7 +151,7 @@ export function useFileUploader({
 
         await saveFileMetadata({
           fileName: file.name,
-          fileType: file.type,
+          fileType,
           fileSize: file.size,
           fileUrl: fileUrl,
           groupId: selectedGroupId

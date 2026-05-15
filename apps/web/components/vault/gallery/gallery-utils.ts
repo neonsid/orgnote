@@ -1,6 +1,36 @@
 import type { VaultFile } from "@/components/dashboard/bookmark-list/types";
+import { FALLBACK_COLORS } from "@/components/dashboard/group-selector";
+import type { Id } from "@/convex/_generated/dataModel";
 import type { VaultSortType } from "@/components/vault/sort-dropdown";
 import type { UploadFileItem } from "@/components/vault/hooks/useFileUploader";
+
+/** First N tiles in the vault grid use Next/Image `priority` for LCP. */
+export const FIRST_SCREEN_TILE_PRIORITY_COUNT = 10;
+
+export type VaultGroupPickRow = {
+  _id: Id<"vaultGroups">;
+  title: string;
+  color: string;
+};
+
+export function buildOtherVaultGroups(
+  groups: VaultGroupPickRow[],
+  currentGroupId: Id<"vaultGroups"> | undefined,
+): { group: VaultGroupPickRow; fallbackColor: string }[] {
+  const out: { group: VaultGroupPickRow; fallbackColor: string }[] = [];
+  let i = 0;
+  for (const group of groups) {
+    if (currentGroupId !== undefined && group._id === currentGroupId) {
+      continue;
+    }
+    out.push({
+      group,
+      fallbackColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length],
+    });
+    i += 1;
+  }
+  return out;
+}
 
 export function isImage(type: string): boolean {
   return type.startsWith("image/");

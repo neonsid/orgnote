@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FileTile } from "@/components/vault";
 import {
   VaultGroupSelectorModal,
+  VaultMoveFileModal,
   EditGroupModal,
   DeleteGroupModal,
 } from "@/components/dialogs";
@@ -346,10 +347,14 @@ function FileActionsModal({
   visible,
   onClose,
   file,
+  canMoveToAnotherGroup,
+  onRequestMoveToAnotherGroup,
 }: {
   visible: boolean;
   onClose: () => void;
   file: { _id: Id<"vaultFiles">; name: string; url: string; type: string } | null;
+  canMoveToAnotherGroup: boolean;
+  onRequestMoveToAnotherGroup: () => void;
 }) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeVaultStyles(colors), [colors]);
@@ -411,6 +416,17 @@ function FileActionsModal({
             {downloading ? "Downloading…" : "Download"}
           </Text>
         </Pressable>
+        {canMoveToAnotherGroup ? (
+          <Pressable
+            style={styles.actionItem}
+            onPress={() => {
+              onRequestMoveToAnotherGroup();
+            }}
+          >
+            <Ionicons name="folder-open-outline" size={22} color={colors.textMuted} />
+            <Text style={{ fontSize: 14, color: colors.text }}>Move to collection</Text>
+          </Pressable>
+        ) : null}
         <Pressable style={styles.actionItem} onPress={handleDelete}>
           <Ionicons name="trash-outline" size={22} color={colors.error} />
           <Text style={styles.actionItemTextDestructive}>Delete</Text>
@@ -432,6 +448,7 @@ function VaultContent() {
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [showEditGroup, setShowEditGroup] = useState(false);
   const [showDeleteGroup, setShowDeleteGroup] = useState(false);
+  const [movePickerOpen, setMovePickerOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<{
     _id: Id<"vaultFiles">;
     name: string;
@@ -448,6 +465,7 @@ function VaultContent() {
   }, [vaultData, selectedGroupId]);
 
   const { uploading, uploadStatus, pickAndUpload } = useVaultUpload(effectiveGroupId);
+  const moveVaultFile = useMutation(api.vault.mutations.moveVaultFile);
 
   const selectedGroup = useMemo(() => {
     if (!vaultData || !effectiveGroupId) return null;
@@ -459,6 +477,22 @@ function VaultContent() {
     if (!effectiveGroupId) return vaultData.files;
     return vaultData.files.filter((f) => f.groupId === effectiveGroupId);
   }, [vaultData, effectiveGroupId]);
+
+  const moveTargetGroups = useMemo(() => {
+    if (!vaultData || !effectiveGroupId) return [];
+    return vaultData.groups.filter((g) => g._id !== effectiveGroupId);
+  }, [vaultData, effectiveGroupId]);
+
+  async function handleSelectMoveTarget(groupId: Id<"vaultGroups">) {
+    if (!selectedFile) return;
+    try {
+      await moveVaultFile({ fileId: selectedFile._id, groupId });
+      setMovePickerOpen(false);
+      setSelectedFile(null);
+    } catch {
+      showThemedAlert("Error", "Failed to move file");
+    }
+  }
 
   if (vaultData === undefined) {
     return <Loading message="Loading vault..." />;
@@ -490,7 +524,7 @@ function VaultContent() {
           </Button>
           <Text style={styles.uploadHint}>
             {effectiveGroupId
-              ? "Up to 3 files per batch, 5 MB each (images, PDF, zip, …)."
+              ? "Up to 10 files per batch, 10 MB each (images, PDF, EPUB, zip, …)."
               : "Select a collection in the header to upload into it."}
           </Text>
         </View>
@@ -579,9 +613,19 @@ function VaultContent() {
       />
 
       <FileActionsModal
-        visible={!!selectedFile}
+        visible={!!selectedFile && !movePickerOpen}
         onClose={() => setSelectedFile(null)}
         file={selectedFile}
+        canMoveToAnotherGroup={moveTargetGroups.length > 0}
+        onRequestMoveToAnotherGroup={() => setMovePickerOpen(true)}
+      />
+
+      <VaultMoveFileModal
+        visible={movePickerOpen && !!selectedFile}
+        onClose={() => setMovePickerOpen(false)}
+        fileName={selectedFile?.name ?? ""}
+        groups={moveTargetGroups}
+        onSelectGroup={(groupId) => void handleSelectMoveTarget(groupId)}
       />
 
       {uploading && uploadStatus ? (

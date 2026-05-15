@@ -2,11 +2,11 @@ import { v } from 'convex/values'
 import { authMutation } from '../lib/auth'
 import { ConvexError } from 'convex/values'
 import { internal } from '../_generated/api'
+import { MAX_FILENAME_LENGTH, R2_PUBLIC_URL } from '../lib/constants'
 import {
-  ALLOWED_FILE_TYPES,
-  MAX_FILENAME_LENGTH,
-  R2_PUBLIC_URL,
-} from '../lib/constants'
+  isAllowedVaultUploadType,
+  normalizeVaultFileTypeForUpload,
+} from '../lib/vault_upload_allowed'
 
 function validateFileNameAndType(fileName: string, fileType: string): void {
   if (fileName.length > MAX_FILENAME_LENGTH) {
@@ -15,16 +15,15 @@ function validateFileNameAndType(fileName: string, fileType: string): void {
   if (!fileName || fileName.trim() === '') {
     throw new ConvexError('Filename is required')
   }
-  if (!fileType || fileType.trim() === '') {
+  const trimmedType = fileType.trim()
+  if (!trimmedType) {
     throw new ConvexError('File type is required')
   }
-  const isAllowedType = ALLOWED_FILE_TYPES.some((type) =>
-    fileType.startsWith(type)
-  )
-  if (!isAllowedType) {
+  if (!isAllowedVaultUploadType(fileName, trimmedType)) {
     throw new ConvexError('File type not allowed')
   }
 }
+
 
 /** Client calls this instead of a public action; intent is stored then an internal action runs. */
 export const requestPresignedUploadUrl = authMutation({
@@ -32,12 +31,13 @@ export const requestPresignedUploadUrl = authMutation({
   returns: v.id('vaultUploadRequests'),
   handler: async (ctx, args) => {
     const { userId } = ctx
-    validateFileNameAndType(args.fileName, args.fileType)
+    const fileType = normalizeVaultFileTypeForUpload(args.fileName, args.fileType)
+    validateFileNameAndType(args.fileName, fileType)
 
     const requestId = await ctx.db.insert('vaultUploadRequests', {
       ownerId: userId,
       fileName: args.fileName,
-      fileType: args.fileType,
+      fileType,
       status: 'pending',
     })
 
@@ -155,5 +155,39 @@ export const deleteVaultGroup = authMutation({
     }
     await ctx.db.delete(args.groupId)
     return true
+  },
+})
+
+export const moveVaultFile = authMutation({
+  args: {
+    fileId: v.id('vaultFiles'),
+    groupId: v.id('vaultGroups'),
+  },
+  returns: v.object({ success: v.boolean() }),
+  handler: async (ctx, args) => {
+    const { userId } = ctx
+
+    const file = await ctx.db.get(args.fileId)
+    if (!file) {
+      throw new ConvexError('File not found')
+    }
+    if (file.ownerId !== userId) {
+      throw new ConvexError('Not authorized to move this file')
+    }
+
+    const group = await ctx.db.get(args.groupId)
+    if (!group) {
+      throw new ConvexError('Vault group not found')
+    }
+    if (group.userId !== userId) {
+      throw new ConvexError('Not authorized')
+    }
+
+    if (file.groupId === args.groupId) {
+      return { success: true }
+    }
+
+    await ctx.db.patch(args.fileId, { groupId: args.groupId })
+    return { success: true }
   },
 })

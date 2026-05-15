@@ -14,10 +14,13 @@ import {
   R2_ACCESS_KEY_ID,
   R2_SECRET_ACCESS_KEY,
   MAX_FILENAME_LENGTH,
-  ALLOWED_FILE_TYPES,
   R2_BUCKET_NAME,
   R2_PUBLIC_URL,
 } from './lib/constants'
+import {
+  isAllowedVaultUploadType,
+  normalizeVaultFileTypeForUpload,
+} from './lib/vault_upload_allowed'
 
 const s3Client = new S3Client({
   region: 'auto',
@@ -39,14 +42,12 @@ function validateFileInput(fileName: string, fileType: string): void {
     throw new Error('Filename is required')
   }
 
-  if (!fileType || fileType.trim() === '') {
+  const effectiveType = normalizeVaultFileTypeForUpload(fileName, fileType)
+  if (!effectiveType) {
     throw new Error('File type is required')
   }
 
-  const isAllowedType = ALLOWED_FILE_TYPES.some((type) =>
-    fileType.startsWith(type)
-  )
-  if (!isAllowedType) {
+  if (!isAllowedVaultUploadType(fileName, effectiveType)) {
     throw new Error('File type not allowed')
   }
 }
@@ -73,7 +74,7 @@ export const completeVaultUploadRequest = internalAction({
       validateFileInput(row.fileName, row.fileType)
 
       const fileKey = generateFileKey(row.fileName)
-      const contentType = row.fileType
+      const contentType = normalizeVaultFileTypeForUpload(row.fileName, row.fileType)
 
       const command = new PutObjectCommand({
         Bucket: R2_BUCKET_NAME,

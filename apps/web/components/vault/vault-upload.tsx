@@ -10,19 +10,16 @@ import { VaultFileGallery } from './vault-file-gallery'
 import { VaultFile } from '../dashboard/bookmark-list/types'
 import { useFileUploader } from './hooks/useFileUploader'
 import { Button } from '@/components/ui/button'
-
-interface VaultGroup {
-  _id: string
-  title: string
-  color: string
-}
+import type { Id } from '@/convex/_generated/dataModel'
+import type { VaultGroupPickRow } from './gallery/gallery-utils'
 
 interface VaultUploadProps {
   selectedGroupId: string | null
-  groups: VaultGroup[]
+  groups: VaultGroupPickRow[]
   files: VaultFile[]
   isLoading?: boolean
   onDeleteFileAction: (file: VaultFile) => void
+  onMoveFileAction: (file: VaultFile, targetGroupId: Id<'vaultGroups'>) => void
 }
 
 function EmptyState({
@@ -59,8 +56,8 @@ function EmptyState({
   )
 }
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024
-const MAX_FILES = 3
+const MAX_FILE_SIZE = 10 * 1024 * 1024
+const MAX_FILES = 10
 
 export function VaultUpload({
   selectedGroupId,
@@ -68,6 +65,7 @@ export function VaultUpload({
   files,
   isLoading,
   onDeleteFileAction,
+  onMoveFileAction,
 }: VaultUploadProps) {
   const {
     uploadFiles,
@@ -115,6 +113,8 @@ export function VaultUpload({
           <VaultFileGallery
             files={files}
             uploadFiles={uploadFiles}
+            vaultGroups={groups}
+            onMoveFileAction={onMoveFileAction}
             onDeleteFileAction={onDeleteFileAction}
             onRemoveUpload={removeFile}
             onRetryUpload={retryUpload}
