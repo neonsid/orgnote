@@ -30,18 +30,18 @@ function buildCompareRows(
 ): CompareRow[] {
   const byKey = new Map<
     string,
-    { displayUrl: string; titles: string[]; count: number }
+    { displayUrl: string; titleSet: Set<string>; count: number }
   >()
   for (const item of items) {
     const k = normalizeUrlKey(item.url)
     const cur = byKey.get(k)
     if (cur) {
       cur.count += 1
-      if (!cur.titles.includes(item.title)) cur.titles.push(item.title)
+      cur.titleSet.add(item.title)
     } else {
       byKey.set(k, {
         displayUrl: item.url,
-        titles: [item.title],
+        titleSet: new Set([item.title]),
         count: 1,
       })
     }
@@ -67,7 +67,7 @@ function buildCompareRows(
     rows.push({
       urlKey,
       displayUrl: v.displayUrl,
-      primaryTitle: v.titles[0] ?? '',
+      primaryTitle: v.titleSet.values().next().value ?? '',
       inFileCount: v.count,
       matchingGroups,
       isNew: matchingGroups.length === 0,
@@ -193,7 +193,8 @@ export const ImportLibraryCompareGate = memo(function ImportLibraryCompareGate({
                 <span className="font-medium text-foreground">new</span> links
                 or what you{' '}
                 <span className="font-medium text-foreground">already have</span>
-                — no need to scan the full list.
+                {' '}
+                (no need to scan the full list).
               </p>
             </div>
           </div>

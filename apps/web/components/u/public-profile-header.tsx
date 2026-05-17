@@ -117,7 +117,7 @@ export function PublicProfileHeader() {
               transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
               className="md:hidden fixed top-14 left-0 right-0 z-40 bg-background shadow-lg"
             >
-              <div className="flex flex-col px-4 py-4">
+              <div className="flex flex-col p-4">
                 {/* Theme toggle row */}
                 <div className="flex items-center justify-between py-3 px-2 rounded-lg hover:bg-muted/50">
                   <span className="text-sm font-medium">Theme</span>

@@ -42,7 +42,10 @@ export function Footer() {
           </nav>
 
           {/* Copyright tagline */}
-          <p className="text-sm text-muted-foreground text-center">
+          <p
+            suppressHydrationWarning
+            className="text-sm text-muted-foreground text-center"
+          >
             © {new Date().getFullYear()} Orgnote – Save and organize your
             bookmarks beautifully
           </p>

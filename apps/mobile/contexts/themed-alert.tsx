@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import {
   Modal,
   Pressable,
@@ -15,6 +9,7 @@ import {
 } from "react-native";
 
 import { useAppTheme } from "@/contexts/app-theme";
+import { useMountEffect } from "@/hooks/use-mount-effect";
 import { borderRadius, spacing } from "@/lib/constants";
 import type { AppColors } from "@/lib/theme-colors";
 
@@ -58,12 +53,12 @@ function ThemedAlertHost() {
   const { colors } = useAppTheme();
   const [payload, setPayload] = useState<ThemedAlertPayload | null>(null);
 
-  useEffect(() => {
+  useMountEffect(() => {
     setAlertGlobal = setPayload;
     return () => {
       setAlertGlobal = null;
     };
-  }, []);
+  });
 
   const close = useCallback(() => setPayload(null), []);
 

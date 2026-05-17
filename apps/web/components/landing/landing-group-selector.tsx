@@ -44,7 +44,7 @@ const GroupItem = memo(function GroupItem({
   isSelected: boolean
   onSelect: (id: string) => void
 }) {
-  const handleClick = useCallback(() => {
+  const selectThisGroup = useCallback(() => {
     onSelect(group.id)
   }, [onSelect, group.id])
 
@@ -52,7 +52,7 @@ const GroupItem = memo(function GroupItem({
     <button
       key={group.id}
       id={`landing-group-option-${group.id}`}
-      onClick={handleClick}
+      onClick={selectThisGroup}
       className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
     >
       <span

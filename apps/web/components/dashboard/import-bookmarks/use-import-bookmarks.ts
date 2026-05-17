@@ -311,26 +311,37 @@ export function useImportBookmarks() {
       dispatch({ type: 'setImporting', importing: true })
       dispatch({ type: 'setDuplicateReviewVisible', visible: false })
       try {
-        let importedTotal = 0
-        let skippedTotal = 0
         const snapshot: Record<string, ParsedImportItem[]> = {}
         for (const [gid, items] of entries) {
           snapshot[gid] = [...items]
         }
 
-        for (const [groupId, items] of entries) {
-          for (let i = 0; i < items.length; i += MAX_IMPORT_BATCH) {
-            const chunk = items.slice(i, i + MAX_IMPORT_BATCH)
-            const result = await importBookmarksMutation({
-              groupId: groupId as Id<'groups'>,
-              items: chunk.map((item) => ({
-                title: item.title,
-                url: item.url,
-              })),
-            })
-            importedTotal += result.importedCount
-            skippedTotal += result.skippedCount
-          }
+        const groupResults = await Promise.all(
+          entries.map(async ([groupId, items]) => {
+            let imported = 0
+            let skipped = 0
+            for (let i = 0; i < items.length; i += MAX_IMPORT_BATCH) {
+              const chunk = items.slice(i, i + MAX_IMPORT_BATCH)
+              // eslint-disable-next-line react-doctor/async-await-in-loop -- preserve batch ordering per destination group
+              const result = await importBookmarksMutation({
+                groupId: groupId as Id<'groups'>,
+                items: chunk.map((item) => ({
+                  title: item.title,
+                  url: item.url,
+                })),
+              })
+              imported += result.importedCount
+              skipped += result.skippedCount
+            }
+            return { imported, skipped }
+          }),
+        )
+
+        let importedTotal = 0
+        let skippedTotal = 0
+        for (const r of groupResults) {
+          importedTotal += r.imported
+          skippedTotal += r.skipped
         }
 
         const importedUrls = new Set(

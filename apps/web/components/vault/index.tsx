@@ -33,12 +33,27 @@ export default function VaultPage() {
 
   const createVaultGroup = useMutation(api.vault.mutations.createVaultGroup);
   const deleteFile = useMutation(api.vault.mutations.deleteFile);
+  const moveVaultFile = useMutation(api.vault.mutations.moveVaultFile);
 
   const handleDeleteFile = useCallback(
     (file: VaultFile) => {
       openDeleteBookmarkDialog(file._id as Id<"vaultFiles">, file.name);
     },
     [openDeleteBookmarkDialog],
+  );
+
+  const handleMoveFile = useCallback(
+    (file: VaultFile, targetGroupId: Id<"vaultGroups">) => {
+      toast.promise(
+        moveVaultFile({ fileId: file._id, groupId: targetGroupId }),
+        {
+          loading: "Moving…",
+          success: "Moved to collection",
+          error: "Failed to move file",
+        },
+      );
+    },
+    [moveVaultFile],
   );
 
   const handleConfirmDelete = useCallback(async () => {
@@ -80,6 +95,7 @@ export default function VaultPage() {
           files={files}
           isLoading={isLoading}
           onDeleteFileAction={handleDeleteFile}
+          onMoveFileAction={handleMoveFile}
         />
       </main>
 

@@ -7,8 +7,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import * as SystemUI from "expo-system-ui";
 import { useColorScheme } from "react-native";
 
+import { useMountEffect } from "@/hooks/use-mount-effect";
 import { darkColors, lightColors, type AppColors } from "@/lib/theme-colors";
 
 const STORAGE_KEY = "@orgnote/theme-preference";
@@ -56,7 +58,7 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
   const systemScheme = useColorScheme();
   const [preference, setPreferenceState] = useState<ThemePreference>("system");
 
-  useEffect(() => {
+  useMountEffect(() => {
     let cancelled = false;
     void (async () => {
       const stored = await readStoredThemePreference();
@@ -65,7 +67,7 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  });
 
   const setPreference = useCallback((p: ThemePreference) => {
     setPreferenceState(p);
@@ -82,6 +84,11 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
   const colors = useMemo((): AppColors => {
     return resolvedScheme === "dark" ? darkColors : lightColors;
   }, [resolvedScheme]);
+
+  /** Imperative native bridge: root window chrome tracks themed tab bar surface. */
+  useEffect(() => {
+    void SystemUI.setBackgroundColorAsync(colors.tabBarBg);
+  }, [colors.tabBarBg]);
 
   const value = useMemo(
     () => ({

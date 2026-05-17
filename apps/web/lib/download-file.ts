@@ -15,6 +15,7 @@ const MIME_TO_EXT: Record<string, string> = {
   'audio/wav': 'wav',
   'audio/ogg': 'ogg',
   'application/pdf': 'pdf',
+  'application/epub+zip': 'epub',
   'application/json': 'json',
   'text/plain': 'txt',
   'text/csv': 'csv',

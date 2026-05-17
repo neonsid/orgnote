@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, memo, useRef, useMemo } from "react";
+import { useState, memo, useRef, useMemo, useCallback } from "react";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import Image from "next/image";
 import { m, AnimatePresence } from "motion/react";
@@ -17,6 +17,7 @@ import {
 import { Copy, Pencil, Trash2, ChevronsRight } from "lucide-react";
 import { formatDate } from "@/components/dashboard/bookmark-list/constants";
 import { useIsSmallMobile } from "@/hooks/use-mobile";
+import { FALLBACK_COLORS } from "@goldfish/shared";
 
 export interface LandingBookmark {
   id: string;
@@ -51,16 +52,10 @@ const KEYBOARD_SHORTCUTS = {
   delete: ["⌘", "⌫"],
 };
 
-const FALLBACK_COLORS = [
-  "#f59e0b",
-  "#3b82f6",
-  "#10b981",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-  "#06b6d4",
-  "#f97316",
-];
+const EMPTY_MOVE_TARGETS: Array<{
+  group: LandingGroup;
+  fallbackColor: string;
+}> = [];
 
 // ============================================================================
 // Memoized Favicon Icon - only re-renders when bookmark data changes
@@ -114,7 +109,7 @@ function KeyboardShortcut({ keys }: { keys: string[] }) {
     <ContextMenuShortcut className="flex items-center gap-1">
       {keys.map((key, idx) => (
         <kbd
-          key={`${keys.join('·')}-${idx}-${key}`}
+          key={`${keys.slice(0, idx + 1).join("·")}:${key}`}
           className="inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-md bg-muted border border-border text-xs font-medium text-muted-foreground select-none"
         >
           {key}
@@ -129,8 +124,6 @@ function KeyboardShortcut({ keys }: { keys: string[] }) {
 // ============================================================================
 
 interface MenuContentProps {
-  bookmarkId: string;
-  bookmarkGroupId: string;
   moveTargetGroups: Array<{ group: LandingGroup; fallbackColor: string }>;
   onCopy: () => void;
   onRename: () => void;
@@ -201,12 +194,12 @@ const MenuContent = memo(function MenuContent({
 interface DesktopRowProps {
   bookmark: LandingBookmark;
   moveTargetGroups: Array<{ group: LandingGroup; fallbackColor: string }>;
-  onMouseEnter: () => void;
+  onMouseEnter: (id: string) => void;
   onMouseLeave: () => void;
-  onCopy: () => void;
-  onRename: () => void;
-  onDelete: () => void;
-  onMove: (groupId: string) => void;
+  onCopyBook: (id: string) => void;
+  onRenameBook: (id: string) => void;
+  onDeleteBook: (id: string) => void;
+  onMoveBook: (id: string, groupId: string) => void;
 }
 
 const DesktopRow = memo(function DesktopRow({
@@ -214,11 +207,34 @@ const DesktopRow = memo(function DesktopRow({
   moveTargetGroups,
   onMouseEnter,
   onMouseLeave,
-  onCopy,
-  onRename,
-  onDelete,
-  onMove,
+  onCopyBook,
+  onRenameBook,
+  onDeleteBook,
+  onMoveBook,
 }: DesktopRowProps) {
+  const handleMouseEnter = useCallback(() => {
+    onMouseEnter(bookmark.id);
+  }, [bookmark.id, onMouseEnter]);
+
+  const handleCopy = useCallback(() => {
+    onCopyBook(bookmark.id);
+  }, [bookmark.id, onCopyBook]);
+
+  const handleRename = useCallback(() => {
+    onRenameBook(bookmark.id);
+  }, [bookmark.id, onRenameBook]);
+
+  const handleDelete = useCallback(() => {
+    onDeleteBook(bookmark.id);
+  }, [bookmark.id, onDeleteBook]);
+
+  const handleMove = useCallback(
+    (groupId: string) => {
+      onMoveBook(bookmark.id, groupId);
+    },
+    [bookmark.id, onMoveBook],
+  );
+
   return (
     <m.div
       key={bookmark.id}
@@ -233,9 +249,9 @@ const DesktopRow = memo(function DesktopRow({
             href={bookmark.url}
             target="_blank"
             rel="noopener noreferrer"
-            onMouseEnter={onMouseEnter}
+            onMouseEnter={handleMouseEnter}
             onMouseLeave={onMouseLeave}
-            className="flex items-center gap-3 py-2 px-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
+            className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
           >
             <FaviconIcon
               favicon={bookmark.favicon}
@@ -258,7 +274,7 @@ const DesktopRow = memo(function DesktopRow({
             <span className="text-xs text-muted-foreground tabular-nums shrink-0 w-[72px] text-right hidden group-hover:flex items-center justify-end gap-1">
               {KEYBOARD_SHORTCUTS.open.map((key: string, idx: number) => (
                 <kbd
-                  key={`${bookmark.id}-open-${idx}-${key}`}
+                  key={`${bookmark.id}-open-${KEYBOARD_SHORTCUTS.open.slice(0, idx + 1).join("·")}`}
                   className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded bg-muted border border-border text-[10px] font-medium"
                 >
                   {key}
@@ -268,13 +284,11 @@ const DesktopRow = memo(function DesktopRow({
           </a>
         </ContextMenuTrigger>
         <MenuContent
-          bookmarkId={bookmark.id}
-          bookmarkGroupId={bookmark.groupId}
           moveTargetGroups={moveTargetGroups}
-          onCopy={onCopy}
-          onRename={onRename}
-          onDelete={onDelete}
-          onMove={onMove}
+          onCopy={handleCopy}
+          onRename={handleRename}
+          onDelete={handleDelete}
+          onMove={handleMove}
         />
       </ContextMenu>
     </m.div>
@@ -302,7 +316,7 @@ const MobileRow = memo(function MobileRow({ bookmark }: MobileRowProps) {
         href={bookmark.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-3 py-2 px-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
+        className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded-lg transition-colors group cursor-pointer"
       >
         <FaviconIcon
           favicon={bookmark.favicon}
@@ -389,21 +403,69 @@ export const LandingBookmarkList = memo(function LandingBookmarkList({
     return () => window.removeEventListener("keydown", handleKeyDown);
   });
 
-  // Precompute move targets once per group list
+  // Precompute move targets once per bookmark group id (single-pass build)
+  const bookmarkByIdMap = useMemo(
+    () => new Map(bookmarks.map((b) => [b.id, b])),
+    [bookmarks],
+  );
+  const bookmarkByIdRef = useRef(bookmarkByIdMap);
+  bookmarkByIdRef.current = bookmarkByIdMap;
+
+  const onCopyBook = useCallback(
+    (id: string) => {
+      const b = bookmarkByIdRef.current.get(id);
+      if (b) onCopy(b);
+    },
+    [onCopy],
+  );
+  const onRenameBook = useCallback(
+    (id: string) => {
+      const b = bookmarkByIdRef.current.get(id);
+      if (b) onRename(b);
+    },
+    [onRename],
+  );
+  const onDeleteBook = useCallback(
+    (id: string) => {
+      const b = bookmarkByIdRef.current.get(id);
+      if (b) onDelete(b);
+    },
+    [onDelete],
+  );
+  const onMoveBook = useCallback(
+    (id: string, groupId: string) => {
+      onMove(id, groupId);
+    },
+    [onMove],
+  );
+
+  const handleBookmarkMouseEnter = useCallback((id: string) => {
+    hoveredBookmarkRef.current = bookmarkByIdRef.current.get(id) ?? null;
+  }, []);
+
+  const handleBookmarkMouseLeave = useCallback(() => {
+    hoveredBookmarkRef.current = null;
+  }, []);
+
   const moveTargetGroupsMap = useMemo(() => {
-    const map = new Map<string, Array<{ group: LandingGroup; fallbackColor: string }>>();
-    for (const bookmark of bookmarks) {
-      if (!map.has(bookmark.groupId)) {
-        map.set(
-          bookmark.groupId,
-          groups
-            .filter((g) => g.id !== bookmark.groupId)
-            .map((group, i) => ({
-              group,
-              fallbackColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length],
-            })),
-        );
+    const map = new Map<
+      string,
+      Array<{ group: LandingGroup; fallbackColor: string }>
+    >();
+    for (const bm of bookmarks) {
+      const gid = bm.groupId;
+      if (map.has(gid)) continue;
+      const list: Array<{ group: LandingGroup; fallbackColor: string }> = [];
+      let i = 0;
+      for (const group of groups) {
+        if (group.id === gid) continue;
+        list.push({
+          group,
+          fallbackColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length],
+        });
+        i++;
       }
+      map.set(gid, list);
     }
     return map;
   }, [groups, bookmarks]);
@@ -422,13 +484,16 @@ export const LandingBookmarkList = memo(function LandingBookmarkList({
             <DesktopRow
               key={bookmark.id}
               bookmark={bookmark}
-              moveTargetGroups={moveTargetGroupsMap.get(bookmark.groupId) || []}
-              onMouseEnter={() => (hoveredBookmarkRef.current = bookmark)}
-              onMouseLeave={() => (hoveredBookmarkRef.current = null)}
-              onCopy={() => onCopy(bookmark)}
-              onRename={() => onRename(bookmark)}
-              onDelete={() => onDelete(bookmark)}
-              onMove={(groupId) => onMove(bookmark.id, groupId)}
+              moveTargetGroups={
+                moveTargetGroupsMap.get(bookmark.groupId) ??
+                EMPTY_MOVE_TARGETS
+              }
+              onMouseEnter={handleBookmarkMouseEnter}
+              onMouseLeave={handleBookmarkMouseLeave}
+              onCopyBook={onCopyBook}
+              onRenameBook={onRenameBook}
+              onDeleteBook={onDeleteBook}
+              onMoveBook={onMoveBook}
             />
           ),
         )}

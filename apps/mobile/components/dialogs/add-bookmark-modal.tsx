@@ -47,7 +47,7 @@ export function AddBookmarkModal({ visible, onClose, groupId }: AddBookmarkModal
   }
 
   return (
-    <Modal visible={visible} onClose={handleClose} title="Add Bookmark" variant="bottom">
+    <Modal visible={visible} onClose={handleClose} title="Add Bookmark" variant="center">
       <View style={styles.content}>
         <Input
           placeholder="Enter URL or paste link..."
@@ -56,7 +56,6 @@ export function AddBookmarkModal({ visible, onClose, groupId }: AddBookmarkModal
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="url"
-          autoFocus
         />
         <Button
           onPress={handleAdd}
@@ -64,7 +63,7 @@ export function AddBookmarkModal({ visible, onClose, groupId }: AddBookmarkModal
           loading={loading}
           style={styles.button}
         >
-          Add Bookmark
+          <Button.Text>Add Bookmark</Button.Text>
         </Button>
       </View>
     </Modal>

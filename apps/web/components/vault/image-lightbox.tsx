@@ -5,6 +5,7 @@ import {
   DialogPortal,
   DialogOverlay,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import { Dialog as DialogPrimitive } from 'radix-ui'
 import Image from 'next/image'
@@ -47,15 +48,20 @@ export function ImageLightbox({
           <DialogTitle className="sr-only">
             View image: {alt}
           </DialogTitle>
-          <div className="relative inline-block max-w-[min(42rem,95vw)] max-h-[85vh]">
+          <DialogDescription className="sr-only">
+            Full-size vault image preview. Close the dialog to return.
+          </DialogDescription>
+          <div className="relative inline-block w-full max-w-[95vw] max-h-[85vh] md:max-w-[min(90vw,56rem)] lg:max-w-[min(90vw,72rem)] xl:max-w-[min(92vw,80rem)]">
             <Image
               src={src}
               alt={alt}
               width={1200}
               height={900}
-              sizes="(max-width: 768px) 95vw, 42rem"
-              className="max-h-[85vh] w-auto h-auto object-contain rounded-lg border shadow-2xl"
+              sizes="(max-width: 768px) 95vw, (max-width: 1024px) 90vw, (max-width: 1280px) 90vw, min(92vw, 80rem)"
+              className="max-h-[85vh] w-auto h-auto max-w-full object-contain rounded-lg border shadow-2xl"
               unoptimized
+              loading={open ? 'eager' : 'lazy'}
+              priority={open}
             />
             <Button
               size="icon"

@@ -137,23 +137,6 @@ function SettingsContent() {
         />
       </SettingsSection>
 
-      <SettingsSection title="Data">
-        <SettingsItem
-          icon="download-outline"
-          label="Export Bookmarks"
-          onPress={() =>
-            showThemedAlert("Coming soon", "Export functionality will be available soon.")
-          }
-        />
-        <SettingsItem
-          icon="cloud-upload-outline"
-          label="Import Bookmarks"
-          onPress={() =>
-            showThemedAlert("Coming soon", "Use the web app to import bookmarks.")
-          }
-        />
-      </SettingsSection>
-
       <SettingsSection title="About">
         <SettingsItem
           icon="information-circle-outline"

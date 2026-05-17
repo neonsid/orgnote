@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import type { UploadFileItem } from "@/components/vault/hooks/useFileUploader";
 import { VaultTilePreview } from "./vault-tile-preview";
-import { isImage, isPdf } from "./gallery-utils";
+import { isImage, isPdf, FIRST_SCREEN_TILE_PRIORITY_COUNT } from "./gallery-utils";
 
 type UploadFileTileProps = {
   item: UploadFileItem;
@@ -39,6 +39,7 @@ type UploadFileTileProps = {
   closePopover: () => void;
   onRemoveUpload?: (fileId: string) => void;
   onRetryUpload?: (fileId: string) => void;
+  tileIndex: number;
 };
 
 export function UploadFileTile({
@@ -59,6 +60,7 @@ export function UploadFileTile({
   closePopover,
   onRemoveUpload,
   onRetryUpload,
+  tileIndex,
 }: UploadFileTileProps) {
   const id = item.id;
   const { file } = item;
@@ -79,7 +81,7 @@ export function UploadFileTile({
         </div>
         <div className="rounded-b-lg absolute right-0 bottom-0 left-0 bg-black/70 p-2 text-white opacity-100 md:opacity-0 md:group-hover/item:opacity-100 transition-opacity z-20">
           <p className="truncate text-xs font-medium">{file.name}</p>
-          <p className="text-xs text-gray-300">{item.progress}%</p>
+          <p className="text-xs text-zinc-300">{item.progress}%</p>
         </div>
       </>
     );
@@ -172,7 +174,7 @@ export function UploadFileTile({
 
         <div className="rounded-b-lg absolute right-0 bottom-0 left-0 bg-black/70 p-2 text-white opacity-100 md:opacity-0 md:group-hover/item:opacity-100 transition-opacity z-20">
           <p className="truncate text-xs font-medium">{file.name}</p>
-          <p className="text-xs text-gray-300">{formatBytes(file.size)}</p>
+          <p className="text-xs text-zinc-300">{formatBytes(file.size)}</p>
         </div>
       </>
     );
@@ -200,6 +202,7 @@ export function UploadFileTile({
             : undefined
         }
         imageObjectFit="contain"
+        imagePriority={tileIndex < FIRST_SCREEN_TILE_PRIORITY_COUNT}
       />
 
       {isSmallMobile ? (
@@ -373,7 +376,7 @@ export function UploadFileTile({
 
       <div className="rounded-b-lg absolute right-0 bottom-0 left-0 bg-black/70 p-2 text-white opacity-100 md:opacity-0 md:group-hover/item:opacity-100 transition-opacity z-20">
         <p className="truncate text-xs font-medium">{file.name}</p>
-        <p className="text-xs text-gray-300">{formatBytes(file.size)}</p>
+        <p className="text-xs text-zinc-300">{formatBytes(file.size)}</p>
       </div>
     </>
   );

@@ -4,6 +4,7 @@ export const ALLOWED_FILE_TYPES = [
   'image/',
   'video/',
   'application/pdf',
+  'application/epub',
   'application/msword',
   'application/zip',
   'audio/',

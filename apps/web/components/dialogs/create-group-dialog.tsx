@@ -75,17 +75,10 @@ export function CreateGroupDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            form.handleSubmit()
-          }}
-          className="flex flex-col gap-5 pt-1"
-        >
+        <div className="flex flex-col gap-5 pt-1">
           {/* Name field */}
-          <form.Field
-            name="name"
-            children={(field) => (
+          <form.Field name="name">
+            {(field) => (
               <div className="grid gap-2">
                 <Label htmlFor="group-name" className="font-semibold">
                   Name
@@ -97,6 +90,11 @@ export function CreateGroupDialog({
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter') return
+                    e.preventDefault()
+                    void form.handleSubmit()
+                  }}
                   disabled={form.state.isSubmitting}
                   aria-invalid={field.state.meta.errors.length > 0}
                 />
@@ -107,12 +105,11 @@ export function CreateGroupDialog({
                 )}
               </div>
             )}
-          />
+          </form.Field>
 
           {/* Color picker */}
-          <form.Field
-            name="color"
-            children={(field) => (
+          <form.Field name="color">
+            {(field) => (
               <div className="grid gap-2">
                 <Label className="font-semibold">Color</Label>
                 <div className="flex flex-wrap gap-2">
@@ -136,7 +133,7 @@ export function CreateGroupDialog({
                 </div>
               </div>
             )}
-          />
+          </form.Field>
 
           <DialogFooter className="pt-2">
             <Button
@@ -148,9 +145,16 @@ export function CreateGroupDialog({
               Cancel
             </Button>
             <form.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting]}
-              children={([canSubmit, isSubmitting]) => (
-                <Button type="submit" disabled={!canSubmit}>
+              selector={(state) =>
+                [state.canSubmit, state.isSubmitting] as const
+              }
+            >
+              {([canSubmit, isSubmitting]) => (
+                <Button
+                  type="button"
+                  disabled={!canSubmit}
+                  onClick={() => void form.handleSubmit()}
+                >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="size-4 animate-spin" />
@@ -161,9 +165,9 @@ export function CreateGroupDialog({
                   )}
                 </Button>
               )}
-            />
+            </form.Subscribe>
           </DialogFooter>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   )

@@ -16,8 +16,6 @@ const ALL_FOLDERS_VALUE = "__all__";
 /** Select value for bookmarks with no Chrome folder path (flat export). */
 export const UNCATEGORIZED_CHROME_FOLDER = "__uncategorized__";
 
-export { ALL_FOLDERS_VALUE };
-
 function isAllowedHttpUrl(href: string): boolean {
   try {
     const u = new URL(href.startsWith("http") ? href : `https://${href}`);
@@ -314,54 +312,6 @@ export function parseBookmarkHtml(
   };
 }
 
-/**
- * One URL per line; optional dedupe by normalized URL.
- */
-export function parsePastedUrlList(
-  text: string,
-  options?: { dedupe?: boolean },
-): { items: ParsedImportItem[]; skippedTooLongCount: number } {
-  const dedupe = options?.dedupe ?? false;
-  const lines = text.split(/\r?\n/);
-  const seen = new Set<string>();
-  const raw: RawParsed[] = [];
-  let skippedTooLongCount = 0;
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-
-    let url = trimmed;
-    if (!/^https?:\/\//i.test(url)) {
-      url = `https://${url}`;
-    }
-
-    if (!isAllowedHttpUrl(url)) continue;
-    if (!isBookmarkUrlLengthOk(url)) {
-      skippedTooLongCount += 1;
-      continue;
-    }
-
-    const key = normalizeUrlKey(url);
-    if (dedupe && seen.has(key)) continue;
-    if (dedupe) seen.add(key);
-
-    raw.push({
-      title: titleFromUrlLikeQuickAdd(url),
-      url,
-      folderPath: [],
-    });
-  }
-
-  const items = raw.map((item, i) => ({
-    ...item,
-    id: `paste-${i}`,
-    sourceIndex: i,
-    folderPath: item.folderPath as readonly string[],
-  }));
-  return { items, skippedTooLongCount };
-}
-
 export function folderPathLabel(folderPath: readonly string[]): string {
   return folderPath.join(" / ");
 }
@@ -373,7 +323,7 @@ export function distinctFolderPaths(items: ParsedImportItem[]): string[] {
     if (item.folderPath.length === 0) continue;
     set.add(folderPathLabel(item.folderPath));
   }
-  return [...set].sort((a, b) => a.localeCompare(b));
+  return Array.from(set).toSorted((a, b) => a.localeCompare(b));
 }
 
 /**
@@ -415,8 +365,9 @@ function pathsEqual(
   a: readonly string[],
   b: readonly string[],
 ): boolean {
-  if (a.length !== b.length) return false;
-  return a.every((seg, i) => seg === b[i]);
+  return (
+    a.length === b.length && a.every((seg, i) => seg === b[i])
+  );
 }
 
 /** Selected folder key is joined path; "__all__" keeps everything. */

@@ -27,6 +27,7 @@ function getFileIcon(type: string): keyof typeof Ionicons.glyphMap {
   if (type.startsWith("video/")) return "videocam-outline";
   if (type.startsWith("audio/")) return "musical-notes-outline";
   if (type.includes("pdf")) return "document-text-outline";
+  if (type.includes("epub")) return "book-outline";
   if (type.includes("zip") || type.includes("rar") || type.includes("tar"))
     return "archive-outline";
   return "document-outline";

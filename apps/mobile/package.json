@@ -15,6 +15,7 @@
     "eas:build:android:production": "EAS_SKIP_AUTO_FINGERPRINT=1 EAS_BUILD_NO_EXPO_GO_WARNING=1 eas build --platform android --profile production"
   },
   "dependencies": {
+    "@goldfish/shared": "workspace:*",
     "@clerk/expo": "^3.1.10",
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "2.2.0",

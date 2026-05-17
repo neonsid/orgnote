@@ -168,25 +168,21 @@ export const BookmarkItem = memo(function BookmarkItem({
           >
             <Popover open={isPopoverOpen} onOpenChange={onPopoverOpenChange}>
               <PopoverTrigger asChild>
-                <a
-                  href={bookmark.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
                   onTouchStart={onTouchStart}
                   onTouchEnd={onTouchEnd}
                   onTouchMove={onTouchEnd}
                   onContextMenu={onContextMenu}
-                  onClick={(e) => {
-                    if (isPopoverOpen) {
-                      e.preventDefault()
-                    }
-                  }}
                   onMouseEnter={onMouseEnter}
                   onMouseLeave={onMouseLeave}
-                  className={rowClass}
+                  className={cn(
+                    rowClass,
+                    'text-left w-full bg-transparent border-0 shadow-none outline-none rounded-lg',
+                  )}
                 >
                   <BookmarkRowMain bookmark={bookmark} leading={rowLeading} />
-                </a>
+                </button>
               </PopoverTrigger>
               <PopoverContent
                 className="w-auto max-h-[min(90dvh,32rem)] overflow-y-auto overscroll-contain p-0"

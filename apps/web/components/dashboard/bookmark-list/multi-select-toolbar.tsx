@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { ConvexGroup } from '@/components/dashboard/group-selector'
-import { FALLBACK_COLORS } from '@/components/dashboard/group-selector'
+import { FALLBACK_COLORS } from '@goldfish/shared'
 import type { Id } from '@/convex/_generated/dataModel'
 import { FileCsvIcon, FileJsIcon } from '@phosphor-icons/react'
 import {
@@ -60,16 +60,19 @@ export function MultiSelectToolbar({
   onDelete,
   onClose,
 }: MultiSelectToolbarProps) {
-  const moveTargets = useMemo(
-    () =>
-      groups
-        .filter((g) => g._id !== currentGroupId)
-        .map((group, i) => ({
-          group,
-          fallbackColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length],
-        })),
-    [groups, currentGroupId],
-  )
+  const moveTargets = useMemo(() => {
+    const out: { group: ConvexGroup; fallbackColor: string }[] = []
+    let i = 0
+    for (const group of groups) {
+      if (group._id === currentGroupId) continue
+      out.push({
+        group,
+        fallbackColor: FALLBACK_COLORS[i % FALLBACK_COLORS.length],
+      })
+      i++
+    }
+    return out
+  }, [groups, currentGroupId])
 
   const barBtn =
     'h-8 gap-1.5 rounded-full px-2.5 text-xs font-medium sm:text-sm sm:px-3'

@@ -27,7 +27,7 @@ export default function PublicProfileContent({
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-2xl font-semibold text-foreground">
             Profile not found
           </h1>
           <p className="text-muted-foreground mt-2">

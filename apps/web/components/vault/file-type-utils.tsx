@@ -5,6 +5,7 @@ import {
   FileTextIcon,
   FileSpreadsheetIcon,
   FileArchiveIcon,
+  BookOpenIcon,
   FileIcon,
   type LucideIcon,
 } from 'lucide-react'
@@ -35,6 +36,11 @@ export const FILE_TYPES: FileTypeConfig[] = [
     label: 'PDF',
     icon: FileTextIcon,
     test: (t) => t.includes('pdf'),
+  },
+  {
+    label: 'EPUB',
+    icon: BookOpenIcon,
+    test: (t) => t.includes('epub'),
   },
   {
     label: 'Word',

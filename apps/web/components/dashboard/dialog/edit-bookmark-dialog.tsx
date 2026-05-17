@@ -277,22 +277,22 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
     if (state.isGenerating) {
       return (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Generating...
+          <Loader2 className="mr-2 size-4 animate-spin" />
+          Generating…
         </>
       );
     }
     if (state.hasExistingDescription && state.form.description) {
       return (
         <>
-          <RefreshCw className="mr-2 h-4 w-4" />
+          <RefreshCw className="mr-2 size-4" />
           Regenerate with AI
         </>
       );
     }
     return (
       <>
-        <Sparkles className="mr-2 h-4 w-4" />
+        <Sparkles className="mr-2 size-4" />
         Generate with AI
       </>
     );
@@ -347,7 +347,7 @@ export const EditBookmarkDialog = memo(function EditBookmarkDialog({
                 state.form.description &&
                 !state.isGenerating && (
                   <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Pencil className="h-3 w-3" />
+                    <Pencil className="size-3" />
                     {state.form.description === bookmark?.description
                       ? "Original"
                       : "Modified"}

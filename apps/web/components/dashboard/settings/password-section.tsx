@@ -1,5 +1,6 @@
 "use client";
 
+import type { KeyboardEventHandler } from "react";
 import Key from "lucide-react/dist/esm/icons/key";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -12,28 +13,28 @@ import { usePasswordForm } from "@/hooks/use-password-form";
 export function PasswordSection() {
   const { form, fieldErrors } = usePasswordForm();
 
+  const submitOnEnter: KeyboardEventHandler<HTMLInputElement> = (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    void form.handleSubmit();
+  };
+
   return (
     <div className="space-y-3">
       <Label className="flex items-center gap-2">
         <Key className="size-4" />
         Change Password
       </Label>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          form.handleSubmit();
-        }}
-        className="space-y-3"
-      >
-        <form.Field
-          name="currentPassword"
-          children={(field) => (
+      <div className="space-y-3">
+        <form.Field name="currentPassword">
+          {(field) => (
             <div className="space-y-2">
               <PasswordInput
                 placeholder="Current password"
                 value={field.state.value}
                 onChange={(value) => field.handleChange(value)}
                 onBlur={field.handleBlur}
+                onKeyDown={submitOnEnter}
                 error={
                   field.state.meta.errors.length > 0 ||
                   !!fieldErrors.currentPassword
@@ -52,16 +53,16 @@ export function PasswordSection() {
                 )}
             </div>
           )}
-        />
-        <form.Field
-          name="newPassword"
-          children={(field) => (
+        </form.Field>
+        <form.Field name="newPassword">
+          {(field) => (
             <div className="space-y-2">
               <PasswordInput
                 placeholder="New password"
                 value={field.state.value}
                 onChange={(value) => field.handleChange(value)}
                 onBlur={field.handleBlur}
+                onKeyDown={submitOnEnter}
                 error={
                   field.state.meta.errors.length > 0 ||
                   !!fieldErrors.newPassword
@@ -75,16 +76,16 @@ export function PasswordSection() {
               <PasswordRequirementsList password={field.state.value} />
             </div>
           )}
-        />
-        <form.Field
-          name="confirmPassword"
-          children={(field) => (
+        </form.Field>
+        <form.Field name="confirmPassword">
+          {(field) => (
             <div className="space-y-2">
               <PasswordInput
                 placeholder="Confirm new password"
                 value={field.state.value}
                 onChange={(value) => field.handleChange(value)}
                 onBlur={field.handleBlur}
+                onKeyDown={submitOnEnter}
                 error={
                   field.state.meta.errors.length > 0 ||
                   !!fieldErrors.confirmPassword
@@ -103,21 +104,23 @@ export function PasswordSection() {
                 )}
             </div>
           )}
-        />
+        </form.Field>
         <form.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting]}
-          children={([canSubmit, isSubmitting]) => (
+          selector={(state) => [state.canSubmit, state.isSubmitting] as const}
+        >
+          {([canSubmit, isSubmitting]) => (
             <Button
-              type="submit"
+              type="button"
               variant="secondary"
               size="sm"
               disabled={!canSubmit}
+              onClick={() => void form.handleSubmit()}
             >
               {isSubmitting ? "Updating…" : "Update Password"}
             </Button>
           )}
-        />
-      </form>
+        </form.Subscribe>
+      </div>
     </div>
   );
 }

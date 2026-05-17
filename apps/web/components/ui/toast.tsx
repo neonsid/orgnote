@@ -240,7 +240,7 @@ export const toastManager: ReturnType<typeof Toast.createToastManager> =
 export const anchoredToastManager: ReturnType<typeof Toast.createToastManager> =
   Toast.createToastManager();
 
-export type ToastPosition =
+type ToastPosition =
   | "top-left"
   | "top-center"
   | "top-right"

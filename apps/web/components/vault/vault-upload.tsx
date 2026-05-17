@@ -6,23 +6,21 @@ import {
 } from 'lucide-react'
 import { m } from 'motion/react'
 import { cn } from '@/lib/utils'
+import { VAULT_MAX_FILE_SIZE_BYTES, VAULT_MAX_FILES_PER_BATCH } from '@goldfish/shared'
 import { VaultFileGallery } from './vault-file-gallery'
 import { VaultFile } from '../dashboard/bookmark-list/types'
 import { useFileUploader } from './hooks/useFileUploader'
 import { Button } from '@/components/ui/button'
-
-interface VaultGroup {
-  _id: string
-  title: string
-  color: string
-}
+import type { Id } from '@/convex/_generated/dataModel'
+import type { VaultGroupPickRow } from './gallery/gallery-utils'
 
 interface VaultUploadProps {
   selectedGroupId: string | null
-  groups: VaultGroup[]
+  groups: VaultGroupPickRow[]
   files: VaultFile[]
   isLoading?: boolean
   onDeleteFileAction: (file: VaultFile) => void
+  onMoveFileAction: (file: VaultFile, targetGroupId: Id<'vaultGroups'>) => void
 }
 
 function EmptyState({
@@ -39,7 +37,7 @@ function EmptyState({
           <h3 className="text-sm font-medium">Gallery</h3>
         </div>
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+          <Loader2 className="text-muted-foreground size-5 animate-spin" />
         </div>
       </div>
     )
@@ -59,15 +57,13 @@ function EmptyState({
   )
 }
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024
-const MAX_FILES = 3
-
 export function VaultUpload({
   selectedGroupId,
   groups,
   files,
   isLoading,
   onDeleteFileAction,
+  onMoveFileAction,
 }: VaultUploadProps) {
   const {
     uploadFiles,
@@ -80,8 +76,8 @@ export function VaultUpload({
     dragHandlers,
   } = useFileUploader({
     selectedGroupId,
-    maxFiles: MAX_FILES,
-    maxSize: MAX_FILE_SIZE,
+    maxFiles: VAULT_MAX_FILES_PER_BATCH,
+    maxSize: VAULT_MAX_FILE_SIZE_BYTES,
   })
 
   if (groups.length === 0 || !selectedGroupId) {
@@ -96,12 +92,12 @@ export function VaultUpload({
         <h3 className="text-sm font-medium">Gallery</h3>
         <div className="flex gap-2">
           <Button onClick={openFileDialog} variant="outline" size="sm">
-            <CloudUploadIcon className="h-4 w-4 mr-2" />
+            <CloudUploadIcon className="size-4 mr-2" />
             Add files
           </Button>
           {uploadFiles.length > 0 && (
             <Button onClick={clearAll} variant="outline" size="sm">
-              <Trash2Icon className="h-4 w-4 mr-2" />
+              <Trash2Icon className="size-4 mr-2" />
               Clear
             </Button>
           )}
@@ -115,6 +111,8 @@ export function VaultUpload({
           <VaultFileGallery
             files={files}
             uploadFiles={uploadFiles}
+            vaultGroups={groups}
+            onMoveFileAction={onMoveFileAction}
             onDeleteFileAction={onDeleteFileAction}
             onRemoveUpload={removeFile}
             onRetryUpload={retryUpload}

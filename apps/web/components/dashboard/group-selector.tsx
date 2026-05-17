@@ -17,6 +17,7 @@ import { useDialogStore } from "@/stores/dialog-store";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { toast } from "@/lib/toast";
+import { FALLBACK_COLORS } from "@goldfish/shared";
 
 const CreateGroupDialog = dynamic(
   () => import("@/components/dialogs").then((m) => m.CreateGroupDialog),
@@ -42,17 +43,6 @@ export interface ConvexGroup {
   isPublic?: boolean;
   _creationTime: number;
 }
-
-export const FALLBACK_COLORS = [
-  "#f59e0b",
-  "#3b82f6",
-  "#10b981",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-  "#06b6d4",
-  "#f97316",
-];
 
 interface GroupSelectorProps {
   groups: ConvexGroup[];

@@ -57,12 +57,13 @@ function summarize(items: ParsedImportItem[]): {
   withFolders: number
   distinctFolderLeaves: number
 } {
-  const withFolders = items.filter((i) => i.folderPath.length > 0).length
-  const leaves = new Set(
-    items
-      .filter((i) => i.folderPath.length > 0)
-      .map((i) => i.folderPath.join(' / '))
-  )
+  let withFolders = 0
+  const leaves = new Set<string>()
+  for (const i of items) {
+    if (i.folderPath.length === 0) continue
+    withFolders++
+    leaves.add(i.folderPath.join(' / '))
+  }
   return {
     total: items.length,
     withFolders,

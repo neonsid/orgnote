@@ -17,7 +17,9 @@
     "typecheck": "pnpm run --parallel typecheck:web typecheck:mobile",
     "typecheck:web": "pnpm --filter @goldfish/web typecheck",
     "typecheck:mobile": "pnpm --filter @goldfish/mobile typecheck",
-    "test:bookmark-parse": "pnpm --filter @goldfish/web test:bookmark-parse"
+    "test:bookmark-parse": "pnpm --filter @goldfish/web test:bookmark-parse",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "devDependencies": {
     "@convex-dev/eslint-plugin": "^1.1.1",
@@ -49,6 +51,9 @@
     }
   },
   "dependencies": {
-    "react-native-webview": "13.15.0"
+    "react-native-webview": "13.15.0",
+    "expo": "~54.0.34",
+    "react": "19.1.0",
+    "react-native": "0.81.5"
   }
 }

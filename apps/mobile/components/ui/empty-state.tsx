@@ -75,7 +75,7 @@ export function EmptyState({
       </View>
       {actionLabel && onAction && (
         <Button variant="outline" onPress={onAction} style={styles.button}>
-          {actionLabel}
+          <Button.Text>{actionLabel}</Button.Text>
         </Button>
       )}
     </View>

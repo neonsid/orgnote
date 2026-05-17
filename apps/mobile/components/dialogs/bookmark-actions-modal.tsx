@@ -14,6 +14,7 @@ import { borderRadius, spacing } from "@/lib/constants";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
+// TODO: Import it from apps/web
 interface Bookmark {
   _id: Id<"bookmarks">;
   title: string;
@@ -36,6 +37,8 @@ const GROUP_DOT_FALLBACK = [
   "#8b5cf6",
   "#ec4899",
 ];
+
+// Until here
 
 interface BookmarkActionsModalProps {
   visible: boolean;

@@ -14,6 +14,8 @@ type VaultTilePreviewProps = {
   onThumbnailError: () => void;
   onImageClick?: () => void;
   imageObjectFit: "cover" | "contain";
+  /** Preload for above-the-fold tiles (Next/Image LCP). */
+  imagePriority?: boolean;
 };
 
 export function VaultTilePreview({
@@ -25,10 +27,11 @@ export function VaultTilePreview({
   onThumbnailError,
   onImageClick,
   imageObjectFit,
+  imagePriority = false,
 }: VaultTilePreviewProps) {
   if (isImage(mimeType) && imageSrc) {
     const imageClassName = cn(
-      "rounded-lg border transition-all group-hover/item:scale-105",
+      "rounded-lg border",
       imageObjectFit === "cover" ? "object-cover" : "object-contain",
       showThumbnailSpinner ? "opacity-0" : "opacity-100",
       onImageClick && "cursor-pointer",
@@ -42,6 +45,7 @@ export function VaultTilePreview({
         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
         className={imageClassName}
         unoptimized
+        priority={imagePriority}
         onLoad={onThumbnailLoad}
         onError={onThumbnailError}
       />
@@ -79,6 +83,8 @@ export function VaultTilePreview({
           width={160}
           height={160}
           sizes="160px"
+          loading="eager"
+          priority={imagePriority}
           className={cn(
             "rounded-lg h-full w-full max-h-full",
             imageObjectFit === "cover" ? "object-cover" : "object-contain",

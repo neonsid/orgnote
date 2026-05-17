@@ -15,6 +15,7 @@ import {
 } from "@/lib/bookmark-export";
 import { borderRadius, spacing } from "@/lib/constants";
 import type { AppColors } from "@/lib/theme-colors";
+import { FALLBACK_COLORS } from "@goldfish/shared";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
@@ -23,15 +24,6 @@ interface Group {
   title: string;
   color?: string;
 }
-
-const FALLBACK_COLORS = [
-  "#f59e0b",
-  "#3b82f6",
-  "#10b981",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-];
 
 interface MultiSelectToolbarProps {
   selectedCount: number;

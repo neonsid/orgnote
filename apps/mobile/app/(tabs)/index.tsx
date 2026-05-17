@@ -1,7 +1,7 @@
 import { useAuth } from "@clerk/expo";
 import { useConvexAuth, useMutation, usePaginatedQuery, useQuery } from "convex/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { AppState, type AppStateStatus, StyleSheet, View } from "react-native";
+import { useCallback, useMemo } from "react";
+import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAppTheme } from "@/contexts/app-theme";
@@ -23,41 +23,40 @@ import {
   DeleteGroupModal,
   BookmarkActionsModal,
   EditBookmarkModal,
-  type FilterType,
 } from "@/components/dialogs";
 import { Loading, EmptyState } from "@/components/ui";
-import { useBookmarkSelection } from "@/hooks";
+import {
+  useBookmarkSelection,
+  useBookmarksTabUiReducer,
+  usePersistedSelectedGroupId,
+} from "@/hooks";
 import { openInAppBrowser } from "@/lib/open-in-app-browser";
-import { loadPersistedSelectedGroupId, savePersistedSelectedGroupId } from "@/lib/persisted-selected-group";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 function BookmarksContent() {
   const { userId } = useAuth();
   const groups = useQuery(api.groups.queries.list);
-  const [selectedGroupId, setSelectedGroupId] = useState<Id<"groups"> | null>(null);
-  /** False until we have tried loading the last-opened group from storage (avoids clobbering it on first paint). */
-  const [groupPreferenceRestored, setGroupPreferenceRestored] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filter, setFilter] = useState<FilterType>("all");
-
-  const [showGroupSelector, setShowGroupSelector] = useState(false);
-  const [showFilter, setShowFilter] = useState(false);
-  const [showAddBookmark, setShowAddBookmark] = useState(false);
-  const [showCreateGroup, setShowCreateGroup] = useState(false);
-  const [showEditGroup, setShowEditGroup] = useState(false);
-  const [showDeleteGroup, setShowDeleteGroup] = useState(false);
-  const [selectedBookmark, setSelectedBookmark] = useState<BookmarkData | null>(null);
-  const [toolbarEditBookmark, setToolbarEditBookmark] = useState<BookmarkData | null>(null);
+  const {
+    selectedGroupId,
+    setSelectedGroupId,
+    groupPreferenceRestored,
+    effectiveGroupId,
+  } = usePersistedSelectedGroupId(userId, groups);
+  const [ui, dispatchUi] = useBookmarksTabUiReducer();
+  const {
+    searchQuery,
+    filter,
+    showGroupSelector,
+    showFilter,
+    showAddBookmark,
+    showCreateGroup,
+    showEditGroup,
+    showDeleteGroup,
+    selectedBookmark,
+    toolbarEditBookmark,
+  } = ui;
   const toggleRead = useMutation(api.bookmarks.mutations.toggleReadStatus);
-
-  const effectiveGroupId = useMemo(() => {
-    if (!groups || groups.length === 0) return null;
-    if (selectedGroupId && groups.some((g) => g._id === selectedGroupId)) {
-      return selectedGroupId;
-    }
-    return groups[0]._id;
-  }, [groups, selectedGroupId]);
 
   const selectedGroup = useMemo(() => {
     if (!groups || !effectiveGroupId) return null;
@@ -138,7 +137,7 @@ function BookmarksContent() {
       if (isSelecting) {
         toggleSelection(bookmark._id);
       } else {
-        setSelectedBookmark(bookmark);
+        dispatchUi({ type: "setSelectedBookmark", bookmark });
       }
     },
     [isSelecting, toggleSelection]
@@ -165,49 +164,9 @@ function BookmarksContent() {
     [toggleRead]
   );
 
-  useEffect(() => {
-    setGroupPreferenceRestored(false);
-  }, [userId]);
-
-  useEffect(() => {
-    if (!userId) return;
-    if (!groups || groups.length === 0) {
-      setGroupPreferenceRestored(false);
-      return;
-    }
-    if (groupPreferenceRestored) return;
-    let cancelled = false;
-    void (async () => {
-      const stored = await loadPersistedSelectedGroupId(userId);
-      if (cancelled) return;
-      if (stored && groups.some((g) => g._id === stored)) {
-        setSelectedGroupId(stored as Id<"groups">);
-      }
-      setGroupPreferenceRestored(true);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [userId, groups, groupPreferenceRestored]);
-
-  useEffect(() => {
-    if (!userId || !effectiveGroupId || !groupPreferenceRestored) return;
-    void savePersistedSelectedGroupId(userId, effectiveGroupId);
-  }, [userId, effectiveGroupId, groupPreferenceRestored]);
-
-  useEffect(() => {
-    if (!userId || !effectiveGroupId || !groupPreferenceRestored) return;
-    const sub = AppState.addEventListener("change", (s: AppStateStatus) => {
-      if (s === "background" || s === "inactive") {
-        void savePersistedSelectedGroupId(userId, effectiveGroupId);
-      }
-    });
-    return () => sub.remove();
-  }, [userId, effectiveGroupId, groupPreferenceRestored]);
-
   const onGroupCreated = useCallback((id: Id<"groups">) => {
     setSelectedGroupId(id);
-  }, []);
+  }, [setSelectedGroupId]);
 
   if (!groups) {
     return <Loading message="Loading..." />;
@@ -221,11 +180,11 @@ function BookmarksContent() {
           title="No collections yet"
           description="Create your first collection to start saving bookmarks."
           actionLabel="Create Collection"
-          onAction={() => setShowCreateGroup(true)}
+          onAction={() => dispatchUi({ type: "setShowCreateGroup", open: true })}
         />
         <CreateGroupModal
           visible={showCreateGroup}
-          onClose={() => setShowCreateGroup(false)}
+          onClose={() => dispatchUi({ type: "setShowCreateGroup", open: false })}
           onCreated={onGroupCreated}
         />
       </>
@@ -252,7 +211,8 @@ function BookmarksContent() {
           onToggleSelectAllVisible={toggleSelectAllVisible}
           onEditSingle={
             selectedCount === 1 && selectedBookmarks[0]
-              ? () => setToolbarEditBookmark(selectedBookmarks[0])
+              ? () =>
+                  dispatchUi({ type: "setToolbarEditBookmark", bookmark: selectedBookmarks[0] })
               : undefined
           }
         />
@@ -260,14 +220,14 @@ function BookmarksContent() {
         <>
           <Header
             selectedGroup={selectedGroup}
-            onOpenGroupSelector={() => setShowGroupSelector(true)}
+            onOpenGroupSelector={() => dispatchUi({ type: "setShowGroupSelector", open: true })}
           />
           <SearchBar
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={(q) => dispatchUi({ type: "setSearchQuery", query: q })}
             filter={filter}
-            onOpenFilter={() => setShowFilter(true)}
-            onOpenAdd={() => setShowAddBookmark(true)}
+            onOpenFilter={() => dispatchUi({ type: "setShowFilter", open: true })}
+            onOpenAdd={() => dispatchUi({ type: "setShowAddBookmark", open: true })}
           />
         </>
       )}
@@ -287,52 +247,43 @@ function BookmarksContent() {
 
       <GroupSelectorModal
         visible={showGroupSelector}
-        onClose={() => setShowGroupSelector(false)}
+        onClose={() => dispatchUi({ type: "setShowGroupSelector", open: false })}
         groups={groups}
         selectedGroupId={effectiveGroupId}
         onSelectGroup={setSelectedGroupId}
-        onCreateGroup={() => {
-          setShowGroupSelector(false);
-          setShowCreateGroup(true);
-        }}
-        onRenameGroup={() => {
-          setShowGroupSelector(false);
-          setShowEditGroup(true);
-        }}
-        onDeleteGroup={() => {
-          setShowGroupSelector(false);
-          setShowDeleteGroup(true);
-        }}
+        onCreateGroup={() => dispatchUi({ type: "groupSelectorToCreate" })}
+        onRenameGroup={() => dispatchUi({ type: "groupSelectorToEdit" })}
+        onDeleteGroup={() => dispatchUi({ type: "groupSelectorToDelete" })}
       />
 
       <FilterModal
         visible={showFilter}
-        onClose={() => setShowFilter(false)}
+        onClose={() => dispatchUi({ type: "setShowFilter", open: false })}
         value={filter}
-        onChange={setFilter}
+        onChange={(f) => dispatchUi({ type: "setFilter", filter: f })}
       />
 
       <AddBookmarkModal
         visible={showAddBookmark}
-        onClose={() => setShowAddBookmark(false)}
+        onClose={() => dispatchUi({ type: "setShowAddBookmark", open: false })}
         groupId={effectiveGroupId}
       />
 
       <CreateGroupModal
         visible={showCreateGroup}
-        onClose={() => setShowCreateGroup(false)}
+        onClose={() => dispatchUi({ type: "setShowCreateGroup", open: false })}
         onCreated={onGroupCreated}
       />
 
       <EditGroupModal
         visible={showEditGroup}
-        onClose={() => setShowEditGroup(false)}
+        onClose={() => dispatchUi({ type: "setShowEditGroup", open: false })}
         group={selectedGroup}
       />
 
       <DeleteGroupModal
         visible={showDeleteGroup}
-        onClose={() => setShowDeleteGroup(false)}
+        onClose={() => dispatchUi({ type: "setShowDeleteGroup", open: false })}
         group={selectedGroup}
         onDeleted={(deletedId) => {
           if (selectedGroupId === deletedId) {
@@ -343,23 +294,23 @@ function BookmarksContent() {
 
       <BookmarkActionsModal
         visible={!!selectedBookmark && !isSelecting}
-        onClose={() => setSelectedBookmark(null)}
+        onClose={() => dispatchUi({ type: "setSelectedBookmark", bookmark: null })}
         bookmark={selectedBookmark}
         groups={groups}
         currentGroupId={effectiveGroupId}
         onSelectMultiple={() => {
           if (selectedBookmark) {
             toggleSelection(selectedBookmark._id);
-            setSelectedBookmark(null);
+            dispatchUi({ type: "setSelectedBookmark", bookmark: null });
           }
         }}
       />
 
       <EditBookmarkModal
         visible={!!toolbarEditBookmark}
-        onClose={() => setToolbarEditBookmark(null)}
+        onClose={() => dispatchUi({ type: "setToolbarEditBookmark", bookmark: null })}
         onSaved={() => {
-          setToolbarEditBookmark(null);
+          dispatchUi({ type: "setToolbarEditBookmark", bookmark: null });
           clearSelection();
         }}
         bookmark={toolbarEditBookmark}
@@ -371,7 +322,7 @@ function BookmarksContent() {
 export default function BookmarksScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
-  const { isLoaded: clerkLoaded, isSignedIn } = useAuth();
+  const { isLoaded: clerkLoaded, isSignedIn, userId } = useAuth();
   const { isLoading: convexLoading, isAuthenticated } = useConvexAuth();
 
   const styles = useMemo(
@@ -408,7 +359,7 @@ export default function BookmarksScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <BookmarksContent />
+      <BookmarksContent key={userId ?? "unknown-user"} />
     </View>
   );
 }
