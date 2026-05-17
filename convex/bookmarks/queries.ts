@@ -29,9 +29,14 @@ async function buildPublicBookmarkList(
     groupColor: string
   }[] = []
 
-  for (const group of groups) {
-    const groupBookmarks = await fetchGroupBookmarks(ctx, group._id)
+  const groupBookmarkPages = await Promise.all(
+    groups.map(async (group) => ({
+      group,
+      groupBookmarks: await fetchGroupBookmarks(ctx, group._id),
+    }))
+  )
 
+  for (const { group, groupBookmarks } of groupBookmarkPages) {
     for (const bookmark of groupBookmarks) {
       if (!bookmarkIsVisibleOnPublicListing(bookmark)) continue
       bookmarks.push({
@@ -132,16 +137,13 @@ export const getBookmarkUrlKeysForImport = authQuery({
       .order('desc')
       .take(MAX_GROUPS_PER_QUERY)
 
-    const out: { groupId: Id<'groups'>; url: string }[] = []
-
-    for (const group of groups) {
-      const bookmarks = await fetchGroupBookmarks(ctx, group._id)
-      for (const b of bookmarks) {
-        out.push({ groupId: b.groupId, url: b.url })
-      }
-    }
-
-    return out
+    const urlKeysByGroup = await Promise.all(
+      groups.map(async (group) => {
+        const bookmarks = await fetchGroupBookmarks(ctx, group._id)
+        return bookmarks.map((b) => ({ groupId: b.groupId, url: b.url }))
+      })
+    )
+    return urlKeysByGroup.flat()
   },
 })
 
@@ -150,32 +152,25 @@ export const getBookmarksByGroupIds = authQuery({
   handler: async (ctx, args) => {
     const { userId } = ctx
 
-    const bookmarks: Array<{
-      _id: string
-      _creationTime: number
-      title: string
-      description?: string
-      url: string
-      imageUrl: string
-      doneReading: boolean
-      updatedAt?: number
-      groupId: string
-      groupTitle: string
-    }> = []
+    await Promise.all(
+      args.groupIds.map((groupId) => verifyGroupOwnership(ctx, groupId, userId))
+    )
 
-    for (const groupId of args.groupIds) {
-      await verifyGroupOwnership(ctx, groupId, userId)
-
-      const groupBookmarks = await fetchGroupBookmarks(ctx, groupId)
-      const group = await ctx.db.get(groupId)
-      for (const bookmark of groupBookmarks) {
-        bookmarks.push({
+    const rows = await Promise.all(
+      args.groupIds.map(async (groupId) => {
+        const [groupBookmarks, group] = await Promise.all([
+          fetchGroupBookmarks(ctx, groupId),
+          ctx.db.get(groupId),
+        ])
+        const groupTitle = group?.title || 'Unknown'
+        return groupBookmarks.map((bookmark) => ({
           ...bookmark,
-          groupTitle: group?.title || 'Unknown',
-        })
-      }
-    }
-    return bookmarks
+          groupTitle,
+        }))
+      })
+    )
+
+    return rows.flat()
   },
 })
 
@@ -189,11 +184,13 @@ export const getBookmarkCountsByUser = authQuery({
       .withIndex('by_userId_and_isPublic', (q) => q.eq('userId', userId))
       .take(MAX_GROUPS_PER_QUERY)
 
-    const counts: Record<string, number> = {}
-    for (const group of groups) {
-      const groupBookmarks = await fetchGroupBookmarksByGroupId(ctx, group._id)
-      counts[group._id] = groupBookmarks.length
-    }
+    const countEntries = await Promise.all(
+      groups.map(async (group) => {
+        const groupBookmarks = await fetchGroupBookmarksByGroupId(ctx, group._id)
+        return [group._id, groupBookmarks.length] as const
+      })
+    )
+    const counts = Object.fromEntries(countEntries)
     return counts
   },
 })

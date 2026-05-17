@@ -53,10 +53,14 @@ const moveDirectories = async (userInput) => {
       console.log(`📁 /${exampleDir} directory created.`);
     }
 
-    // Move old directories to new app-example directory or delete them
-    for (const dir of oldDirs) {
-      const oldDirPath = path.join(root, dir);
-      if (fs.existsSync(oldDirPath)) {
+    // Run directory moves/removes concurrently (each touches a disjoint path).
+    await Promise.all(
+      oldDirs.map(async (dir) => {
+        const oldDirPath = path.join(root, dir);
+        if (!fs.existsSync(oldDirPath)) {
+          console.log(`➡️ /${dir} does not exist, skipping.`);
+          return;
+        }
         if (userInput === "y") {
           const newDirPath = path.join(root, exampleDir, dir);
           await fs.promises.rename(oldDirPath, newDirPath);
@@ -65,10 +69,8 @@ const moveDirectories = async (userInput) => {
           await fs.promises.rm(oldDirPath, { recursive: true, force: true });
           console.log(`❌ /${dir} deleted.`);
         }
-      } else {
-        console.log(`➡️ /${dir} does not exist, skipping.`);
-      }
-    }
+      })
+    );
 
     // Create new /app directory
     const newAppDirPath = path.join(root, newAppDir);

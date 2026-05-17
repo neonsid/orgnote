@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef, useMemo } from 'react'
+import { useCallback, useRef, useMemo, useReducer } from 'react'
 import { useMountEffect } from '@/hooks/use-mount-effect'
 import { Loader2 } from 'lucide-react'
 import { useMutation } from 'convex/react'
@@ -35,6 +35,89 @@ const DeleteBookmarkDialog = dynamic(
   { ssr: false }
 )
 
+type DashboardUiState = {
+  debouncedQuery: string
+  filter: FilterType
+  multiSelectMode: boolean
+  selectedBookmarkIds: Set<Id<'bookmarks'>>
+  bulkDeleteOpen: boolean
+  bulkDeleteIds: Id<'bookmarks'>[]
+}
+
+type DashboardUiAction =
+  | { type: 'setDebouncedQuery'; query: string }
+  | { type: 'setFilter'; filter: FilterType }
+  | { type: 'exitMultiSelect' }
+  | { type: 'enterMultiSelect'; id: Id<'bookmarks'> }
+  | { type: 'toggleMultiSelect'; id: Id<'bookmarks'> }
+  | { type: 'selectAllVisibleBookmarks'; visibleIds: Id<'bookmarks'>[] }
+  | { type: 'openBulkDelete'; ids: Id<'bookmarks'>[] }
+  | { type: 'bulkDeleteOpenChange'; open: boolean }
+
+const initialDashboardUi: DashboardUiState = {
+  debouncedQuery: '',
+  filter: 'all',
+  multiSelectMode: false,
+  selectedBookmarkIds: new Set(),
+  bulkDeleteOpen: false,
+  bulkDeleteIds: [],
+}
+
+function dashboardReducer(
+  state: DashboardUiState,
+  action: DashboardUiAction
+): DashboardUiState {
+  switch (action.type) {
+    case 'setDebouncedQuery':
+      return { ...state, debouncedQuery: action.query }
+    case 'setFilter':
+      return { ...state, filter: action.filter }
+    case 'exitMultiSelect':
+      return {
+        ...state,
+        multiSelectMode: false,
+        selectedBookmarkIds: new Set(),
+      }
+    case 'enterMultiSelect':
+      return {
+        ...state,
+        multiSelectMode: true,
+        selectedBookmarkIds: new Set([action.id]),
+      }
+    case 'toggleMultiSelect': {
+      const next = new Set(state.selectedBookmarkIds)
+      if (next.has(action.id)) next.delete(action.id)
+      else next.add(action.id)
+      return { ...state, selectedBookmarkIds: next }
+    }
+    case 'selectAllVisibleBookmarks': {
+      const { visibleIds } = action
+      if (visibleIds.length === 0) return state
+      const prev = state.selectedBookmarkIds
+      const everyVisible = visibleIds.every((id) => prev.has(id))
+      return {
+        ...state,
+        selectedBookmarkIds: everyVisible
+          ? new Set()
+          : new Set(visibleIds),
+      }
+    }
+    case 'openBulkDelete':
+      return {
+        ...state,
+        bulkDeleteOpen: true,
+        bulkDeleteIds: action.ids,
+      }
+    case 'bulkDeleteOpenChange':
+      if (!action.open) {
+        return { ...state, bulkDeleteOpen: false, bulkDeleteIds: [] }
+      }
+      return { ...state, bulkDeleteOpen: true }
+    default:
+      return state
+  }
+}
+
 export default function DashboardPage() {
   const { user, isLoaded: isUserLoaded } = useUser()
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -59,14 +142,15 @@ export default function DashboardPage() {
     [bookmarks]
   )
 
-  const [debouncedQuery, setDebouncedQuery] = useState('')
-  const [filter, setFilter] = useState<FilterType>('all')
-  const [multiSelectMode, setMultiSelectMode] = useState(false)
-  const [selectedBookmarkIds, setSelectedBookmarkIds] = useState<
-    Set<Id<'bookmarks'>>
-  >(new Set())
-  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
-  const [bulkDeleteIds, setBulkDeleteIds] = useState<Id<'bookmarks'>[]>([])
+  const [ui, dispatchUi] = useReducer(dashboardReducer, initialDashboardUi)
+  const {
+    debouncedQuery,
+    filter,
+    multiSelectMode,
+    selectedBookmarkIds,
+    bulkDeleteOpen,
+    bulkDeleteIds,
+  } = ui
 
   useMountEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -140,7 +224,7 @@ export default function DashboardPage() {
           ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
           : '',
       })
-      setDebouncedQuery('')
+      dispatchUi({ type: 'setDebouncedQuery', query: '' })
     },
     [createBookmark, effectiveGroupId]
   )
@@ -197,22 +281,15 @@ export default function DashboardPage() {
   )
 
   const exitMultiSelect = useCallback(() => {
-    setMultiSelectMode(false)
-    setSelectedBookmarkIds(new Set())
+    dispatchUi({ type: 'exitMultiSelect' })
   }, [])
 
   const enterMultiSelect = useCallback((id: Id<'bookmarks'>) => {
-    setMultiSelectMode(true)
-    setSelectedBookmarkIds(new Set([id]))
+    dispatchUi({ type: 'enterMultiSelect', id })
   }, [])
 
   const toggleMultiSelect = useCallback((id: Id<'bookmarks'>) => {
-    setSelectedBookmarkIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+    dispatchUi({ type: 'toggleMultiSelect', id })
   }, [])
 
   const allVisibleBookmarksSelected = useMemo(
@@ -223,15 +300,9 @@ export default function DashboardPage() {
   )
 
   const selectAllVisibleBookmarks = useCallback(() => {
-    setSelectedBookmarkIds((prev) => {
-      const visibleIds = filteredBookmarks.map((b) => b.id)
-      if (visibleIds.length === 0) return prev
-
-      const everyVisibleInSelection = visibleIds.every((id) => prev.has(id))
-      if (everyVisibleInSelection) {
-        return new Set()
-      }
-      return new Set(visibleIds)
+    dispatchUi({
+      type: 'selectAllVisibleBookmarks',
+      visibleIds: filteredBookmarks.map((b) => b.id),
     })
   }, [filteredBookmarks])
 
@@ -302,13 +373,14 @@ export default function DashboardPage() {
       toast.error('Select at least one bookmark')
       return
     }
-    setBulkDeleteIds([...selectedBookmarkIds])
-    setBulkDeleteOpen(true)
+    dispatchUi({
+      type: 'openBulkDelete',
+      ids: [...selectedBookmarkIds],
+    })
   }, [selectedBookmarkIds])
 
   const handleBulkDeleteOpenChange = useCallback((open: boolean) => {
-    setBulkDeleteOpen(open)
-    if (!open) setBulkDeleteIds([])
+    dispatchUi({ type: 'bulkDeleteOpenChange', open })
   }, [])
 
   const runBulkDelete = useCallback(async () => {
@@ -358,11 +430,18 @@ export default function DashboardPage() {
           <div className="flex-1">
             <BookmarkSearch
               ref={searchInputRef}
-              onSearch={setDebouncedQuery}
+              onSearch={(query) =>
+                dispatchUi({ type: 'setDebouncedQuery', query })
+              }
               onSubmit={handleSubmitBookmark}
             />
           </div>
-          <FilterDropdown value={filter} onChange={setFilter} />
+          <FilterDropdown
+            value={filter}
+            onChange={(next) =>
+              dispatchUi({ type: 'setFilter', filter: next })
+            }
+          />
         </div>
 
         <div className="flex items-center justify-between px-3 mb-4">

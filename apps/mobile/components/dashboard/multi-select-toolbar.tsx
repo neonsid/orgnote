@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactElement } from "react";
 import { Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useMutation } from "convex/react";
 import * as Clipboard from "expo-clipboard";
@@ -238,26 +238,27 @@ export function MultiSelectToolbar({
 
       <Modal visible={showMoveModal} onClose={() => setShowMoveModal(false)} title="Move to…">
         <ScrollView style={styles.moveList}>
-          {groups
-            .filter((g) => g._id !== currentGroupId)
-            .map((group, index) => (
-              <Pressable
-                key={group._id}
-                style={({ pressed }) => [styles.moveItem, pressed && styles.moveItemPressed]}
-                onPress={() => void handleBulkMove(group._id)}
-              >
-                <View
-                  style={[
-                    styles.colorDot,
-                    {
-                      backgroundColor:
-                        group.color ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length],
-                    },
-                  ]}
-                />
-                <Text style={styles.moveItemText}>{group.title}</Text>
-              </Pressable>
-            ))}
+          {(() => {
+            const moveRows: ReactElement[] = [];
+            let fallbackIdx = 0;
+            for (const group of groups) {
+              if (group._id === currentGroupId) continue;
+              const dotColor =
+                group.color ?? FALLBACK_COLORS[fallbackIdx % FALLBACK_COLORS.length];
+              fallbackIdx += 1;
+              moveRows.push(
+                <Pressable
+                  key={group._id}
+                  style={({ pressed }) => [styles.moveItem, pressed && styles.moveItemPressed]}
+                  onPress={() => void handleBulkMove(group._id)}
+                >
+                  <View style={[styles.colorDot, { backgroundColor: dotColor }]} />
+                  <Text style={styles.moveItemText}>{group.title}</Text>
+                </Pressable>
+              );
+            }
+            return moveRows;
+          })()}
         </ScrollView>
       </Modal>
 

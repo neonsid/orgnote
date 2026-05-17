@@ -21,6 +21,7 @@ export async function waitForVaultUploadRequest(
   convex: ConvexReactClient,
   requestId: Id<"vaultUploadRequests">
 ): Promise<{ uploadUrl: string; fileUrl: string }> {
+  // Poll sequentially until ready — each iteration depends on the previous query + delay.
   for (let i = 0; i < DEFAULT_MAX_ATTEMPTS; i++) {
     const row = await convex.query(api.vault.queries.getVaultUploadRequest, {
       requestId,

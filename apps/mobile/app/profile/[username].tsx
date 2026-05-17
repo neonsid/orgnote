@@ -226,9 +226,9 @@ function ProfileHeader({
 
       {profile.links && profile.links.length > 0 && (
         <View style={styles.links}>
-          {profile.links.map((link, i) => (
+          {profile.links.map((link) => (
             <Pressable
-              key={i}
+              key={link.url}
               style={styles.linkButton}
               onPress={() => Linking.openURL(link.url)}
             >

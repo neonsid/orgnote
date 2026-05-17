@@ -163,33 +163,34 @@ export const importBookmarks = authMutation({
       })
     }
 
-    let importedCount = 0
-    let skippedCount = 0
+    const outcomes = await Promise.all(
+      args.items.map(async (item) => {
+        const url = item.url.trim()
+        const title = item.title.trim() || 'Untitled'
 
-    for (const item of args.items) {
-      const url = item.url.trim()
-      const title = item.title.trim() || 'Untitled'
+        if (!isValidUrl(url)) {
+          return 'skipped' as const
+        }
 
-      if (!isValidUrl(url)) {
-        skippedCount++
-        continue
-      }
+        const imageUrl = faviconUrlForHttpUrl(url)
 
-      const imageUrl = faviconUrlForHttpUrl(url)
+        const bookmarkId = await ctx.db.insert('bookmarks', {
+          title,
+          description: '',
+          groupId: args.groupId,
+          url,
+          imageUrl,
+          doneReading: false,
+        })
 
-      const bookmarkId = await ctx.db.insert('bookmarks', {
-        title,
-        description: '',
-        groupId: args.groupId,
-        url,
-        imageUrl,
-        doneReading: false,
+        await scheduleBookmarkMetadata(ctx, bookmarkId, url, userId, false)
+        await scheduleUrlSafetyCheck(ctx, bookmarkId)
+        return 'imported' as const
       })
+    )
 
-      await scheduleBookmarkMetadata(ctx, bookmarkId, url, userId, false)
-      await scheduleUrlSafetyCheck(ctx, bookmarkId)
-      importedCount++
-    }
+    const importedCount = outcomes.filter((o) => o === 'imported').length
+    const skippedCount = outcomes.filter((o) => o === 'skipped').length
 
     return { importedCount, skippedCount }
   },
@@ -213,10 +214,12 @@ export const deleteBookmarksBulk = authMutation({
     }
 
     const uniqueIds = [...new Set(args.bookmarkIds)]
-    for (const bookmarkId of uniqueIds) {
-      await verifyBookmarkOwnership(ctx, bookmarkId, userId)
-      await ctx.db.delete(bookmarkId)
-    }
+    await Promise.all(
+      uniqueIds.map((bookmarkId) =>
+        verifyBookmarkOwnership(ctx, bookmarkId, userId)
+      )
+    )
+    await Promise.all(uniqueIds.map((bookmarkId) => ctx.db.delete(bookmarkId)))
 
     return { deletedCount: uniqueIds.length }
   },
@@ -328,13 +331,15 @@ export const moveBookmarksBulk = authMutation({
 
     const uniqueIds = [...new Set(args.bookmarkIds)]
     const updatedAt = Date.now()
-    for (const bookmarkId of uniqueIds) {
-      await verifyBookmarkOwnership(ctx, bookmarkId, userId)
-      await ctx.db.patch(bookmarkId, {
-        groupId: args.groupId,
-        updatedAt,
+    await Promise.all(
+      uniqueIds.map(async (bookmarkId) => {
+        await verifyBookmarkOwnership(ctx, bookmarkId, userId)
+        await ctx.db.patch(bookmarkId, {
+          groupId: args.groupId,
+          updatedAt,
+        })
       })
-    }
+    )
 
     return { movedCount: uniqueIds.length }
   },

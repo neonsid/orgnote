@@ -82,9 +82,14 @@ export const getPublicProfileData = query({
       groupColor: string
     }[] = []
 
-    for (const group of groups) {
-      const groupBookmarks = await fetchGroupBookmarks(ctx, group._id)
+    const groupBookmarkPages = await Promise.all(
+      groups.map(async (group) => ({
+        group,
+        groupBookmarks: await fetchGroupBookmarks(ctx, group._id),
+      }))
+    )
 
+    for (const { group, groupBookmarks } of groupBookmarkPages) {
       for (const bookmark of groupBookmarks) {
         if (!bookmarkIsVisibleOnPublicListing(bookmark)) continue
         bookmarks.push({

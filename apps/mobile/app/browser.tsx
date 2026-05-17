@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useReducer, useRef } from "react";
 import {
   ActivityIndicator,
   Linking,
@@ -19,6 +19,44 @@ import type { AppColors } from "@/lib/theme-colors";
 
 function getStringParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+type BrowserNavState = {
+  currentUrl: string;
+  pageTitle: string;
+  canGoBack: boolean;
+  canGoForward: boolean;
+  loading: boolean;
+};
+
+type BrowserNavAction =
+  | {
+      type: "navigation";
+      payload: Pick<
+        WebViewNavigation,
+        "url" | "title" | "canGoBack" | "canGoForward" | "loading"
+      >;
+    }
+  | { type: "loading"; loading: boolean };
+
+function browserNavReducer(state: BrowserNavState, action: BrowserNavAction): BrowserNavState {
+  switch (action.type) {
+    case "navigation": {
+      const { url, title, canGoBack, canGoForward, loading } = action.payload;
+      return {
+        ...state,
+        currentUrl: url,
+        canGoBack,
+        canGoForward,
+        loading,
+        ...(title ? { pageTitle: title } : {}),
+      };
+    }
+    case "loading":
+      return { ...state, loading: action.loading };
+    default:
+      return state;
+  }
 }
 
 function makeStyles(colors: AppColors) {
@@ -121,20 +159,17 @@ export default function BrowserScreen() {
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const webViewRef = useRef<WebView>(null);
-  const [currentUrl, setCurrentUrl] = useState(initialUrl);
-  const [pageTitle, setPageTitle] = useState(initialTitle);
-  const [canGoBack, setCanGoBack] = useState(false);
-  const [canGoForward, setCanGoForward] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [navState, dispatchNav] = useReducer(browserNavReducer, {
+    currentUrl: initialUrl,
+    pageTitle: initialTitle,
+    canGoBack: false,
+    canGoForward: false,
+    loading: true,
+  });
+  const { currentUrl, pageTitle, canGoBack, canGoForward, loading } = navState;
 
-  function handleNavigationChange(navState: WebViewNavigation) {
-    setCurrentUrl(navState.url);
-    setCanGoBack(navState.canGoBack);
-    setCanGoForward(navState.canGoForward);
-    setLoading(navState.loading);
-    if (navState.title) {
-      setPageTitle(navState.title);
-    }
+  function handleNavigationChange(payload: WebViewNavigation) {
+    dispatchNav({ type: "navigation", payload });
   }
 
   async function handleOpenExternal() {
@@ -181,8 +216,8 @@ export default function BrowserScreen() {
         ref={webViewRef}
         source={{ uri: initialUrl }}
         style={styles.webview}
-        onLoadStart={() => setLoading(true)}
-        onLoadEnd={() => setLoading(false)}
+        onLoadStart={() => dispatchNav({ type: "loading", loading: true })}
+        onLoadEnd={() => dispatchNav({ type: "loading", loading: false })}
         onNavigationStateChange={handleNavigationChange}
         startInLoadingState
         renderLoading={() => <ActivityIndicator size="large" color={colors.primaryAccent} />}

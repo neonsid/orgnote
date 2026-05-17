@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactElement } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useMutation } from "convex/react";
 import * as Clipboard from "expo-clipboard";
@@ -120,31 +120,28 @@ export function BookmarkActionsModal({
   }
 
   if (showMoveMenu) {
+    const moveRows: ReactElement[] = [];
+    let fallbackColorIdx = 0;
+    for (const group of groups) {
+      if (group._id === currentGroupId) continue;
+      const dotColor =
+        group.color ?? GROUP_DOT_FALLBACK[fallbackColorIdx % GROUP_DOT_FALLBACK.length];
+      fallbackColorIdx += 1;
+      moveRows.push(
+        <Pressable
+          key={group._id}
+          style={styles.moveItem}
+          onPress={() => handleMove(group._id)}
+        >
+          <View style={[styles.colorDot, { backgroundColor: dotColor }]} />
+          <Text style={styles.moveItemText}>{group.title}</Text>
+        </Pressable>
+      );
+    }
+
     return (
       <Modal visible={visible} onClose={() => setShowMoveMenu(false)} title="Move to…">
-        <ScrollView style={styles.moveList}>
-          {groups
-            .filter((g) => g._id !== currentGroupId)
-            .map((group, index) => (
-              <Pressable
-                key={group._id}
-                style={styles.moveItem}
-                onPress={() => handleMove(group._id)}
-              >
-                <View
-                  style={[
-                    styles.colorDot,
-                    {
-                      backgroundColor:
-                        group.color ??
-                        GROUP_DOT_FALLBACK[index % GROUP_DOT_FALLBACK.length],
-                    },
-                  ]}
-                />
-                <Text style={styles.moveItemText}>{group.title}</Text>
-              </Pressable>
-            ))}
-        </ScrollView>
+        <ScrollView style={styles.moveList}>{moveRows}</ScrollView>
         <Pressable style={styles.cancelButton} onPress={() => setShowMoveMenu(false)}>
           <Text style={styles.cancelText}>Cancel</Text>
         </Pressable>

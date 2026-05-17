@@ -2,6 +2,7 @@
   "name": "goldfish",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@10.21.0",
   "scripts": {
     "predev": "convex dev --until-success",
     "dev": "npm-run-all --parallel dev:web dev:backend",
@@ -22,6 +23,7 @@
     "ios": "expo run:ios"
   },
   "devDependencies": {
+    "next": "^16.2.6",
     "@convex-dev/eslint-plugin": "^1.1.1",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",

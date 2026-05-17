@@ -29,7 +29,6 @@ import type * as metadata_github_fetch from "../metadata/github_fetch.js";
 import type * as metadata_internal from "../metadata/internal.js";
 import type * as metadata_open_graph from "../metadata/open_graph.js";
 import type * as metadata_validators from "../metadata/validators.js";
-import type * as migrations from "../migrations.js";
 import type * as profile_mutations from "../profile/mutations.js";
 import type * as profile_queries from "../profile/queries.js";
 import type * as rate_limit from "../rate_limit.js";
@@ -67,7 +66,6 @@ declare const fullApi: ApiFromModules<{
   "metadata/internal": typeof metadata_internal;
   "metadata/open_graph": typeof metadata_open_graph;
   "metadata/validators": typeof metadata_validators;
-  migrations: typeof migrations;
   "profile/mutations": typeof profile_mutations;
   "profile/queries": typeof profile_queries;
   rate_limit: typeof rate_limit;

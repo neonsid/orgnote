@@ -56,8 +56,10 @@ export function BookmarkList({
   const SkeletonList = useMemo(
     () => (
       <View style={styles.skeletonContainer}>
-        {[1, 2, 3, 4, 5].map((i) => (
-          <View key={i} style={styles.skeletonRow}>
+        {(
+          ["s-a", "s-b", "s-c", "s-d", "s-e"] as const
+        ).map((rowKey) => (
+          <View key={rowKey} style={styles.skeletonRow}>
             <View style={styles.skeletonIcon} />
             <View style={styles.skeletonContent}>
               <View style={styles.skeletonTitle} />

@@ -17,6 +17,8 @@ export type ThemedAlertButton = {
   text: string;
   style?: "default" | "cancel" | "destructive";
   onPress?: () => void;
+  /** Populated internally by {@link showThemedAlert}; stable key for rendering. */
+  _listKey?: string;
 };
 
 export type ThemedAlertPayload = {
@@ -36,14 +38,29 @@ export function showThemedAlert(
   message?: string,
   buttons?: ThemedAlertButton[]
 ): void {
+  const normalizedButtons: ThemedAlertButton[] =
+    buttons && buttons.length > 0
+      ? buttons.map((b) => ({
+          ...b,
+          _listKey:
+            typeof crypto.randomUUID === "function"
+              ? crypto.randomUUID()
+              : `${b.style ?? ""}:${b.text}:${Math.random().toString(36).slice(2)}`,
+        }))
+      : [
+          {
+            text: "OK",
+            style: "default",
+            _listKey: "themed-alert-default-ok",
+          },
+        ];
+
   const payload: ThemedAlertPayload = {
     title,
     message,
-    buttons:
-      buttons && buttons.length > 0
-        ? buttons
-        : [{ text: "OK", style: "default" }],
+    buttons: normalizedButtons,
   };
+
   queueMicrotask(() => {
     setAlertGlobal?.(payload);
   });
@@ -75,7 +92,13 @@ function ThemedAlertHost() {
 
   if (!payload) return null;
 
-  const buttons = payload.buttons ?? [{ text: "OK", style: "default" as const }];
+  const buttons = payload.buttons ?? [
+    {
+      text: "OK",
+      style: "default" as const,
+      _listKey: "themed-alert-default-ok-host",
+    },
+  ];
 
   return (
     <Modal
@@ -98,12 +121,12 @@ function ThemedAlertHost() {
             </ScrollView>
           ) : null}
           <View style={styles.buttonRow}>
-            {buttons.map((btn, i) => {
+            {buttons.map((btn) => {
               const isDestructive = btn.style === "destructive";
               const isCancel = btn.style === "cancel";
               return (
                 <Pressable
-                  key={`${btn.text}-${i}`}
+                  key={btn._listKey ?? btn.text}
                   onPress={() => handleButton(btn)}
                   style={({ pressed }) => [
                     styles.button,

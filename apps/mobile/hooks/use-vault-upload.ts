@@ -93,16 +93,24 @@ export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
         );
       }
 
-      let ok = 0;
+      type WorkItem = {
+        asset: (typeof assets)[number];
+        name: string;
+        size: number;
+        fileType: string;
+        /** 1-based position in the trimmed batch */
+        ordinal: number;
+      };
+
+      const workItems: WorkItem[] = [];
       for (const [index, asset] of assets.entries()) {
         const name = asset.name ?? "file";
-        const progressBase = {
-          current: index + 1,
-          total: assets.length,
-          fileName: name,
-        };
+        const ordinal = index + 1;
         if (name.length > MAX_FILENAME_LENGTH) {
-          showThemedAlert("Invalid file", `"${name}" is too long (max ${MAX_FILENAME_LENGTH} characters).`);
+          showThemedAlert(
+            "Invalid file",
+            `"${name}" is too long (max ${MAX_FILENAME_LENGTH} characters).`
+          );
           continue;
         }
         const size = asset.size ?? 0;
@@ -120,28 +128,66 @@ export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
           );
           continue;
         }
-
-        setUploadStatus({ ...progressBase, step: "Preparing upload..." });
-        const requestId = await requestPresignedUploadUrl({
-          fileName: name,
-          fileType,
-        });
-        const { uploadUrl, fileUrl } = await waitForVaultUploadRequest(convex, requestId);
-        setUploadStatus({ ...progressBase, step: "Uploading file..." });
-        await uploadFn(asset.uri, fileType, uploadUrl);
-        setUploadStatus({ ...progressBase, step: "Saving to vault..." });
-        await saveFileMetadata({
-          fileName: name,
-          fileType,
-          fileSize: size,
-          fileUrl,
-          groupId,
-        });
-        ok += 1;
+        workItems.push({ asset, name, size, fileType, ordinal });
       }
 
-      if (ok > 0) {
-        showThemedAlert("Upload complete", `${ok} file${ok === 1 ? "" : "s"} uploaded.`);
+      if (workItems.length === 0) {
+        return;
+      }
+
+      setUploadStatus({
+        current: 0,
+        total: workItems.length,
+        step: `Uploading ${workItems.length} file${workItems.length === 1 ? "" : "s"}…`,
+      });
+
+      const settlements = await Promise.allSettled(
+        workItems.map(async ({ asset, name, size, fileType, ordinal }) => {
+          setUploadStatus({
+            current: ordinal,
+            total: workItems.length,
+            fileName: name,
+            step: "Preparing upload…",
+          });
+          const requestId = await requestPresignedUploadUrl({
+            fileName: name,
+            fileType,
+          });
+          const { uploadUrl, fileUrl } = await waitForVaultUploadRequest(convex, requestId);
+          setUploadStatus({
+            current: ordinal,
+            total: workItems.length,
+            fileName: name,
+            step: "Uploading file…",
+          });
+          await uploadFn(asset.uri, fileType, uploadUrl);
+          setUploadStatus({
+            current: ordinal,
+            total: workItems.length,
+            fileName: name,
+            step: "Saving to vault…",
+          });
+          await saveFileMetadata({
+            fileName: name,
+            fileType,
+            fileSize: size,
+            fileUrl,
+            groupId,
+          });
+        })
+      );
+
+      const okCount = settlements.filter((s) => s.status === "fulfilled").length;
+      const firstReject = settlements.find(
+        (s): s is PromiseRejectedResult => s.status === "rejected"
+      );
+
+      if (firstReject && okCount < workItems.length) {
+        const extra =
+          firstReject.reason instanceof Error ? ` ${firstReject.reason.message}` : "";
+        showThemedAlert("Some uploads failed", `${okCount}/${workItems.length} uploaded.${extra}`);
+      } else if (okCount > 0) {
+        showThemedAlert("Upload complete", `${okCount} file${okCount === 1 ? "" : "s"} uploaded.`);
       }
     } catch (e) {
       showThemedAlert(
