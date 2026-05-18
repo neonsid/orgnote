@@ -4,7 +4,77 @@
 
 import { twitterHosts } from './constants'
 
-export type UrlType = 'github' | 'twitter' | 'generic'
+export type UrlType = 'github' | 'twitter' | 'youtube' | 'generic'
+
+/** YouTube watch/embed hosts we resolve video IDs for (Data API / OG fallback). */
+export function isYouTubeVideoHost(hostname: string): boolean {
+  const h = hostname.toLowerCase()
+  return (
+    h === 'youtube.com' ||
+    h === 'www.youtube.com' ||
+    h === 'm.youtube.com' ||
+    h === 'music.youtube.com' ||
+    h === 'youtu.be' ||
+    h === 'www.youtu.be'
+  )
+}
+
+/** Typical YouTube video IDs are 11 chars ([A-Za-z0-9_-]). */
+function isLikelyYouTubeVideoId(id: string): boolean {
+  return /^[a-zA-Z0-9_-]{11}$/.test(id)
+}
+
+/**
+ * Extract video ID from common YouTube URL shapes (watch, embed, shorts, live, youtu.be, Music).
+ */
+export function parseYouTubeVideoId(url: string): string | null {
+  try {
+    const parsed = new URL(url)
+    if (!isYouTubeVideoHost(parsed.hostname)) {
+      return null
+    }
+
+    if (
+      parsed.hostname === 'youtu.be' ||
+      parsed.hostname === 'www.youtu.be'
+    ) {
+      const segment = parsed.pathname.split('/').filter(Boolean)[0]
+      if (segment && isLikelyYouTubeVideoId(segment)) {
+        return segment
+      }
+      return null
+    }
+
+    const vParam = parsed.searchParams.get('v')
+    if (vParam && isLikelyYouTubeVideoId(vParam.trim())) {
+      return vParam.trim()
+    }
+
+    const parts = parsed.pathname.split('/').filter(Boolean)
+    const idxAfter = (segment: string): string | null => {
+      const i = parts.indexOf(segment)
+      const id = i !== -1 ? parts[i + 1] : undefined
+      return id && isLikelyYouTubeVideoId(id) ? id : null
+    }
+
+    const fromEmbed = idxAfter('embed')
+    if (fromEmbed) return fromEmbed
+
+    const fromShorts = idxAfter('shorts')
+    if (fromShorts) return fromShorts
+
+    const fromLive = idxAfter('live')
+    if (fromLive) return fromLive
+
+    if (parts[0] === 'watch' && parts[1] && isLikelyYouTubeVideoId(parts[1])) {
+      return parts[1]
+    }
+
+    return null
+  } catch {
+    return null
+  }
+}
 
 export function classifyUrl(url: string): UrlType {
   if (isGitHubUrl(url)) {
@@ -12,6 +82,9 @@ export function classifyUrl(url: string): UrlType {
   }
   if (isTwitterUrl(url)) {
     return 'twitter'
+  }
+  if (parseYouTubeVideoId(url)) {
+    return 'youtube'
   }
   return 'generic'
 }

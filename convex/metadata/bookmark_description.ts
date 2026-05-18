@@ -6,12 +6,18 @@ import {
   classifyUrl,
   extractTwitterHandleFromUrl,
   parseGitHubRepo,
+  parseYouTubeVideoId,
 } from '../lib/url_classifier'
 import { fetchTweetContentWithScira, getSciraApiKey } from '../lib/scira'
 import { generateDescriptionWithAI } from './ai_description'
 import type { BookmarkDescriptionReturn } from './validators'
 import { fetchGitHubReadme, fetchGitHubRepoTitle } from './github_fetch'
 import { fetchOpenGraphMetadata } from './open_graph'
+import {
+  fetchYouTubeOEmbedWithCanonicalFallback,
+  fetchYouTubeVideoSnippet,
+  getYouTubeApiKey,
+} from './youtube_fetch'
 
 /**
  * Core URL-type branching and LLM step for bookmark description (internal actions).
@@ -27,7 +33,8 @@ export async function runBookmarkDescriptionFlow(
     const urlType = classifyUrl(url)
 
     let title: string | undefined
-    let content: string
+    /** Set by each URL-type branch before `generateDescriptionWithAI`. */
+    let content!: string
     let imageUrl: string | undefined
     let remainingQuota: number | undefined
 
@@ -119,6 +126,50 @@ export async function runBookmarkDescriptionFlow(
           : `GitHub repository: ${repoInfo.owner}/${repoInfo.repo}`
       } else {
         content = readme
+      }
+    } else if (urlType === 'youtube') {
+      const videoId = parseYouTubeVideoId(url)
+      const ytKey = getYouTubeApiKey()
+
+      let youtubeResolved = false
+
+      if (videoId && ytKey) {
+        const snippet = await fetchYouTubeVideoSnippet(videoId, ytKey)
+        if (snippet) {
+          title = snippet.title
+          imageUrl = snippet.thumbnailUrl
+          const parts: string[] = [`Title: ${snippet.title}`]
+          if (snippet.channelTitle) {
+            parts.push(`Channel: ${snippet.channelTitle}`)
+          }
+          if (snippet.description) {
+            parts.push(`Description: ${snippet.description}`)
+          }
+          content = parts.join('\n')
+          youtubeResolved = true
+        }
+      }
+
+      if (!youtubeResolved) {
+        const oembed = await fetchYouTubeOEmbedWithCanonicalFallback(url, videoId)
+        if (oembed) {
+          title = oembed.title
+          imageUrl = oembed.thumbnailUrl ?? imageUrl
+          const parts: string[] = [`Title: ${oembed.title}`]
+          if (oembed.authorName) {
+            parts.push(`Channel: ${oembed.authorName}`)
+          }
+          content = parts.join('\n')
+          youtubeResolved = true
+        }
+      }
+
+      if (!youtubeResolved) {
+        return {
+          success: false,
+          error:
+            'Could not load this video from YouTube (Data API and oEmbed). Add a title and description manually, or try again later.',
+        }
       }
     } else {
       const ogData = await fetchOpenGraphMetadata(url)

@@ -39,6 +39,7 @@ Rules:
 - 10–20 words maximum
 - Clear and informative
 - No marketing fluff
+- When the fetched content or title names a channel, creator, or uploader (common for videos), mention that name briefly so the user knows the source—still stay within the word limit
 - Output only the description text, no quotes or prefixes
 
 Description:`

@@ -7,7 +7,7 @@ AI-powered bookmark manager: save links, get instant summaries, organize groups,
 ## Features
 
 - **AI summaries** — Descriptions for bookmarked URLs via OpenRouter
-- **URL-aware extraction** — Different paths for X/Twitter (Scira), GitHub, and generic sites (Open Graph + AI)
+- **URL-aware extraction** — Different paths for X/Twitter (Scira), GitHub, YouTube ([Data API v3](https://developers.google.com/youtube/v3) plus official [oEmbed](https://oembed.com/#provider-youtube)), and generic sites (Open Graph + AI)
 - **Groups** — Color-coded bookmark collections (optional public visibility)
 - **Public profiles** — `/u/[username]` with shared bookmarks
 - **Vault** — File uploads with presigned URLs, thumbnails, and gallery UI (R2 storage)
@@ -107,6 +107,7 @@ In Convex → **Settings → Environment Variables**, set:
 - `CLERK_FRONTEND_API_URL`
 - `OPENROUTER_API_KEY`
 - `SCIRA_API_KEY`
+- `YOUTUBE_API_KEY` (optional — richer YouTube metadata via Data API v3; oEmbed still works without it; see table below)
 - R2-related variables (see table below)
 
 ### 6. Run the app
@@ -182,6 +183,7 @@ These variables live in the **repo root** `.env.local` (or `.env`). `apps/web/ne
 | `CLERK_FRONTEND_API_URL` | **Yes** | Clerk Frontend API URL for JWT validation (`convex/auth.config.ts`). |
 | `OPENROUTER_API_KEY` | **Yes** (AI metadata) | OpenRouter API key. |
 | `GOOGLE_SAFE_BROWSING_API_KEY` | **Optional** | [Google Safe Browsing API](https://developers.google.com/safe-browsing) key. When set, new/updated bookmark URLs are checked; matches are hidden from public profiles. If unset, checks are skipped. **E2E test:** bookmark `https://testsafebrowsing.appspot.com/s/malware.html` — the public API often returns no match for `.../phishing.html` even though Chrome warns on it. |
+| `YOUTUBE_API_KEY` | **Optional** | [YouTube Data API v3](https://developers.google.com/youtube/v3) key (enable **YouTube Data API v3** in Google Cloud). When set, Convex prefers `videos.list` for full snippet text (better AI context, thumbnails). When unset or quota/exhausted, metadata still uses YouTube’s official **oEmbed** endpoint only—no HTML/Open Graph scraping for YouTube URLs. Each `videos.list` call uses API [quota](https://developers.google.com/youtube/v3/getting-started#quota). |
 | `SCIRA_API_KEY` | **Yes** (X/Twitter) | Scira key for tweet/thread extraction. |
 | `R2_ACCOUNT_ID` | **Yes** (vault) | Cloudflare account ID for R2. |
 | `R2_BUCKET_NAME` | **Yes** (vault) | Bucket name. |
