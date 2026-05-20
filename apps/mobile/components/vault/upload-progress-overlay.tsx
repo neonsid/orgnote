@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { useCallback } from "react";
+import { ActivityIndicator, FlatList, Text, View, type ListRenderItemInfo } from "react-native";
 
 import { useAppTheme } from "@/contexts/app-theme";
 import {
@@ -23,11 +24,37 @@ function FileStatusIcon({ phase }: { phase: VaultUploadFileItem["phase"] }) {
   return <ActivityIndicator size="small" color={colors.primary} />;
 }
 
+function UploadFileRow({ file }: { file: VaultUploadFileItem }) {
+  return (
+    <View className="flex-row items-center gap-2 border-b border-border py-2">
+      <FileStatusIcon phase={file.phase} />
+      <View className="flex-1 gap-0.5">
+        <Text className="text-[13px] font-medium text-foreground" numberOfLines={2}>
+          {file.fileName}
+        </Text>
+        <Text className="text-xs text-secondary-foreground">
+          {vaultUploadPhaseLabel(file.phase)}
+        </Text>
+        {file.errorMessage ? (
+          <Text className="text-[11px] text-destructive" numberOfLines={2}>
+            {file.errorMessage}
+          </Text>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
 export function UploadProgressOverlay({ status }: { status: VaultUploadStatus }) {
   const doneCount = status.files.filter((f) => f.phase === "done").length;
   const activeCount = status.files.filter(
     (f) => f.phase !== "done" && f.phase !== "error" && f.phase !== "queued"
   ).length;
+
+  const renderItem = useCallback(
+    ({ item }: ListRenderItemInfo<VaultUploadFileItem>) => <UploadFileRow file={item} />,
+    []
+  );
 
   return (
     <View
@@ -40,29 +67,13 @@ export function UploadProgressOverlay({ status }: { status: VaultUploadStatus })
           {doneCount}/{status.files.length} complete
           {activeCount > 0 ? ` · ${activeCount} in progress` : ""}
         </Text>
-        <ScrollView className="max-h-80" showsVerticalScrollIndicator={false}>
-          {status.files.map((file) => (
-            <View
-              key={file.id}
-              className="flex-row items-center gap-2 border-b border-border py-2"
-            >
-              <FileStatusIcon phase={file.phase} />
-              <View className="flex-1 gap-0.5">
-                <Text className="text-[13px] font-medium text-foreground" numberOfLines={2}>
-                  {file.fileName}
-                </Text>
-                <Text className="text-xs text-secondary-foreground">
-                  {vaultUploadPhaseLabel(file.phase)}
-                </Text>
-                {file.errorMessage ? (
-                  <Text className="text-[11px] text-destructive" numberOfLines={2}>
-                    {file.errorMessage}
-                  </Text>
-                ) : null}
-              </View>
-            </View>
-          ))}
-        </ScrollView>
+        <FlatList
+          data={status.files}
+          keyExtractor={(file) => file.id}
+          className="max-h-80"
+          showsVerticalScrollIndicator={false}
+          renderItem={renderItem}
+        />
       </View>
     </View>
   );

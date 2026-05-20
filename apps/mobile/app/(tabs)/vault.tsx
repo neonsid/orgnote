@@ -7,12 +7,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   VaultGroupSelectorModal,
   VaultMoveFileModal,
+  CreateGroupModal,
   EditGroupModal,
   DeleteGroupModal,
 } from "@/components/dialogs";
 import { Loading, EmptyState } from "@/components/ui";
 import {
-  CreateVaultGroupModal,
   FileActionsModal,
   UploadProgressOverlay,
   VaultDuplicatesBanner,
@@ -21,7 +21,6 @@ import {
   VaultMultiSelectToolbar,
   VaultStatsBar,
   VaultUploadBar,
-  type VaultListFile,
 } from "@/components/vault";
 import { showThemedAlert } from "@/contexts/themed-alert";
 import { useVaultTabUiReducer, useVaultUpload, useVaultSelection } from "@/hooks";
@@ -106,10 +105,17 @@ function VaultContent() {
   }, [vaultData?.groups]);
 
   const selectableFileIds = useMemo(() => {
-    if (!viewingDuplicates) return filteredFiles.map((f) => f._id);
-    return filteredFiles
-      .filter((f) => !canonicalFileIds.has(f._id))
-      .map((f) => f._id);
+    if (!viewingDuplicates) {
+      return filteredFiles.map((f) => f._id);
+    }
+
+    const ids: Id<"vaultFiles">[] = [];
+    for (const file of filteredFiles) {
+      if (!canonicalFileIds.has(file._id)) {
+        ids.push(file._id);
+      }
+    }
+    return ids;
   }, [filteredFiles, viewingDuplicates, canonicalFileIds]);
 
   const visibleFileIds = selectableFileIds;
@@ -132,21 +138,40 @@ function VaultContent() {
     }
   }, [showDuplicatesOnly, duplicateSetCount, clearSelection]);
 
-  const selectedFiles = useMemo(
-    () =>
-      filteredFiles
-        .filter((f) => selectedIds.includes(f._id))
-        .map((f) => ({
-          _id: f._id,
-          name: f.name,
-          url: f.url,
-          type: f.type,
-        })),
-    [filteredFiles, selectedIds]
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+
+  const selectedFiles = useMemo(() => {
+    const result: Array<{
+      _id: Id<"vaultFiles">;
+      name: string;
+      url: string;
+      type: string;
+    }> = [];
+
+    for (const file of filteredFiles) {
+      if (selectedIdSet.has(file._id)) {
+        result.push({
+          _id: file._id,
+          name: file.name,
+          url: file.url,
+          type: file.type,
+        });
+      }
+    }
+
+    return result;
+  }, [filteredFiles, selectedIdSet]);
+
+  const filesById = useMemo(
+    () => new Map(filteredFiles.map((file) => [file._id, file])),
+    [filteredFiles]
   );
 
   const handleFilePress = useCallback(
-    (file: VaultListFile) => {
+    (fileId: Id<"vaultFiles">) => {
+      const file = filesById.get(fileId);
+      if (!file) return;
+
       if (isSelecting) {
         if (viewingDuplicates && canonicalFileIds.has(file._id)) return;
         toggleSelection(file._id);
@@ -154,15 +179,32 @@ function VaultContent() {
         void promptOpenExternalUrl(file.url, file.name);
       }
     },
-    [isSelecting, toggleSelection, viewingDuplicates, canonicalFileIds]
+    [filesById, isSelecting, toggleSelection, viewingDuplicates, canonicalFileIds]
   );
 
   const handleFileLongPress = useCallback(
-    (file: VaultListFile) => {
+    (fileId: Id<"vaultFiles">) => {
+      const file = filesById.get(fileId);
+      if (!file) return;
+
       if (viewingDuplicates && canonicalFileIds.has(file._id)) return;
-      toggleSelection(file._id);
+
+      if (isSelecting) {
+        toggleSelection(file._id);
+        return;
+      }
+
+      vaultDispatch({
+        type: "setSelectedFile",
+        file: {
+          _id: file._id,
+          name: file.name,
+          url: file.url,
+          type: file.type,
+        },
+      });
     },
-    [toggleSelection, viewingDuplicates, canonicalFileIds]
+    [filesById, isSelecting, toggleSelection, viewingDuplicates, canonicalFileIds]
   );
 
   const moveTargetGroups = useMemo(() => {
@@ -192,6 +234,15 @@ function VaultContent() {
     clearSelection();
     vaultDispatch({ type: "setShowGroupSelector", open: false });
   }
+
+  const onVaultGroupCreated = useCallback(
+    (groupId: Id<"vaultGroups">) => {
+      vaultDispatch({ type: "setSelectedGroupId", id: groupId });
+      clearSelection();
+      setShowDuplicatesOnly(false);
+    },
+    [clearSelection]
+  );
 
   const statsLabel = viewingDuplicates
     ? `${duplicateSetCount} duplicate set${duplicateSetCount === 1 ? "" : "s"} · ${filteredFiles.length} files`
@@ -291,9 +342,11 @@ function VaultContent() {
         onShowDuplicates={handleToggleDuplicatesView}
       />
 
-      <CreateVaultGroupModal
+      <CreateGroupModal
         visible={showCreateGroup}
         onClose={() => vaultDispatch({ type: "setShowCreateGroup", open: false })}
+        groupKind="vault"
+        onCreated={onVaultGroupCreated}
       />
 
       <EditGroupModal
@@ -321,6 +374,11 @@ function VaultContent() {
         file={selectedFile}
         canMoveToAnotherGroup={moveTargetGroups.length > 0}
         onRequestMoveToAnotherGroup={() => vaultDispatch({ type: "openMovePicker" })}
+        onSelectMultiple={() => {
+          if (!selectedFile) return;
+          toggleSelection(selectedFile._id);
+          vaultDispatch({ type: "setSelectedFile", file: null });
+        }}
       />
 
       <VaultMoveFileModal

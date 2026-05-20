@@ -15,7 +15,7 @@ export function Header({ selectedGroup, onOpenGroupSelector }: HeaderProps) {
   const { colors } = useAppTheme();
 
   return (
-    <View className="flex-row items-center bg-surface px-3 py-3">
+    <View className="flex-row items-center bg-surface p-3">
       <View className="shrink-0">
         <View className="h-8 w-8 items-center justify-center overflow-hidden rounded-sm border border-border bg-muted">
           <OrgNoteLogo size={28} />

@@ -17,12 +17,14 @@ export function FileActionsModal({
   file,
   canMoveToAnotherGroup,
   onRequestMoveToAnotherGroup,
+  onSelectMultiple,
 }: {
   visible: boolean;
   onClose: () => void;
   file: { _id: Id<"vaultFiles">; name: string; url: string; type: string } | null;
   canMoveToAnotherGroup: boolean;
   onRequestMoveToAnotherGroup: () => void;
+  onSelectMultiple?: () => void;
 }) {
   const { colors } = useAppTheme();
   const deleteFile = useMutation(api.vault.mutations.deleteFile);
@@ -82,7 +84,7 @@ export function FileActionsModal({
         </Pressable>
         <Pressable
           className="flex-row items-center gap-3 py-3 active:bg-muted"
-          onPress={handleDownload}
+          onPress={() => void handleDownload()}
           disabled={downloading}
         >
           <Ionicons name="download-outline" size={22} color={colors.textMuted} />
@@ -90,6 +92,18 @@ export function FileActionsModal({
             {downloading ? "Downloading…" : "Download"}
           </Text>
         </Pressable>
+        {onSelectMultiple ? (
+          <Pressable
+            className="flex-row items-center gap-3 py-3 active:bg-muted"
+            onPress={() => {
+              onSelectMultiple();
+              onClose();
+            }}
+          >
+            <Ionicons name="checkbox-outline" size={22} color={colors.textMuted} />
+            <Text className="text-sm text-foreground">Select multiple</Text>
+          </Pressable>
+        ) : null}
         {canMoveToAnotherGroup ? (
           <Pressable
             className="flex-row items-center gap-3 py-3 active:bg-muted"

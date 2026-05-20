@@ -189,14 +189,14 @@ export function MultiSelectToolbar({
             format as the web app).
           </Text>
           <Pressable
-            className="flex-row items-center gap-3 rounded-sm px-3 py-3 active:bg-muted"
+            className="flex-row items-center gap-3 rounded-sm p-3 active:bg-muted"
             onPress={() => void shareExport("csv")}
           >
             <Ionicons name="document-text-outline" size={22} color={colors.textSecondary} />
             <Text className="text-[15px] text-foreground">Export as CSV</Text>
           </Pressable>
           <Pressable
-            className="flex-row items-center gap-3 rounded-sm px-3 py-3 active:bg-muted"
+            className="flex-row items-center gap-3 rounded-sm p-3 active:bg-muted"
             onPress={() => void shareExport("json")}
           >
             <Ionicons name="code-slash-outline" size={22} color={colors.textSecondary} />

@@ -1,4 +1,3 @@
-export { CreateVaultGroupModal } from "./create-vault-group-modal";
 export { FileActionsModal } from "./file-actions-modal";
 export { FileTile } from "./file-tile";
 export { UploadProgressOverlay } from "./upload-progress-overlay";

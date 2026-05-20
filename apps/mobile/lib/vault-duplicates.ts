@@ -29,10 +29,11 @@ function groupByDuplicateKey(files: VaultFileRow[]): Map<string, VaultFileRow[]>
 
 /** Oldest upload in a duplicate set is treated as the original to keep. */
 export function getCanonicalFileId(group: VaultFileRow[]): Id<"vaultFiles"> {
-  const sorted = [...group].sort(
-    (a, b) => (a._creationTime ?? 0) - (b._creationTime ?? 0)
-  );
-  return sorted[0]!._id;
+  return getCanonicalFile(group)._id;
+}
+
+export function getCanonicalFile(group: VaultFileRow[]): VaultFileRow {
+  return group.toSorted((a, b) => (a._creationTime ?? 0) - (b._creationTime ?? 0))[0]!;
 }
 
 /** Every file id that belongs to a duplicate set (2+ with the same key). */
@@ -103,8 +104,7 @@ export function getOriginalInfoForExtras(
   const info = new Map<Id<"vaultFiles">, DuplicateOriginalInfo>();
   for (const group of groupByDuplicateKey(files).values()) {
     if (group.length <= 1) continue;
-    const canonical = group.find((f) => f._id === getCanonicalFileId(group));
-    if (!canonical) continue;
+    const canonical = getCanonicalFile(group);
     const original: DuplicateOriginalInfo = {
       canonicalId: canonical._id,
       canonicalGroupId: canonical.groupId,

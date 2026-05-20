@@ -1,4 +1,5 @@
-import { ActivityIndicator, FlatList, Text, View } from "react-native";
+import { useCallback } from "react";
+import { ActivityIndicator, FlatList, Text, View, type ListRenderItemInfo } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAppTheme } from "@/contexts/app-theme";
@@ -34,7 +35,7 @@ function SkeletonList() {
   return (
     <View className="px-3">
       {(["s-a", "s-b", "s-c", "s-d", "s-e"] as const).map((rowKey) => (
-        <View key={rowKey} className="flex-row items-center gap-3 px-3 py-3">
+        <View key={rowKey} className="flex-row items-center gap-3 p-3">
           <View className="h-5 w-5 rounded-sm bg-muted" />
           <View className="flex-1 flex-row items-center gap-2">
             <View className="h-3.5 w-[120px] rounded bg-muted" />
@@ -60,7 +61,21 @@ export function BookmarkList({
 }: BookmarkListProps) {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
-  const bottomPad = insets.bottom + 88;
+  const bottomInset = insets.bottom + 88;
+
+  const renderItem = useCallback(
+    ({ item }: ListRenderItemInfo<BookmarkData>) => (
+      <BookmarkCard
+        bookmark={item}
+        onPress={() => onBookmarkPress(item)}
+        onLongPress={() => onBookmarkLongPress(item)}
+        onToggleRead={onToggleRead}
+        isSelecting={isSelecting}
+        isSelected={isSelected?.(item._id)}
+      />
+    ),
+    [onBookmarkPress, onBookmarkLongPress, onToggleRead, isSelecting, isSelected]
+  );
 
   if (loading) {
     return (
@@ -77,7 +92,8 @@ export function BookmarkList({
       keyExtractor={(item) => item._id}
       className="flex-1"
       contentContainerClassName="px-3"
-      contentContainerStyle={{ paddingBottom: bottomPad }}
+      contentInset={{ bottom: bottomInset }}
+      scrollIndicatorInsets={{ bottom: bottomInset }}
       showsVerticalScrollIndicator={false}
       onEndReached={onLoadMore}
       onEndReachedThreshold={0.5}
@@ -95,16 +111,7 @@ export function BookmarkList({
           </View>
         ) : null
       }
-      renderItem={({ item }) => (
-        <BookmarkCard
-          bookmark={item}
-          onPress={() => onBookmarkPress(item)}
-          onLongPress={() => onBookmarkLongPress(item)}
-          onToggleRead={onToggleRead}
-          isSelecting={isSelecting}
-          isSelected={isSelected?.(item._id)}
-        />
-      )}
+      renderItem={renderItem}
     />
   );
 }

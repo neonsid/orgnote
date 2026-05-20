@@ -10,29 +10,47 @@ import { GROUP_COLORS } from "@/lib/group-colors";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
-interface CreateGroupModalProps {
+type CreateGroupModalProps = {
   visible: boolean;
   onClose: () => void;
-  /** Called with the new group id so the list can select it. */
-  onCreated?: (groupId: Id<"groups">) => void;
-}
+} & (
+  | { groupKind?: "bookmarks"; onCreated?: (groupId: Id<"groups">) => void }
+  | { groupKind: "vault"; onCreated?: (groupId: Id<"vaultGroups">) => void }
+);
 
-export function CreateGroupModal({ visible, onClose, onCreated }: CreateGroupModalProps) {
+/**
+ * Bookmark collections: `groups.mutations.create`. Vault: `vault.mutations.createVaultGroup`.
+ */
+export function CreateGroupModal(props: CreateGroupModalProps) {
+  const { visible, onClose } = props;
+  const groupKind = props.groupKind === "vault" ? "vault" : "bookmarks";
   const { colors } = useAppTheme();
   const [title, setTitle] = useState("");
   const [selectedColor, setSelectedColor] = useState<string>(GROUP_COLORS[0].value);
   const [loading, setLoading] = useState(false);
-  const createGroup = useMutation(api.groups.mutations.create);
+  const createBookmarkGroup = useMutation(api.groups.mutations.create);
+  const createVaultGroup = useMutation(api.vault.mutations.createVaultGroup);
 
   async function handleCreate() {
     if (!title.trim()) return;
 
     setLoading(true);
     try {
-      const groupId = await createGroup({ title: title.trim(), color: selectedColor });
-      setTitle("");
-      setSelectedColor(GROUP_COLORS[0].value);
-      onCreated?.(groupId);
+      if (groupKind === "vault") {
+        const groupId = await createVaultGroup({ title: title.trim(), color: selectedColor });
+        setTitle("");
+        setSelectedColor(GROUP_COLORS[0].value);
+        if (props.groupKind === "vault") {
+          props.onCreated?.(groupId);
+        }
+      } else {
+        const groupId = await createBookmarkGroup({ title: title.trim(), color: selectedColor });
+        setTitle("");
+        setSelectedColor(GROUP_COLORS[0].value);
+        if (props.groupKind !== "vault") {
+          props.onCreated?.(groupId);
+        }
+      }
       onClose();
     } catch (err) {
       showThemedAlert("Error", err instanceof Error ? err.message : "Failed to create collection");
@@ -50,11 +68,7 @@ export function CreateGroupModal({ visible, onClose, onCreated }: CreateGroupMod
   return (
     <Modal visible={visible} onClose={handleClose} title="Create collection" variant="center">
       <View className="gap-3 p-4">
-        <Input
-          placeholder="Collection name..."
-          value={title}
-          onChangeText={setTitle}
-        />
+        <Input placeholder="Collection name..." value={title} onChangeText={setTitle} />
 
         <Text className="mt-1 text-[13px] font-semibold text-secondary-foreground">Color</Text>
         <ScrollView
@@ -75,20 +89,13 @@ export function CreateGroupModal({ visible, onClose, onCreated }: CreateGroupMod
                 }}
                 accessibilityLabel={c.label}
               >
-                {selected && (
-                  <Ionicons name="checkmark" size={20} color="#ffffff" />
-                )}
+                {selected ? <Ionicons name="checkmark" size={20} color="#ffffff" /> : null}
               </Pressable>
             );
           })}
         </ScrollView>
 
-        <Button
-          onPress={handleCreate}
-          disabled={!title.trim()}
-          loading={loading}
-          className="mt-1"
-        >
+        <Button onPress={handleCreate} disabled={!title.trim()} loading={loading} className="mt-1">
           <Button.Text>Create</Button.Text>
         </Button>
       </View>

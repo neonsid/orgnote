@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { memo, useCallback } from "react";
 import { Image, Platform, Pressable, Text, View } from "react-native";
 
 import { useAppTheme } from "@/contexts/app-theme";
@@ -16,8 +17,8 @@ interface FileData {
 
 interface FileTileProps {
   file: FileData;
-  onPress: () => void;
-  onLongPress: () => void;
+  onPress: (fileId: Id<"vaultFiles">) => void;
+  onLongPress: (fileId: Id<"vaultFiles">) => void;
   isSelecting?: boolean;
   selected?: boolean;
   groupLabel?: string;
@@ -43,7 +44,7 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function FileTile({
+export const FileTile = memo(function FileTile({
   file,
   onPress,
   onLongPress,
@@ -55,6 +56,8 @@ export function FileTile({
   selectionLocked = false,
 }: FileTileProps) {
   const { colors } = useAppTheme();
+  const handlePress = useCallback(() => onPress(file._id), [onPress, file._id]);
+  const handleLongPress = useCallback(() => onLongPress(file._id), [onLongPress, file._id]);
   const isImage = file.type.startsWith("image/");
   const previewUrl = file.thumbnailUrl ?? (isImage ? file.url : undefined);
   const showSelectionUi = isSelecting && !selectionLocked;
@@ -76,8 +79,8 @@ export function FileTile({
       style={({ pressed }) => [
         pressed && !selectionLocked ? { opacity: 0.92, transform: [{ scale: 0.98 }] } : undefined,
       ]}
-      onPress={onPress}
-      onLongPress={onLongPress}
+      onPress={handlePress}
+      onLongPress={handleLongPress}
       disabled={selectionLocked && isSelecting}
       android_ripple={
         Platform.OS === "android" && !selectionLocked
@@ -114,7 +117,7 @@ export function FileTile({
           </>
         ) : null}
       </View>
-      <View className="gap-0.5 px-2 py-2">
+      <View className="gap-0.5 p-2">
         <Text className="text-[13px] font-semibold tracking-wide text-foreground" numberOfLines={2}>
           {file.name}
         </Text>
@@ -143,4 +146,4 @@ export function FileTile({
       </View>
     </Pressable>
   );
-}
+});

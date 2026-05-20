@@ -137,8 +137,8 @@ export function VaultMultiSelectToolbar({
               iconColor={colors.textSecondary}
             />
             <MultiSelectActionChip
-              icon="share-outline"
-              label={downloading ? "…" : "Share"}
+              icon="download-outline"
+              label={downloading ? "…" : "Download"}
               onPress={() => {
                 setDownloading(true);
                 void downloadAndShareFile(singleFile.url, singleFile.name, singleFile.type)
