@@ -1,11 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Platform, Pressable, Text, View } from "react-native";
 
 import { useAppTheme } from "@/contexts/app-theme";
-import { promptOpenExternalUrl } from "@/lib/open-external-url";
-import { spacing, borderRadius } from "@/lib/constants";
-import type { AppColors } from "@/lib/theme-colors";
+import { cn } from "@/lib/cn";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 interface FileData {
@@ -19,7 +16,14 @@ interface FileData {
 
 interface FileTileProps {
   file: FileData;
+  onPress: () => void;
   onLongPress: () => void;
+  isSelecting?: boolean;
+  selected?: boolean;
+  groupLabel?: string;
+  isOriginal?: boolean;
+  originalLocationLabel?: string;
+  selectionLocked?: boolean;
 }
 
 function getFileIcon(type: string): keyof typeof Ionicons.glyphMap {
@@ -39,76 +43,103 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function makeFileTileStyles(colors: AppColors) {
-  return StyleSheet.create({
-    tile: {
-      width: "48%",
-      backgroundColor: colors.surface,
-      borderRadius: borderRadius.md,
-      overflow: "hidden",
-      marginBottom: spacing.md,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    tilePressed: {
-      opacity: 0.85,
-    },
-    preview: {
-      width: "100%",
-      aspectRatio: 1,
-      backgroundColor: colors.muted,
-    },
-    iconContainer: {
-      width: "100%",
-      aspectRatio: 1,
-      backgroundColor: colors.muted,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    info: {
-      padding: spacing.sm,
-    },
-    name: {
-      fontSize: 12,
-      fontWeight: "500",
-      color: colors.text,
-    },
-    size: {
-      fontSize: 10,
-      color: colors.textMuted,
-      marginTop: 2,
-    },
-  });
-}
-
-export function FileTile({ file, onLongPress }: FileTileProps) {
+export function FileTile({
+  file,
+  onPress,
+  onLongPress,
+  isSelecting = false,
+  selected = false,
+  groupLabel,
+  isOriginal = false,
+  originalLocationLabel,
+  selectionLocked = false,
+}: FileTileProps) {
   const { colors } = useAppTheme();
-  const styles = useMemo(() => makeFileTileStyles(colors), [colors]);
   const isImage = file.type.startsWith("image/");
   const previewUrl = file.thumbnailUrl ?? (isImage ? file.url : undefined);
+  const showSelectionUi = isSelecting && !selectionLocked;
 
-  function handlePress() {
-    void promptOpenExternalUrl(file.url, file.name);
-  }
+  const preview = previewUrl ? (
+    <Image source={{ uri: previewUrl }} className="aspect-square w-full bg-muted" />
+  ) : (
+    <View className="relative aspect-square w-full items-center justify-center overflow-hidden bg-muted">
+      <Ionicons name={getFileIcon(file.type)} size={36} color={colors.textSecondary} />
+    </View>
+  );
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
-      onPress={handlePress}
-      onLongPress={onLongPress}
-    >
-      {previewUrl ? (
-        <Image source={{ uri: previewUrl }} style={styles.preview} />
-      ) : (
-        <View style={styles.iconContainer}>
-          <Ionicons name={getFileIcon(file.type)} size={32} color={colors.textSecondary} />
-        </View>
+      className={cn(
+        "mb-3 w-[48%] rounded-xl border bg-surface",
+        selected ? "border-2 border-primary-accent" : "border-border"
       )}
-      <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={1}>
+      style={({ pressed }) => [
+        pressed && !selectionLocked ? { opacity: 0.92, transform: [{ scale: 0.98 }] } : undefined,
+      ]}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      disabled={selectionLocked && isSelecting}
+      android_ripple={
+        Platform.OS === "android" && !selectionLocked
+          ? { color: `${colors.primaryAccent}22`, foreground: true }
+          : undefined
+      }
+    >
+      <View className="relative">
+        {preview}
+        {selectionLocked ? (
+          <View className="absolute inset-0 bg-black/5" pointerEvents="none" />
+        ) : null}
+        {showSelectionUi ? (
+          <>
+            <View
+              className="absolute inset-0"
+              style={{
+                backgroundColor: selected
+                  ? `${colors.primaryAccent}22`
+                  : `${colors.primaryAccent}33`,
+              }}
+              pointerEvents="none"
+            />
+            <View className="absolute left-2 top-2" pointerEvents="none">
+              <View
+                className={cn(
+                  "h-[26px] w-[26px] items-center justify-center rounded-full border-2 border-white",
+                  selected ? "border-primary-accent bg-primary-accent" : "bg-black/35"
+                )}
+              >
+                {selected ? <Ionicons name="checkmark" size={16} color="#ffffff" /> : null}
+              </View>
+            </View>
+          </>
+        ) : null}
+      </View>
+      <View className="gap-0.5 px-2 py-2">
+        <Text className="text-[13px] font-semibold tracking-wide text-foreground" numberOfLines={2}>
           {file.name}
         </Text>
-        <Text style={styles.size}>{formatFileSize(file.size)}</Text>
+        <Text className="text-[11px] text-muted-foreground">{formatFileSize(file.size)}</Text>
+        {groupLabel ? (
+          <Text className="text-[11px] text-muted-foreground" numberOfLines={1}>
+            {groupLabel}
+          </Text>
+        ) : null}
+        {isOriginal ? (
+          <View className="mt-1 flex-row items-center gap-1 self-start rounded-sm bg-success/10 px-1.5 py-0.5">
+            <Ionicons name="shield-checkmark-outline" size={11} color={colors.success} />
+            <Text className="text-[10px] font-semibold text-success" numberOfLines={1}>
+              Original · kept
+            </Text>
+          </View>
+        ) : null}
+        {originalLocationLabel ? (
+          <View className="mt-1 flex-row items-center gap-1 self-start rounded-sm bg-primary-accent/10 px-1.5 py-0.5">
+            <Ionicons name="copy-outline" size={11} color={colors.primaryAccent} />
+            <Text className="text-[10px] font-semibold text-primary-accent" numberOfLines={1}>
+              Copy · original in {originalLocationLabel}
+            </Text>
+          </View>
+        ) : null}
       </View>
     </Pressable>
   );

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo, useState, type ReactElement } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useState, type ReactElement } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { useMutation } from "convex/react";
 import * as Clipboard from "expo-clipboard";
 
@@ -9,8 +9,7 @@ import { Modal } from "@/components/ui";
 import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/contexts/themed-alert";
 import { openInAppBrowser } from "@/lib/open-in-app-browser";
-import type { AppColors } from "@/lib/theme-colors";
-import { borderRadius, spacing } from "@/lib/constants";
+import { cn } from "@/lib/cn";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
@@ -58,14 +57,11 @@ export function BookmarkActionsModal({
   currentGroupId,
   onSelectMultiple,
 }: BookmarkActionsModalProps) {
-  const { colors } = useAppTheme();
   const [showMoveMenu, setShowMoveMenu] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const deleteBookmark = useMutation(api.bookmarks.mutations.deleteBookMark);
   const toggleRead = useMutation(api.bookmarks.mutations.toggleReadStatus);
   const moveBookmark = useMutation(api.bookmarks.mutations.moveBookMark);
-
-  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   if (!bookmark) return null;
 
@@ -130,20 +126,23 @@ export function BookmarkActionsModal({
       moveRows.push(
         <Pressable
           key={group._id}
-          style={styles.moveItem}
+          className="mx-2 my-0.5 flex-row items-center gap-3 rounded-sm px-2 py-3 active:bg-muted"
           onPress={() => handleMove(group._id)}
         >
-          <View style={[styles.colorDot, { backgroundColor: dotColor }]} />
-          <Text style={styles.moveItemText}>{group.title}</Text>
+          <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: dotColor }} />
+          <Text className="text-sm text-foreground">{group.title}</Text>
         </Pressable>
       );
     }
 
     return (
       <Modal visible={visible} onClose={() => setShowMoveMenu(false)} title="Move to…">
-        <ScrollView style={styles.moveList}>{moveRows}</ScrollView>
-        <Pressable style={styles.cancelButton} onPress={() => setShowMoveMenu(false)}>
-          <Text style={styles.cancelText}>Cancel</Text>
+        <ScrollView className="max-h-[250px]">{moveRows}</ScrollView>
+        <Pressable
+          className="mx-2 mt-3 items-center rounded-sm bg-muted py-3 active:bg-muted"
+          onPress={() => setShowMoveMenu(false)}
+        >
+          <Text className="text-sm font-medium text-secondary-foreground">Cancel</Text>
         </Pressable>
       </Modal>
     );
@@ -152,25 +151,16 @@ export function BookmarkActionsModal({
   return (
     <>
       <Modal visible={visible && !showEdit} onClose={onClose}>
-        <View style={styles.content}>
-          <Text style={styles.title} numberOfLines={2}>
+        <View className="p-3">
+          <Text
+            className="mb-3 border-b border-border px-2 pb-2 text-sm font-medium text-secondary-foreground"
+            numberOfLines={2}
+          >
             {b.title || "Untitled"}
           </Text>
 
-          <ActionRow
-            icon="open-outline"
-            label="Open in browser"
-            onPress={handleOpenUrl}
-            colors={colors}
-            styles={styles}
-          />
-          <ActionRow
-            icon="create-outline"
-            label="Edit"
-            onPress={() => setShowEdit(true)}
-            colors={colors}
-            styles={styles}
-          />
+          <ActionRow icon="open-outline" label="Open in browser" onPress={handleOpenUrl} />
+          <ActionRow icon="create-outline" label="Edit" onPress={() => setShowEdit(true)} />
           {!!b.description && (
             <ActionRow
               icon="information-circle-outline"
@@ -178,39 +168,20 @@ export function BookmarkActionsModal({
               onPress={() => {
                 showThemedAlert("Description", b.description ?? "");
               }}
-              colors={colors}
-              styles={styles}
             />
           )}
-          <ActionRow
-            icon="copy-outline"
-            label="Copy URL"
-            onPress={handleCopyUrl}
-            colors={colors}
-            styles={styles}
-          />
+          <ActionRow icon="copy-outline" label="Copy URL" onPress={handleCopyUrl} />
           <ActionRow
             icon={b.doneReading ? "eye-off-outline" : "checkmark-circle-outline"}
             label={b.doneReading ? "Mark as unread" : "Mark as read"}
             onPress={handleToggleRead}
-            colors={colors}
-            styles={styles}
           />
           <ActionRow
             icon="arrow-forward-outline"
             label="Move to…"
             onPress={() => setShowMoveMenu(true)}
-            colors={colors}
-            styles={styles}
           />
-          <ActionRow
-            icon="trash-outline"
-            label="Delete"
-            onPress={handleDelete}
-            destructive
-            colors={colors}
-            styles={styles}
-          />
+          <ActionRow icon="trash-outline" label="Delete" onPress={handleDelete} destructive />
           {onSelectMultiple && (
             <ActionRow
               icon="layers-outline"
@@ -218,13 +189,14 @@ export function BookmarkActionsModal({
               onPress={() => {
                 onSelectMultiple();
               }}
-              colors={colors}
-              styles={styles}
             />
           )}
 
-          <Pressable style={styles.cancelButton} onPress={onClose}>
-            <Text style={styles.cancelText}>Cancel</Text>
+          <Pressable
+            className="mx-2 mt-3 items-center rounded-sm bg-muted py-3 active:bg-muted"
+            onPress={onClose}
+          >
+            <Text className="text-sm font-medium text-secondary-foreground">Cancel</Text>
           </Pressable>
         </View>
       </Modal>
@@ -247,22 +219,17 @@ function ActionRow({
   label,
   onPress,
   destructive = false,
-  colors,
-  styles,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   onPress: () => void;
   destructive?: boolean;
-  colors: AppColors;
-  styles: ReturnType<typeof makeStyles>;
 }) {
+  const { colors } = useAppTheme();
+
   return (
     <Pressable
-      style={({ pressed }) => [
-        styles.actionItem,
-        pressed && { backgroundColor: colors.muted },
-      ]}
+      className="flex-row items-center gap-3 rounded-sm px-2 py-3 active:bg-muted"
       onPress={onPress}
     >
       <Ionicons
@@ -270,77 +237,9 @@ function ActionRow({
         size={20}
         color={destructive ? colors.error : colors.textMuted}
       />
-      <Text style={[styles.actionText, destructive && styles.actionTextDestructive]}>
+      <Text className={cn("text-sm text-foreground", destructive && "text-destructive")}>
         {label}
       </Text>
     </Pressable>
   );
-}
-
-function makeStyles(colors: AppColors) {
-  return StyleSheet.create({
-    content: {
-      padding: spacing.md,
-    },
-    title: {
-      fontSize: 14,
-      fontWeight: "500",
-      color: colors.textSecondary,
-      marginBottom: spacing.md,
-      paddingBottom: spacing.sm,
-      paddingHorizontal: spacing.sm,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    actionItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingVertical: 12,
-      paddingHorizontal: spacing.sm,
-      gap: spacing.md,
-      borderRadius: borderRadius.sm,
-    },
-    actionText: {
-      fontSize: 14,
-      color: colors.text,
-    },
-    actionTextDestructive: {
-      color: colors.error,
-    },
-    cancelButton: {
-      marginTop: spacing.md,
-      paddingVertical: 12,
-      alignItems: "center",
-      backgroundColor: colors.muted,
-      borderRadius: borderRadius.sm,
-      marginHorizontal: spacing.sm,
-    },
-    cancelText: {
-      fontSize: 14,
-      fontWeight: "500",
-      color: colors.textSecondary,
-    },
-    moveList: {
-      maxHeight: 250,
-    },
-    moveItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingVertical: 12,
-      paddingHorizontal: spacing.lg,
-      gap: spacing.md,
-      borderRadius: borderRadius.sm,
-      marginHorizontal: spacing.sm,
-      marginVertical: 2,
-    },
-    moveItemText: {
-      fontSize: 14,
-      color: colors.text,
-    },
-    colorDot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-    },
-  });
 }

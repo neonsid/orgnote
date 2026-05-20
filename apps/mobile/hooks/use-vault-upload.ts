@@ -15,11 +15,23 @@ import {
   VAULT_MAX_FILES_PER_BATCH,
 } from "@goldfish/shared";
 
+export type VaultUploadFilePhase =
+  | "queued"
+  | "preparing"
+  | "uploading"
+  | "saving"
+  | "done"
+  | "error";
+
+export type VaultUploadFileItem = {
+  id: string;
+  fileName: string;
+  phase: VaultUploadFilePhase;
+  errorMessage?: string;
+};
+
 export type VaultUploadStatus = {
-  step: string;
-  current: number;
-  total: number;
-  fileName?: string;
+  files: VaultUploadFileItem[];
 };
 
 async function getDocumentPicker() {
@@ -39,12 +51,45 @@ async function getUploader() {
   }
 }
 
+function phaseLabel(phase: VaultUploadFilePhase): string {
+  switch (phase) {
+    case "queued":
+      return "Waiting…";
+    case "preparing":
+      return "Preparing…";
+    case "uploading":
+      return "Uploading…";
+    case "saving":
+      return "Saving…";
+    case "done":
+      return "Done";
+    case "error":
+      return "Failed";
+  }
+}
+
+export { phaseLabel as vaultUploadPhaseLabel };
+
 export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
   const convex = useConvex();
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<VaultUploadStatus | null>(null);
   const requestPresignedUploadUrl = useMutation(api.vault.mutations.requestPresignedUploadUrl);
   const saveFileMetadata = useMutation(api.vault.mutations.saveFileMetadata);
+
+  const updateFilePhase = useCallback(
+    (id: string, patch: Partial<VaultUploadFileItem>) => {
+      setUploadStatus((prev) => {
+        if (!prev) return prev;
+        return {
+          files: prev.files.map((file) =>
+            file.id === id ? { ...file, ...patch } : file
+          ),
+        };
+      });
+    },
+    []
+  );
 
   const pickAndUpload = useCallback(async () => {
     if (!groupId) {
@@ -94,18 +139,16 @@ export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
       }
 
       type WorkItem = {
+        id: string;
         asset: (typeof assets)[number];
         name: string;
         size: number;
         fileType: string;
-        /** 1-based position in the trimmed batch */
-        ordinal: number;
       };
 
       const workItems: WorkItem[] = [];
       for (const [index, asset] of assets.entries()) {
         const name = asset.name ?? "file";
-        const ordinal = index + 1;
         if (name.length > MAX_FILENAME_LENGTH) {
           showThemedAlert(
             "Invalid file",
@@ -128,7 +171,13 @@ export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
           );
           continue;
         }
-        workItems.push({ asset, name, size, fileType, ordinal });
+        workItems.push({
+          id: `upload-${index}-${Date.now()}`,
+          asset,
+          name,
+          size,
+          fileType,
+        });
       }
 
       if (workItems.length === 0) {
@@ -136,44 +185,38 @@ export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
       }
 
       setUploadStatus({
-        current: 0,
-        total: workItems.length,
-        step: `Uploading ${workItems.length} file${workItems.length === 1 ? "" : "s"}…`,
+        files: workItems.map((item) => ({
+          id: item.id,
+          fileName: item.name,
+          phase: "queued" as const,
+        })),
       });
 
       const settlements = await Promise.allSettled(
-        workItems.map(async ({ asset, name, size, fileType, ordinal }) => {
-          setUploadStatus({
-            current: ordinal,
-            total: workItems.length,
-            fileName: name,
-            step: "Preparing upload…",
-          });
-          const requestId = await requestPresignedUploadUrl({
-            fileName: name,
-            fileType,
-          });
-          const { uploadUrl, fileUrl } = await waitForVaultUploadRequest(convex, requestId);
-          setUploadStatus({
-            current: ordinal,
-            total: workItems.length,
-            fileName: name,
-            step: "Uploading file…",
-          });
-          await uploadFn(asset.uri, fileType, uploadUrl);
-          setUploadStatus({
-            current: ordinal,
-            total: workItems.length,
-            fileName: name,
-            step: "Saving to vault…",
-          });
-          await saveFileMetadata({
-            fileName: name,
-            fileType,
-            fileSize: size,
-            fileUrl,
-            groupId,
-          });
+        workItems.map(async ({ id, asset, name, size, fileType }) => {
+          try {
+            updateFilePhase(id, { phase: "preparing" });
+            const requestId = await requestPresignedUploadUrl({
+              fileName: name,
+              fileType,
+            });
+            const { uploadUrl, fileUrl } = await waitForVaultUploadRequest(convex, requestId);
+            updateFilePhase(id, { phase: "uploading" });
+            await uploadFn(asset.uri, fileType, uploadUrl);
+            updateFilePhase(id, { phase: "saving" });
+            await saveFileMetadata({
+              fileName: name,
+              fileType,
+              fileSize: size,
+              fileUrl,
+              groupId,
+            });
+            updateFilePhase(id, { phase: "done" });
+          } catch (err) {
+            const message = err instanceof Error ? err.message : "Upload failed";
+            updateFilePhase(id, { phase: "error", errorMessage: message });
+            throw err;
+          }
         })
       );
 
@@ -198,7 +241,7 @@ export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
       setUploadStatus(null);
       setUploading(false);
     }
-  }, [convex, groupId, requestPresignedUploadUrl, saveFileMetadata]);
+  }, [convex, groupId, requestPresignedUploadUrl, saveFileMetadata, updateFilePhase]);
 
   return { uploading, uploadStatus, pickAndUpload };
 }

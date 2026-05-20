@@ -1,10 +1,15 @@
 import { StatusBar } from "expo-status-bar";
-import { type ReactNode } from "react";
+import { useLayoutEffect, type ReactNode } from "react";
+import { Uniwind } from "uniwind";
 
 import { useAppTheme } from "@/contexts/app-theme";
 
 export function ThemeRoot({ children }: { children: ReactNode }) {
-  const { isDark } = useAppTheme();
+  const { isDark, resolvedScheme } = useAppTheme();
+
+  useLayoutEffect(() => {
+    Uniwind.setTheme(resolvedScheme);
+  }, [resolvedScheme]);
 
   return (
     <>

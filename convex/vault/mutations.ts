@@ -2,7 +2,7 @@ import { v } from 'convex/values'
 import { authMutation } from '../lib/auth'
 import { ConvexError } from 'convex/values'
 import { internal } from '../_generated/api'
-import { MAX_FILENAME_LENGTH, R2_PUBLIC_URL } from '../lib/constants'
+import { MAX_FILENAME_LENGTH, R2_PUBLIC_URL, MAX_BULK_VAULT_DELETE, MAX_BULK_VAULT_MOVE } from '../lib/constants'
 import {
   isAllowedVaultUploadType,
   normalizeVaultFileTypeForUpload,
@@ -189,5 +189,101 @@ export const moveVaultFile = authMutation({
 
     await ctx.db.patch(args.fileId, { groupId: args.groupId })
     return { success: true }
+  },
+})
+
+export const deleteVaultFilesBulk = authMutation({
+  args: { fileIds: v.array(v.id('vaultFiles')) },
+  returns: v.object({ deletedCount: v.number() }),
+  handler: async (ctx, args) => {
+    const { userId } = ctx
+
+    if (args.fileIds.length === 0) {
+      return { deletedCount: 0 }
+    }
+
+    if (args.fileIds.length > MAX_BULK_VAULT_DELETE) {
+      throw new ConvexError(
+        `You can delete at most ${MAX_BULK_VAULT_DELETE} files at once`
+      )
+    }
+
+    const uniqueIds = [...new Set(args.fileIds)]
+    const r2Deletes: Array<{ fileKey: string; thumbnailFileKey?: string }> = []
+
+    for (const fileId of uniqueIds) {
+      const file = await ctx.db.get(fileId)
+      if (!file) {
+        throw new ConvexError('File not found')
+      }
+      if (file.ownerId !== userId) {
+        throw new ConvexError('Not authorized to delete this file')
+      }
+      const fileKey = file.url.replace(`${R2_PUBLIC_URL}/`, '')
+      const thumbnailFileKey = file.thumbnailUrl
+        ? file.thumbnailUrl.replace(`${R2_PUBLIC_URL}/`, '')
+        : undefined
+      r2Deletes.push({ fileKey, thumbnailFileKey })
+      await ctx.db.delete(fileId)
+    }
+
+    await Promise.all(
+      r2Deletes.map(({ fileKey, thumbnailFileKey }) =>
+        ctx.scheduler.runAfter(0, internal.vault_node.deleteFromR2, {
+          fileKey,
+          thumbnailFileKey,
+        })
+      )
+    )
+
+    return { deletedCount: uniqueIds.length }
+  },
+})
+
+export const moveVaultFilesBulk = authMutation({
+  args: {
+    fileIds: v.array(v.id('vaultFiles')),
+    groupId: v.id('vaultGroups'),
+  },
+  returns: v.object({ movedCount: v.number() }),
+  handler: async (ctx, args) => {
+    const { userId } = ctx
+
+    if (args.fileIds.length === 0) {
+      return { movedCount: 0 }
+    }
+
+    if (args.fileIds.length > MAX_BULK_VAULT_MOVE) {
+      throw new ConvexError(
+        `You can move at most ${MAX_BULK_VAULT_MOVE} files at once`
+      )
+    }
+
+    const group = await ctx.db.get(args.groupId)
+    if (!group) {
+      throw new ConvexError('Vault group not found')
+    }
+    if (group.userId !== userId) {
+      throw new ConvexError('Not authorized')
+    }
+
+    const uniqueIds = [...new Set(args.fileIds)]
+    let movedCount = 0
+
+    for (const fileId of uniqueIds) {
+      const file = await ctx.db.get(fileId)
+      if (!file) {
+        throw new ConvexError('File not found')
+      }
+      if (file.ownerId !== userId) {
+        throw new ConvexError('Not authorized to move this file')
+      }
+      if (file.groupId !== args.groupId) {
+        await ctx.db.patch(fileId, { groupId: args.groupId })
+        movedCount += 1
+      }
+    }
+
+    return { movedCount }
   },
 })

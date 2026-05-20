@@ -2,7 +2,6 @@ import { createContext, useContext, useMemo, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Pressable,
-  StyleSheet,
   Text,
   type PressableProps,
   type StyleProp,
@@ -11,13 +10,14 @@ import {
 } from "react-native";
 
 import { useAppTheme } from "@/contexts/app-theme";
-import { borderRadius } from "@/lib/constants";
+import { cn } from "@/lib/cn";
 
 type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "destructive";
 type ButtonSize = "sm" | "md" | "lg";
 
 type ButtonTextContextValue = {
-  textStyles: StyleProp<TextStyle>;
+  textClassName: string;
+  textStyle?: StyleProp<TextStyle>;
 };
 
 const ButtonTextContext = createContext<ButtonTextContextValue | null>(null);
@@ -28,26 +28,55 @@ function useOptionalButtonTextContext() {
 
 export function ButtonText({
   children,
+  className,
   style,
 }: {
   children: ReactNode;
+  className?: string;
   style?: StyleProp<TextStyle>;
 }) {
   const ctx = useOptionalButtonTextContext();
   if (!ctx) {
     throw new Error("Button.Text must be used inside <Button>");
   }
-  return <Text style={[ctx.textStyles, style]}>{children}</Text>;
+  return (
+    <Text className={cn(ctx.textClassName, className)} style={[ctx.textStyle, style]}>
+      {children}
+    </Text>
+  );
 }
 
-interface ButtonProps extends Omit<PressableProps, "style"> {
+interface ButtonProps extends Omit<PressableProps, "style" | "className"> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   loading?: boolean;
   children: React.ReactNode;
+  className?: string;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
 }
+
+const variantClasses: Record<ButtonVariant, string> = {
+  primary: "bg-primary",
+  secondary: "bg-muted",
+  outline: "border border-border bg-transparent",
+  ghost: "bg-transparent",
+  destructive: "bg-destructive",
+};
+
+const textVariantClasses: Record<ButtonVariant, string> = {
+  primary: "text-surface",
+  secondary: "text-foreground",
+  outline: "text-foreground",
+  ghost: "text-foreground",
+  destructive: "text-white",
+};
+
+const sizeClasses: Record<ButtonSize, string> = {
+  sm: "px-3 py-2",
+  md: "px-4 py-2.5",
+  lg: "px-5 py-3.5",
+};
 
 function ButtonRoot({
   variant = "primary",
@@ -55,6 +84,7 @@ function ButtonRoot({
   loading = false,
   disabled,
   children,
+  className,
   style,
   textStyle,
   ...props
@@ -62,46 +92,15 @@ function ButtonRoot({
   const { colors } = useAppTheme();
   const isDisabled = disabled || loading;
 
-  const styles = useMemo(
-    () =>
-      StyleSheet.create({
-        base: {
-          alignItems: "center",
-          justifyContent: "center",
-          borderRadius: borderRadius.sm,
-        },
-        pressed: { opacity: 0.85 },
-        disabled: { opacity: 0.5 },
-        primary: { backgroundColor: colors.primary },
-        secondary: { backgroundColor: colors.muted },
-        outline: {
-          backgroundColor: "transparent",
-          borderWidth: 1,
-          borderColor: colors.border,
-        },
-        ghost: { backgroundColor: "transparent" },
-        destructive: { backgroundColor: colors.error },
-        size_sm: { paddingHorizontal: 12, paddingVertical: 8 },
-        size_md: { paddingHorizontal: 16, paddingVertical: 10 },
-        size_lg: { paddingHorizontal: 20, paddingVertical: 14 },
-        text: { fontSize: 14, fontWeight: "500" },
-        text_primary: { color: colors.surface },
-        text_secondary: { color: colors.text },
-        text_outline: { color: colors.text },
-        text_ghost: { color: colors.text },
-        text_destructive: { color: "#fff" },
-      }),
-    [colors]
-  );
-
   const spinnerColor =
     variant === "primary" || variant === "destructive" ? colors.surface : colors.text;
 
   const textContext = useMemo<ButtonTextContextValue>(
     () => ({
-      textStyles: [styles.text, styles[`text_${variant}`], textStyle],
+      textClassName: cn("text-sm font-medium", textVariantClasses[variant]),
+      textStyle,
     }),
-    [styles, variant, textStyle]
+    [variant, textStyle]
   );
 
   return (
@@ -109,14 +108,14 @@ function ButtonRoot({
       <Pressable
         {...props}
         disabled={isDisabled}
-        style={({ pressed }) => [
-          styles.base,
-          styles[variant],
-          styles[`size_${size}`],
-          pressed && styles.pressed,
-          isDisabled && styles.disabled,
-          style,
-        ]}
+        className={cn(
+          "items-center justify-center rounded-sm active:bg-muted",
+          variantClasses[variant],
+          sizeClasses[size],
+          isDisabled && "opacity-50",
+          className
+        )}
+        style={style}
       >
         {loading ? (
           <ActivityIndicator size="small" color={spinnerColor} />

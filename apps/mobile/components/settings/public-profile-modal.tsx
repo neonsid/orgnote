@@ -1,12 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
-import { useMemo, useReducer } from "react";
+import { useReducer } from "react";
 import {
   ActivityIndicator,
   Modal,
   Pressable,
   ScrollView,
-  StyleSheet,
   Switch,
   Text,
   View,
@@ -16,75 +15,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Input } from "@/components/ui";
 import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/contexts/themed-alert";
-import { spacing, borderRadius } from "@/lib/constants";
-import type { AppColors } from "@/lib/theme-colors";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc } from "../../../../convex/_generated/dataModel";
-
-function makePublicProfileModalStyles(colors: AppColors) {
-  return StyleSheet.create({
-    screen: {
-      flex: 1,
-      backgroundColor: colors.surface,
-    },
-    header: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.md,
-      backgroundColor: colors.surface,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    title: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.text,
-    },
-    saveButton: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: colors.text,
-    },
-    content: {
-      flex: 1,
-      padding: spacing.lg,
-    },
-    toggleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      backgroundColor: colors.surface,
-      padding: spacing.md,
-      borderRadius: borderRadius.sm,
-      marginBottom: spacing.lg,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    toggleInfo: {
-      flex: 1,
-      marginRight: spacing.md,
-    },
-    toggleLabel: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: colors.text,
-    },
-    toggleDescription: {
-      fontSize: 12,
-      color: colors.textMuted,
-      marginTop: spacing.xs,
-    },
-    inputContainer: {
-      marginBottom: spacing.md,
-    },
-    textArea: {
-      height: 80,
-      textAlignVertical: "top",
-    },
-  });
-}
 
 function publicProfileSeed(profile: Doc<"userProfile"> | null) {
   let githubUrl = "";
@@ -178,18 +110,17 @@ function publicProfileFormReducer(
 function PublicProfileModalSkeleton({ onClose }: { onClose: () => void }) {
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
-  const styles = useMemo(() => makePublicProfileModalStyles(colors), [colors]);
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
+    <View className="flex-1 bg-surface" style={{ paddingTop: insets.top }}>
+      <View className="flex-row items-center justify-between border-b border-border bg-surface px-4 py-3">
         <Pressable onPress={onClose} hitSlop={8}>
           <Ionicons name="close" size={28} color={colors.textSecondary} />
         </Pressable>
-        <Text style={styles.title}>Public Profile</Text>
-        <View style={{ width: 28 }} />
+        <Text className="text-base font-semibold text-foreground">Public Profile</Text>
+        <View className="w-7" />
       </View>
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <View className="flex-1 items-center justify-center">
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     </View>
@@ -205,7 +136,6 @@ function PublicProfileForm({
 }) {
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
-  const styles = useMemo(() => makePublicProfileModalStyles(colors), [colors]);
   const upsertProfile = useMutation(api.profile.mutations.upsertProfile);
 
   const [state, dispatch] = useReducer(
@@ -257,26 +187,26 @@ function PublicProfileForm({
   }
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
+    <View className="flex-1 bg-surface" style={{ paddingTop: insets.top }}>
+      <View className="flex-row items-center justify-between border-b border-border bg-surface px-4 py-3">
         <Pressable onPress={onClose} hitSlop={8}>
           <Ionicons name="close" size={28} color={colors.textSecondary} />
         </Pressable>
-        <Text style={styles.title}>Public Profile</Text>
+        <Text className="text-base font-semibold text-foreground">Public Profile</Text>
         <Pressable onPress={handleSave} disabled={loading} hitSlop={8}>
           {loading ? (
             <ActivityIndicator size="small" color={colors.primary} />
           ) : (
-            <Text style={styles.saveButton}>Save</Text>
+            <Text className="text-sm font-semibold text-foreground">Save</Text>
           )}
         </Pressable>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.toggleRow}>
-          <View style={styles.toggleInfo}>
-            <Text style={styles.toggleLabel}>Enable Public Profile</Text>
-            <Text style={styles.toggleDescription}>
+      <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
+        <View className="mb-4 flex-row items-center justify-between rounded-sm border border-border bg-surface p-3">
+          <View className="mr-3 flex-1">
+            <Text className="text-sm font-semibold text-foreground">Enable Public Profile</Text>
+            <Text className="mt-1 text-xs text-muted-foreground">
               Allow others to see your public collections
             </Text>
           </View>
@@ -294,7 +224,7 @@ function PublicProfileForm({
           onChangeText={(t) => dispatch({ type: "setUsername", value: t })}
           placeholder="your-username"
           autoCapitalize="none"
-          containerStyle={styles.inputContainer}
+          containerClassName="mb-3"
         />
 
         <Input
@@ -304,8 +234,9 @@ function PublicProfileForm({
           placeholder="Tell others about yourself..."
           multiline
           numberOfLines={3}
-          style={styles.textArea}
-          containerStyle={styles.inputContainer}
+          className="h-20"
+          style={{ textAlignVertical: "top" }}
+          containerClassName="mb-3"
         />
 
         <Input
@@ -315,7 +246,7 @@ function PublicProfileForm({
           placeholder="https://github.com/username"
           autoCapitalize="none"
           keyboardType="url"
-          containerStyle={styles.inputContainer}
+          containerClassName="mb-3"
         />
 
         <Input
@@ -325,7 +256,7 @@ function PublicProfileForm({
           placeholder="https://twitter.com/username"
           autoCapitalize="none"
           keyboardType="url"
-          containerStyle={styles.inputContainer}
+          containerClassName="mb-3"
         />
 
         <Input
@@ -335,7 +266,7 @@ function PublicProfileForm({
           placeholder="https://your-website.com"
           autoCapitalize="none"
           keyboardType="url"
-          containerStyle={styles.inputContainer}
+          containerClassName="mb-3"
         />
       </ScrollView>
     </View>
