@@ -1,10 +1,9 @@
 import { useAuth } from "@clerk/expo";
 import { useConvexAuth, useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import { useCallback, useMemo } from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/contexts/themed-alert";
 
 import {
@@ -197,7 +196,7 @@ function BookmarksContent() {
       : "No bookmarks in this collection";
 
   return (
-    <View style={{ flex: 1 }}>
+    <View className="flex-1">
       {isSelecting ? (
         <MultiSelectToolbar
           selectedCount={selectedCount}
@@ -321,44 +320,32 @@ function BookmarksContent() {
 
 export default function BookmarksScreen() {
   const insets = useSafeAreaInsets();
-  const { colors } = useAppTheme();
   const { isLoaded: clerkLoaded, isSignedIn, userId } = useAuth();
   const { isLoading: convexLoading, isAuthenticated } = useConvexAuth();
 
-  const styles = useMemo(
-    () =>
-      StyleSheet.create({
-        screen: {
-          flex: 1,
-          backgroundColor: colors.background,
-        },
-      }),
-    [colors]
-  );
-
   if (!clerkLoaded) {
     return (
-      <View style={[styles.screen, { paddingTop: insets.top }]}>
+      <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
         <Loading message="Loading..." />
       </View>
     );
   }
 
   if (!isSignedIn) {
-    return <View style={[styles.screen, { paddingTop: insets.top }]} />;
+    return <View className="flex-1 bg-background" style={{ paddingTop: insets.top }} />;
   }
 
   /** Avoid “sign in” flash: Clerk is signed in but Convex auth may lag one frame. */
   if (convexLoading || !isAuthenticated) {
     return (
-      <View style={[styles.screen, { paddingTop: insets.top }]}>
+      <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
         <Loading message="Connecting..." />
       </View>
     );
   }
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       <BookmarksContent key={userId ?? "unknown-user"} />
     </View>
   );

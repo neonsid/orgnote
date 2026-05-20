@@ -1,17 +1,14 @@
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import {
   Modal,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
 
-import { useAppTheme } from "@/contexts/app-theme";
 import { useMountEffect } from "@/hooks/use-mount-effect";
-import { borderRadius, spacing } from "@/lib/constants";
-import type { AppColors } from "@/lib/theme-colors";
+import { cn } from "@/lib/cn";
 
 export type ThemedAlertButton = {
   text: string;
@@ -29,6 +26,19 @@ export type ThemedAlertPayload = {
 
 let setAlertGlobal: ((p: ThemedAlertPayload | null) => void) | null = null;
 
+let alertButtonKeyCounter = 0;
+
+function nextAlertButtonKey(button: ThemedAlertButton): string {
+  try {
+    const uuid = globalThis.crypto?.randomUUID?.();
+    if (uuid) return uuid;
+  } catch {
+    // React Native / Hermes may not expose crypto.
+  }
+  alertButtonKeyCounter += 1;
+  return `alert-${alertButtonKeyCounter}-${button.style ?? "default"}-${button.text}`;
+}
+
 /**
  * Theme-aware replacement for `Alert.alert` (no system white dialog on dark mode).
  * Must be used under `ThemedAlertProvider`.
@@ -42,10 +52,7 @@ export function showThemedAlert(
     buttons && buttons.length > 0
       ? buttons.map((b) => ({
           ...b,
-          _listKey:
-            typeof crypto.randomUUID === "function"
-              ? crypto.randomUUID()
-              : `${b.style ?? ""}:${b.text}:${Math.random().toString(36).slice(2)}`,
+          _listKey: nextAlertButtonKey(b),
         }))
       : [
           {
@@ -67,7 +74,6 @@ export function showThemedAlert(
 }
 
 function ThemedAlertHost() {
-  const { colors } = useAppTheme();
   const [payload, setPayload] = useState<ThemedAlertPayload | null>(null);
 
   useMountEffect(() => {
@@ -88,8 +94,6 @@ function ThemedAlertHost() {
     [close]
   );
 
-  const styles = useMemo(() => makeAlertStyles(colors), [colors]);
-
   if (!payload) return null;
 
   const buttons = payload.buttons ?? [
@@ -108,19 +112,27 @@ function ThemedAlertHost() {
       statusBarTranslucent
       onRequestClose={close}
     >
-      <Pressable style={styles.backdrop} onPress={close}>
-        <Pressable style={styles.card} onPress={(e) => e.stopPropagation()}>
-          <Text style={styles.title}>{payload.title}</Text>
+      <Pressable
+        className="flex-1 items-center justify-center bg-overlay p-4"
+        onPress={close}
+      >
+        <Pressable
+          className="w-full max-w-[360px] gap-3 rounded-lg border border-border bg-surface p-4"
+          onPress={(e) => e.stopPropagation()}
+        >
+          <Text className="text-[17px] font-semibold text-foreground">{payload.title}</Text>
           {payload.message ? (
             <ScrollView
-              style={styles.messageScroll}
-              contentContainerStyle={styles.messageScrollContent}
+              className="max-h-[220px]"
+              contentContainerClassName="pb-1"
               keyboardShouldPersistTaps="handled"
             >
-              <Text style={styles.message}>{payload.message}</Text>
+              <Text className="text-[15px] leading-[22px] text-secondary-foreground">
+                {payload.message}
+              </Text>
             </ScrollView>
           ) : null}
-          <View style={styles.buttonRow}>
+          <View className="mt-1 flex-row flex-wrap justify-end gap-2">
             {buttons.map((btn) => {
               const isDestructive = btn.style === "destructive";
               const isCancel = btn.style === "cancel";
@@ -128,19 +140,18 @@ function ThemedAlertHost() {
                 <Pressable
                   key={btn._listKey ?? btn.text}
                   onPress={() => handleButton(btn)}
-                  style={({ pressed }) => [
-                    styles.button,
-                    isDestructive && styles.buttonDestructive,
-                    isCancel && styles.buttonCancel,
-                    pressed && styles.buttonPressed,
-                  ]}
+                  className={cn(
+                    "min-w-[88px] items-center rounded-sm bg-muted px-4 py-2.5 active:bg-muted",
+                    isCancel && "bg-transparent",
+                    isDestructive && "bg-destructive/15"
+                  )}
                 >
                   <Text
-                    style={[
-                      styles.buttonText,
-                      isDestructive && styles.buttonTextDestructive,
-                      isCancel && styles.buttonTextCancel,
-                    ]}
+                    className={cn(
+                      "text-[15px] font-semibold text-foreground",
+                      isCancel && "font-medium text-secondary-foreground",
+                      isDestructive && "text-destructive"
+                    )}
                   >
                     {btn.text}
                   </Text>
@@ -152,80 +163,6 @@ function ThemedAlertHost() {
       </Pressable>
     </Modal>
   );
-}
-
-function makeAlertStyles(colors: AppColors) {
-  return StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: colors.overlay,
-      justifyContent: "center",
-      alignItems: "center",
-      padding: spacing.lg,
-    },
-    card: {
-      backgroundColor: colors.surface,
-      borderRadius: borderRadius.lg,
-      width: "100%",
-      maxWidth: 360,
-      borderWidth: 1,
-      borderColor: colors.border,
-      padding: spacing.lg,
-      gap: spacing.md,
-    },
-    title: {
-      fontSize: 17,
-      fontWeight: "600",
-      color: colors.text,
-    },
-    messageScroll: {
-      maxHeight: 220,
-    },
-    messageScrollContent: {
-      paddingBottom: spacing.xs,
-    },
-    message: {
-      fontSize: 15,
-      color: colors.textSecondary,
-      lineHeight: 22,
-    },
-    buttonRow: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      justifyContent: "flex-end",
-      gap: spacing.sm,
-      marginTop: spacing.xs,
-    },
-    button: {
-      paddingVertical: 10,
-      paddingHorizontal: spacing.lg,
-      borderRadius: borderRadius.sm,
-      backgroundColor: colors.muted,
-      minWidth: 88,
-      alignItems: "center",
-    },
-    buttonCancel: {
-      backgroundColor: "transparent",
-    },
-    buttonDestructive: {
-      backgroundColor: `${colors.error}22`,
-    },
-    buttonPressed: {
-      opacity: 0.85,
-    },
-    buttonText: {
-      fontSize: 15,
-      fontWeight: "600",
-      color: colors.text,
-    },
-    buttonTextCancel: {
-      color: colors.textSecondary,
-      fontWeight: "500",
-    },
-    buttonTextDestructive: {
-      color: colors.error,
-    },
-  });
 }
 
 export function ThemedAlertProvider({ children }: { children: ReactNode }) {

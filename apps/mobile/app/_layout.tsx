@@ -1,4 +1,5 @@
 import "../polyfills";
+import "../global.css";
 
 import { ClerkProvider, useAuth } from "@clerk/expo";
 import type { TokenCache } from "@clerk/expo";
@@ -14,6 +15,8 @@ import { ThemeRoot } from "@/components/theme-root";
 import { useAppTheme } from "@/contexts/app-theme";
 import { AppThemeProvider } from "@/contexts/app-theme";
 import { ThemedAlertProvider } from "@/contexts/themed-alert";
+import { useMountEffect } from "@/hooks/use-mount-effect";
+import { warmUpInAppBrowser } from "@/lib/open-in-app-browser";
 
 if (Platform.OS !== "web") {
   require("react-native-gesture-handler");
@@ -73,7 +76,6 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="sso-callback" />
       <Stack.Screen name="+not-found" />
-      <Stack.Screen name="browser" />
       <Stack.Screen name="profile/[username]" />
 
       <Stack.Protected guard={!auth.isSignedIn}>
@@ -88,6 +90,10 @@ function RootNavigator() {
 }
 
 function AppContent() {
+  useMountEffect(() => {
+    void warmUpInAppBrowser();
+  });
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>

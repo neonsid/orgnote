@@ -1,8 +1,4 @@
-import { useMemo } from "react";
-import { StyleSheet, Text, View } from "react-native";
-
-import { useAppTheme } from "@/contexts/app-theme";
-import { spacing } from "@/lib/constants";
+import { Text, View } from "react-native";
 
 interface SettingsSectionProps {
   title?: string;
@@ -10,33 +6,14 @@ interface SettingsSectionProps {
 }
 
 export function SettingsSection({ title, children }: SettingsSectionProps) {
-  const { colors } = useAppTheme();
-  const styles = useMemo(
-    () =>
-      StyleSheet.create({
-        section: {
-          marginBottom: spacing.lg,
-        },
-        title: {
-          fontSize: 11,
-          fontWeight: "600",
-          color: colors.textMuted,
-          textTransform: "uppercase",
-          letterSpacing: 0.5,
-          paddingHorizontal: spacing.lg,
-          marginBottom: spacing.xs,
-        },
-        content: {
-          backgroundColor: colors.surface,
-        },
-      }),
-    [colors]
-  );
-
   return (
-    <View style={styles.section}>
-      {title && <Text style={styles.title}>{title}</Text>}
-      <View style={styles.content}>{children}</View>
+    <View className="mb-4">
+      {title ? (
+        <Text className="mb-1 px-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {title}
+        </Text>
+      ) : null}
+      <View className="bg-surface">{children}</View>
     </View>
   );
 }

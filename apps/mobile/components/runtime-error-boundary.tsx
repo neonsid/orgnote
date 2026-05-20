@@ -1,10 +1,9 @@
 import type { ReactNode } from "react";
-import { Component, useMemo, useState } from "react";
+import { Component, useState } from "react";
 import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -100,119 +99,43 @@ function RuntimeErrorScreen({
   error: RuntimeErrorDetails;
   onRetry: () => void;
 }) {
-  const styles = useMemo(
-    () =>
-      StyleSheet.create({
-        safeArea: {
-          flex: 1,
-          backgroundColor: "#09090b",
-        },
-        container: {
-          flex: 1,
-          paddingHorizontal: 20,
-          paddingVertical: 24,
-          gap: 16,
-        },
-        badge: {
-          alignSelf: "flex-start",
-          borderRadius: 999,
-          backgroundColor: "#7f1d1d",
-          paddingHorizontal: 10,
-          paddingVertical: 6,
-        },
-        badgeText: {
-          color: "#fecaca",
-          fontSize: 12,
-          fontWeight: "700",
-          textTransform: "uppercase",
-          letterSpacing: 0.5,
-        },
-        title: {
-          color: "#fafafa",
-          fontSize: 24,
-          fontWeight: "700",
-        },
-        subtitle: {
-          color: "#d4d4d8",
-          fontSize: 14,
-          lineHeight: 21,
-        },
-        meta: {
-          color: "#a1a1aa",
-          fontSize: 12,
-        },
-        card: {
-          borderRadius: 16,
-          backgroundColor: "#18181b",
-          borderWidth: 1,
-          borderColor: "#27272a",
-          padding: 14,
-          gap: 10,
-          flex: 1,
-        },
-        cardLabel: {
-          color: "#f4f4f5",
-          fontSize: 13,
-          fontWeight: "600",
-        },
-        errorText: {
-          color: "#fda4af",
-          fontSize: 13,
-          lineHeight: 20,
-        },
-        stackText: {
-          color: "#e4e4e7",
-          fontSize: 12,
-          lineHeight: 18,
-        },
-        button: {
-          alignSelf: "flex-start",
-          borderRadius: 12,
-          backgroundColor: "#fafafa",
-          paddingHorizontal: 14,
-          paddingVertical: 10,
-        },
-        buttonText: {
-          color: "#09090b",
-          fontSize: 14,
-          fontWeight: "600",
-        },
-      }),
-    [],
-  );
-
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>App crashed</Text>
+    <SafeAreaView className="flex-1 bg-[#09090b]">
+      <View className="flex-1 gap-4 px-5 py-6">
+        <View className="self-start rounded-full bg-[#7f1d1d] px-2.5 py-1.5">
+          <Text className="text-xs font-bold uppercase tracking-wide text-[#fecaca]">
+            App crashed
+          </Text>
         </View>
-        <Text style={styles.title}>OrgNote hit a runtime error</Text>
-        <Text style={styles.subtitle}>
+        <Text className="text-2xl font-bold text-[#fafafa]">OrgNote hit a runtime error</Text>
+        <Text className="text-sm leading-[21px] text-[#d4d4d8]">
           This screen is shown so installed builds expose the actual JS failure instead of
           closing immediately.
         </Text>
-        <Text style={styles.meta}>
+        <Text className="text-xs text-[#a1a1aa]">
           source={error.source} fatal={String(error.isFatal ?? false)} platform={Platform.OS}
         </Text>
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>Message</Text>
-          <Text selectable style={styles.errorText}>
+        <View className="flex-1 gap-2.5 rounded-2xl border border-[#27272a] bg-[#18181b] p-3.5">
+          <Text className="text-[13px] font-semibold text-[#f4f4f5]">Message</Text>
+          <Text selectable className="text-[13px] leading-5 text-[#fda4af]">
             {error.message}
           </Text>
           {error.stack ? (
             <>
-              <Text style={styles.cardLabel}>Stack</Text>
+              <Text className="text-[13px] font-semibold text-[#f4f4f5]">Stack</Text>
               <ScrollView>
-                <Text selectable style={styles.stackText}>
+                <Text selectable className="text-xs leading-[18px] text-[#e4e4e7]">
                   {error.stack}
                 </Text>
               </ScrollView>
             </>
           ) : null}
         </View>
-        <Pressable onPress={onRetry} style={styles.button}>
-          <Text style={styles.buttonText}>Retry render</Text>
+        <Pressable
+          onPress={onRetry}
+          className="self-start rounded-xl bg-[#fafafa] px-3.5 py-2.5 active:bg-muted"
+        >
+          <Text className="text-sm font-semibold text-[#09090b]">Retry render</Text>
         </Pressable>
       </View>
     </SafeAreaView>

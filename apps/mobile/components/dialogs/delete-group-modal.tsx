@@ -1,11 +1,9 @@
 import { useMutation } from "convex/react";
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 import { Button, Modal } from "@/components/ui";
-import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/contexts/themed-alert";
-import { spacing, borderRadius } from "@/lib/constants";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
@@ -46,7 +44,6 @@ const FALLBACK_COLOR = "#f59e0b";
 export function DeleteGroupModal(props: DeleteGroupModalProps) {
   const { visible, onClose, group, onDeleted } = props;
   const groupKind = props.groupKind === "vault" ? "vault" : "bookmarks";
-  const { colors } = useAppTheme();
   const [loading, setLoading] = useState(false);
   const deleteGroup = useMutation(api.groups.mutations.deleteGroup);
   const deleteVaultGroup = useMutation(api.vault.mutations.deleteVaultGroup);
@@ -86,35 +83,28 @@ export function DeleteGroupModal(props: DeleteGroupModalProps) {
 
   return (
     <Modal visible={visible} onClose={onClose} title={modalTitle} variant="center">
-      <View style={styles.body}>
-        <Text style={[styles.description, { color: colors.textSecondary }]}>{description}</Text>
+      <View className="gap-3 p-4">
+        <Text className="text-sm leading-5 text-secondary-foreground">{description}</Text>
 
-        <View
-          style={[
-            styles.preview,
-            { borderColor: colors.border, backgroundColor: colors.muted },
-          ]}
-        >
+        <View className="flex-row items-center gap-3 rounded-sm border border-border bg-muted px-3 py-2.5">
           <View
-            style={[
-              styles.dot,
-              { backgroundColor: group.color ?? FALLBACK_COLOR },
-            ]}
+            className="h-3 w-3 rounded-full"
+            style={{ backgroundColor: group.color ?? FALLBACK_COLOR }}
           />
-          <Text style={[styles.previewTitle, { color: colors.text }]} numberOfLines={2}>
+          <Text className="flex-1 text-[15px] font-semibold text-foreground" numberOfLines={2}>
             {group.title}
           </Text>
         </View>
 
-        <View style={styles.actions}>
-          <Button variant="ghost" onPress={onClose} disabled={loading} style={styles.actionBtn}>
+        <View className="mt-1 flex-row gap-2">
+          <Button variant="ghost" onPress={onClose} disabled={loading} className="flex-1">
             <Button.Text>Cancel</Button.Text>
           </Button>
           <Button
             variant="destructive"
             onPress={() => void handleDelete()}
             loading={loading}
-            style={styles.actionBtn}
+            className="flex-1"
           >
             <Button.Text>Delete</Button.Text>
           </Button>
@@ -123,41 +113,3 @@ export function DeleteGroupModal(props: DeleteGroupModalProps) {
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  body: {
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  description: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  preview: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    borderRadius: borderRadius.sm,
-    borderWidth: 1,
-  },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  previewTitle: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  actions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  actionBtn: {
-    flex: 1,
-  },
-});

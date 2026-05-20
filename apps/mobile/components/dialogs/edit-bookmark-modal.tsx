@@ -1,13 +1,11 @@
 import { useCallback, useReducer, useRef } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { useConvex, useMutation } from "convex/react";
 
 import { Button, Input, Modal } from "@/components/ui";
-import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/contexts/themed-alert";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { waitForBookmarkDescriptionJob } from "@/lib/poll-convex-query";
-import { spacing } from "@/lib/constants";
 import { MAX_DESCRIPTION_LENGTH } from "../../../../convex/lib/constants";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -87,7 +85,6 @@ function EditBookmarkFormBody({
 }: Pick<EditBookmarkModalProps, "bookmark" | "onClose" | "onSaved"> & {
   bookmark: NonNullable<EditBookmarkModalProps["bookmark"]>;
 }) {
-  const { colors } = useAppTheme();
   const convex = useConvex();
   const [state, dispatch] = useReducer(editBookmarkFormReducer, bookmark, initialEditBookmarkFormState);
   const { title, url, description, loading, generating } = state;
@@ -192,10 +189,10 @@ function EditBookmarkFormBody({
 
   return (
     <ScrollView
-      style={[styles.scroll, { backgroundColor: colors.surface }]}
+      className="max-h-[520px] bg-surface"
       keyboardShouldPersistTaps="handled"
     >
-      <View style={styles.fields}>
+      <View className="gap-3 p-4">
         <Input
           label="Title"
           value={title}
@@ -211,7 +208,7 @@ function EditBookmarkFormBody({
           autoCorrect={false}
           keyboardType="url"
         />
-        <Text style={[styles.descHelp, { color: colors.textMuted }]}>
+        <Text className="text-xs leading-4 text-muted-foreground">
           Description (max {MAX_DESCRIPTION_LENGTH} characters) — generate from the URL or edit manually.
         </Text>
         <Input
@@ -221,9 +218,10 @@ function EditBookmarkFormBody({
           placeholder="Optional"
           multiline
           numberOfLines={4}
-          style={styles.textArea}
+          className="min-h-24 pt-3"
+          style={{ textAlignVertical: "top" }}
         />
-        <View style={styles.genRow}>
+        <View className="-mt-1">
           <Button
             variant="outline"
             onPress={() => void handleGenerateDescription()}
@@ -255,25 +253,3 @@ export function EditBookmarkModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  scroll: {
-    maxHeight: 520,
-  },
-  fields: {
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  descHelp: {
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  textArea: {
-    minHeight: 96,
-    paddingTop: 12,
-    textAlignVertical: "top",
-  },
-  genRow: {
-    marginTop: -spacing.xs,
-  },
-});

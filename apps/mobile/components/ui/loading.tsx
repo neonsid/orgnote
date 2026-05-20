@@ -1,5 +1,4 @@
-import { useMemo } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 
 import { useAppTheme } from "@/contexts/app-theme";
 
@@ -10,27 +9,11 @@ interface LoadingProps {
 
 export function Loading({ message, size = "small" }: LoadingProps) {
   const { colors } = useAppTheme();
-  const styles = useMemo(
-    () =>
-      StyleSheet.create({
-        container: {
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 12,
-        },
-        message: {
-          fontSize: 13,
-          color: colors.textMuted,
-        },
-      }),
-    [colors]
-  );
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 items-center justify-center gap-3">
       <ActivityIndicator size={size} color={colors.textMuted} />
-      {message && <Text style={styles.message}>{message}</Text>}
+      {message ? <Text className="text-[13px] text-muted-foreground">{message}</Text> : null}
     </View>
   );
 }

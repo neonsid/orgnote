@@ -1,11 +1,6 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useMemo } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { Modal } from "@/components/ui";
-import { useAppTheme } from "@/contexts/app-theme";
-import type { AppColors } from "@/lib/theme-colors";
-import { spacing, borderRadius } from "@/lib/constants";
 import { FALLBACK_COLORS } from "@goldfish/shared";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
@@ -30,24 +25,21 @@ export function VaultMoveFileModal({
   groups,
   onSelectGroup,
 }: VaultMoveFileModalProps) {
-  const { colors } = useAppTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
-
   return (
     <Modal visible={visible} onClose={onClose} title="Move to collection" variant="center">
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        className="max-h-[360px]"
+        contentContainerClassName="pb-3"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={groups.length > 8}
       >
-        <View style={styles.inner}>
+        <View className="px-2">
           {groups.length === 0 ? (
-            <View style={styles.empty}>
-              <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>
+            <View className="items-center px-3 py-4">
+              <Text className="text-center text-sm text-secondary-foreground">
                 No other collections
               </Text>
-              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+              <Text className="mt-1 text-center text-xs text-secondary-foreground">
                 Create another vault collection to move files between them.
               </Text>
             </View>
@@ -55,19 +47,17 @@ export function VaultMoveFileModal({
             groups.map((group, i) => (
               <Pressable
                 key={group._id}
-                style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                className="min-h-11 flex-row items-center gap-2.5 rounded-md px-3 py-2.5 active:bg-muted"
                 onPress={() => onSelectGroup(group._id)}
               >
                 <View
-                  style={[
-                    styles.colorDot,
-                    {
-                      backgroundColor:
-                        group.color ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length],
-                    },
-                  ]}
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{
+                    backgroundColor:
+                      group.color ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length],
+                  }}
                 />
-                <Text style={[styles.rowLabel, { color: colors.text }]} numberOfLines={1}>
+                <Text className="flex-1 text-sm font-medium text-foreground" numberOfLines={1}>
                   {group.title}
                 </Text>
               </Pressable>
@@ -77,59 +67,4 @@ export function VaultMoveFileModal({
       </ScrollView>
     </Modal>
   );
-}
-
-function makeStyles(colors: AppColors) {
-  return StyleSheet.create({
-    subtitle: {
-      fontSize: 13,
-      paddingHorizontal: spacing.md,
-      paddingBottom: spacing.sm,
-    },
-    scroll: {
-      maxHeight: 360,
-    },
-    scrollContent: {
-      paddingBottom: spacing.md,
-    },
-    inner: {
-      paddingHorizontal: spacing.sm,
-    },
-    empty: {
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.lg,
-      alignItems: "center",
-    },
-    emptyTitle: {
-      fontSize: 14,
-      textAlign: "center",
-    },
-    emptySubtitle: {
-      fontSize: 12,
-      textAlign: "center",
-      marginTop: spacing.xs,
-    },
-    row: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
-      minHeight: 44,
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-      borderRadius: borderRadius.md,
-    },
-    rowPressed: {
-      backgroundColor: colors.muted,
-    },
-    rowLabel: {
-      flex: 1,
-      fontSize: 14,
-      fontWeight: "500",
-    },
-    colorDot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-    },
-  });
 }

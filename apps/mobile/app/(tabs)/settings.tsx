@@ -1,7 +1,7 @@
 import { useAuth, useClerk } from "@clerk/expo";
 import { useConvexAuth, useQuery } from "convex/react";
-import { useMemo, useState } from "react";
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -13,7 +13,7 @@ import {
 import { Loading } from "@/components/ui";
 import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/contexts/themed-alert";
-import { spacing } from "@/lib/constants";
+import { cn } from "@/lib/cn";
 import { api } from "../../../../convex/_generated/api";
 
 function ThemeOption({
@@ -25,26 +25,18 @@ function ThemeOption({
   selected: boolean;
   onPress: () => void;
 }) {
-  const { colors } = useAppTheme();
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [
-        {
-          paddingVertical: 12,
-          paddingHorizontal: spacing.lg,
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          backgroundColor: pressed ? colors.muted : "transparent",
-        },
-      ]}
+      className="flex-row items-center justify-between px-4 py-3 active:bg-muted"
     >
-      <Text style={{ fontSize: 14, color: colors.text, fontWeight: selected ? "600" : "400" }}>
+      <Text
+        className={cn("text-sm text-foreground", selected && "font-semibold")}
+      >
         {label}
       </Text>
       {selected ? (
-        <Text style={{ fontSize: 14, color: colors.primaryAccent }}>✓</Text>
+        <Text className="text-sm text-primary-accent">✓</Text>
       ) : null}
     </Pressable>
   );
@@ -54,35 +46,7 @@ function SettingsContent() {
   const { signOut } = useClerk();
   const profile = useQuery(api.profile.queries.getProfile);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const { preference, setPreference, colors } = useAppTheme();
-
-  const styles = useMemo(
-    () =>
-      StyleSheet.create({
-        container: {
-          flex: 1,
-        },
-        header: {
-          paddingHorizontal: spacing.lg,
-          paddingVertical: spacing.md,
-          backgroundColor: colors.surface,
-        },
-        headerTitle: {
-          fontSize: 20,
-          fontWeight: "600",
-          color: colors.text,
-        },
-        footer: {
-          alignItems: "center",
-          paddingVertical: spacing.xxxl,
-        },
-        footerText: {
-          fontSize: 12,
-          color: colors.textMuted,
-        },
-      }),
-    [colors]
-  );
+  const { preference, setPreference } = useAppTheme();
 
   function handleSignOut() {
     showThemedAlert("Sign out", "Are you sure you want to sign out?", [
@@ -92,9 +56,9 @@ function SettingsContent() {
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Settings</Text>
+    <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <View className="bg-surface px-4 py-3">
+        <Text className="text-xl font-semibold text-foreground">Settings</Text>
       </View>
 
       <ProfileCard />
@@ -166,8 +130,8 @@ function SettingsContent() {
         />
       </SettingsSection>
 
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>OrgNote</Text>
+      <View className="items-center py-8">
+        <Text className="text-xs text-muted-foreground">OrgNote</Text>
       </View>
 
       <PublicProfileModal
@@ -182,38 +146,38 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { isLoaded: clerkLoaded, isSignedIn } = useAuth();
   const { isLoading: convexLoading, isAuthenticated } = useConvexAuth();
-  const { colors } = useAppTheme();
-
-  const screenStyle = useMemo(
-    () => ({
-      flex: 1,
-      backgroundColor: colors.background,
-    }),
-    [colors.background]
-  );
 
   if (!clerkLoaded) {
     return (
-      <View style={[screenStyle, { paddingTop: insets.top }]}>
+      <View
+        className="flex-1 bg-background"
+        style={{ paddingTop: insets.top }}
+      >
         <Loading message="Loading..." />
       </View>
     );
   }
 
   if (!isSignedIn) {
-    return <View style={[screenStyle, { paddingTop: insets.top }]} />;
+    return <View className="flex-1 bg-background" style={{ paddingTop: insets.top }} />;
   }
 
   if (convexLoading || !isAuthenticated) {
     return (
-      <View style={[screenStyle, { paddingTop: insets.top }]}>
+      <View
+        className="flex-1 bg-background"
+        style={{ paddingTop: insets.top }}
+      >
         <Loading message="Connecting..." />
       </View>
     );
   }
 
   return (
-    <View style={[screenStyle, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View
+      className="flex-1 bg-background"
+      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+    >
       <SettingsContent />
     </View>
   );
