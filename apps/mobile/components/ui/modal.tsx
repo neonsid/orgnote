@@ -1,18 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo } from "react";
 import {
   KeyboardAvoidingView,
   Modal as RNModal,
   Platform,
   Pressable,
-  StyleSheet,
   Text,
   View,
   type ModalProps as RNModalProps,
 } from "react-native";
 
 import { useAppTheme } from "@/contexts/app-theme";
-import { borderRadius, spacing } from "@/lib/constants";
+import { cn } from "@/lib/cn";
 
 interface ModalProps extends RNModalProps {
   title?: string;
@@ -29,126 +27,54 @@ export function Modal({
   ...props
 }: ModalProps) {
   const { colors } = useAppTheme();
-  const styles = useMemo(
-    () =>
-      StyleSheet.create({
-        kav: {
-          flex: 1,
-        },
-        overlay: {
-          flex: 1,
-          backgroundColor: colors.overlay,
-          justifyContent: "center",
-          alignItems: "center",
-        },
-        overlayBottom: {
-          justifyContent: "flex-end",
-        },
-        overlayTop: {
-          justifyContent: "flex-start",
-        },
-        container: {
-          backgroundColor: colors.surface,
-          borderRadius: borderRadius.lg,
-          width: "90%",
-          maxWidth: 400,
-          maxHeight: "80%",
-          overflow: "hidden",
-        },
-        containerBottom: {
-          width: "100%",
-          maxWidth: "100%",
-          borderTopLeftRadius: borderRadius.xl,
-          borderTopRightRadius: borderRadius.xl,
-          borderBottomLeftRadius: 0,
-          borderBottomRightRadius: 0,
-          paddingBottom: spacing.xxxl,
-        },
-        containerTop: {
-          width: "100%",
-          maxWidth: "100%",
-          borderTopLeftRadius: 0,
-          borderTopRightRadius: 0,
-          borderBottomLeftRadius: borderRadius.xl,
-          borderBottomRightRadius: borderRadius.xl,
-          paddingTop: spacing.xxxl,
-        },
-        handle: {
-          width: 36,
-          height: 4,
-          backgroundColor: colors.border,
-          borderRadius: 2,
-          alignSelf: "center",
-          marginTop: spacing.sm,
-          marginBottom: spacing.xs,
-        },
-        handleBottom: {
-          marginTop: spacing.xs,
-          marginBottom: spacing.sm,
-        },
-        header: {
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingHorizontal: spacing.lg,
-          paddingVertical: spacing.md,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
-        },
-        closeButton: {
-          width: 32,
-          height: 32,
-          borderRadius: 16,
-          backgroundColor: colors.muted,
-          alignItems: "center",
-          justifyContent: "center",
-        },
-        title: {
-          fontSize: 16,
-          fontWeight: "600",
-          color: colors.text,
-        },
-      }),
-    [colors]
-  );
-
   const isEdgeVariant = variant === "bottom" || variant === "top";
 
   return (
     <RNModal transparent animationType={isEdgeVariant ? "slide" : "fade"} onRequestClose={onClose} {...props}>
       <KeyboardAvoidingView
-        style={styles.kav}
+        className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         enabled={Platform.OS === "ios"}
         keyboardVerticalOffset={0}
       >
         <Pressable
-          style={[
-            styles.overlay,
-            variant === "bottom" && styles.overlayBottom,
-            variant === "top" && styles.overlayTop,
-          ]}
+          className={cn(
+            "flex-1 items-center justify-center bg-overlay",
+            variant === "bottom" && "justify-end",
+            variant === "top" && "justify-start"
+          )}
           onPress={onClose}
         >
           <Pressable
-            style={[
-              styles.container,
-              variant === "bottom" && styles.containerBottom,
-              variant === "top" && styles.containerTop,
-            ]}
+            className={cn(
+              "max-h-[80%] overflow-hidden bg-surface",
+              variant === "center" && "w-[90%] max-w-[400px] rounded-lg",
+              variant === "bottom" &&
+                "w-full max-w-full rounded-t-xl rounded-b-none pb-8",
+              variant === "top" &&
+                "w-full max-w-full rounded-b-xl rounded-t-none pt-8"
+            )}
             onPress={(e) => e.stopPropagation()}
           >
-            {variant === "bottom" && <View style={styles.handle} />}
-            {title && (
-              <View style={styles.header}>
-                <Text style={styles.title}>{title}</Text>
-                <Pressable style={styles.closeButton} onPress={onClose} hitSlop={8}>
+            {variant === "bottom" ? (
+              <View className="mb-1 mt-2 h-1 w-9 self-center rounded-sm bg-border" />
+            ) : null}
+            {title ? (
+              <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
+                <Text className="text-base font-semibold text-foreground">{title}</Text>
+                <Pressable
+                  className="h-8 w-8 items-center justify-center rounded-full bg-muted active:bg-background"
+                  onPress={onClose}
+                  hitSlop={8}
+                >
                   <Ionicons name="close" size={20} color={colors.textSecondary} />
                 </Pressable>
               </View>
-            )}
+            ) : null}
             {children}
-            {variant === "top" && <View style={[styles.handle, styles.handleBottom]} />}
+            {variant === "top" ? (
+              <View className="mb-2 mt-1 h-1 w-9 self-center rounded-sm bg-border" />
+            ) : null}
           </Pressable>
         </Pressable>
       </KeyboardAvoidingView>

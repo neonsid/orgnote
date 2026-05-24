@@ -11,7 +11,7 @@ export const FALLBACK_COLORS = [
 ] as const;
 
 /** Max size of a single vault upload (bytes). */
-export const VAULT_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+export const VAULT_MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 
 /** Max files per picker / drop batch for vault uploads. */
 export const VAULT_MAX_FILES_PER_BATCH = 10;

@@ -1,10 +1,8 @@
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
-import { useMemo } from "react";
+import { useCallback } from "react";
+import { ActivityIndicator, FlatList, Text, View, type ListRenderItemInfo } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAppTheme } from "@/contexts/app-theme";
-import type { AppColors } from "@/lib/theme-colors";
-import { borderRadius, spacing } from "@/lib/constants";
 import { BookmarkCard, type BookmarkData } from "./bookmark-card";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
@@ -21,6 +19,34 @@ interface BookmarkListProps {
   isSelected?: (id: Id<"bookmarks">) => boolean;
 }
 
+function ListHeader() {
+  return (
+    <View className="mb-2 px-3">
+      <View className="flex-row justify-between px-3 py-2">
+        <Text className="text-[13px] font-medium text-muted-foreground">Title</Text>
+        <Text className="text-[13px] font-medium text-muted-foreground">Domain</Text>
+      </View>
+      <View className="mx-2 h-px bg-foreground/10" />
+    </View>
+  );
+}
+
+function SkeletonList() {
+  return (
+    <View className="px-3">
+      {(["s-a", "s-b", "s-c", "s-d", "s-e"] as const).map((rowKey) => (
+        <View key={rowKey} className="flex-row items-center gap-3 p-3">
+          <View className="h-5 w-5 rounded-sm bg-muted" />
+          <View className="flex-1 flex-row items-center gap-2">
+            <View className="h-3.5 w-[120px] rounded bg-muted" />
+            <View className="h-3 w-20 rounded bg-muted" />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 export function BookmarkList({
   bookmarks,
   loading,
@@ -35,48 +61,27 @@ export function BookmarkList({
 }: BookmarkListProps) {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
+  const bottomInset = insets.bottom + 88;
 
-  const styles = useMemo(() => makeListStyles(colors), [colors]);
-
-  const bottomPad = insets.bottom + 88;
-
-  const ListHeader = useMemo(
-    () => (
-      <View style={styles.headerSection}>
-        <View style={styles.headerLabels}>
-          <Text style={styles.headerLabel}>Title</Text>
-          <Text style={styles.headerLabel}>Domain</Text>
-        </View>
-        <View style={styles.divider} />
-      </View>
+  const renderItem = useCallback(
+    ({ item }: ListRenderItemInfo<BookmarkData>) => (
+      <BookmarkCard
+        bookmark={item}
+        onPress={() => onBookmarkPress(item)}
+        onLongPress={() => onBookmarkLongPress(item)}
+        onToggleRead={onToggleRead}
+        isSelecting={isSelecting}
+        isSelected={isSelected?.(item._id)}
+      />
     ),
-    [styles]
-  );
-
-  const SkeletonList = useMemo(
-    () => (
-      <View style={styles.skeletonContainer}>
-        {(
-          ["s-a", "s-b", "s-c", "s-d", "s-e"] as const
-        ).map((rowKey) => (
-          <View key={rowKey} style={styles.skeletonRow}>
-            <View style={styles.skeletonIcon} />
-            <View style={styles.skeletonContent}>
-              <View style={styles.skeletonTitle} />
-              <View style={styles.skeletonDomain} />
-            </View>
-          </View>
-        ))}
-      </View>
-    ),
-    [styles]
+    [onBookmarkPress, onBookmarkLongPress, onToggleRead, isSelecting, isSelected]
   );
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        {ListHeader}
-        {SkeletonList}
+      <View className="flex-1">
+        <ListHeader />
+        <SkeletonList />
       </View>
     );
   }
@@ -85,119 +90,28 @@ export function BookmarkList({
     <FlatList
       data={bookmarks}
       keyExtractor={(item) => item._id}
-      contentContainerStyle={[styles.listContent, { paddingBottom: bottomPad }]}
+      className="flex-1"
+      contentContainerClassName="px-3"
+      contentInset={{ bottom: bottomInset }}
+      scrollIndicatorInsets={{ bottom: bottomInset }}
       showsVerticalScrollIndicator={false}
       onEndReached={onLoadMore}
       onEndReachedThreshold={0.5}
       ListHeaderComponent={ListHeader}
       ListEmptyComponent={
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>No bookmarks found</Text>
-          <Text style={styles.emptyText}>{emptyMessage}</Text>
+        <View className="items-center gap-1 py-12">
+          <Text className="text-sm font-medium text-secondary-foreground">No bookmarks found</Text>
+          <Text className="text-center text-xs text-muted-foreground">{emptyMessage}</Text>
         </View>
       }
       ListFooterComponent={
         loadingMore ? (
-          <View style={styles.loadingMore}>
+          <View className="items-center py-5">
             <ActivityIndicator size="small" color={colors.textMuted} />
           </View>
         ) : null
       }
-      renderItem={({ item }) => (
-        <BookmarkCard
-          bookmark={item}
-          onPress={() => onBookmarkPress(item)}
-          onLongPress={() => onBookmarkLongPress(item)}
-          onToggleRead={onToggleRead}
-          isSelecting={isSelecting}
-          isSelected={isSelected?.(item._id)}
-        />
-      )}
+      renderItem={renderItem}
     />
   );
-}
-
-function makeListStyles(colors: AppColors) {
-  return StyleSheet.create({
-    container: {
-      flex: 1,
-    },
-    listContent: {
-      paddingHorizontal: spacing.md,
-    },
-    headerSection: {
-      paddingHorizontal: spacing.md,
-      marginBottom: spacing.sm,
-    },
-    headerLabels: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-    },
-    headerLabel: {
-      fontSize: 13,
-      fontWeight: "500",
-      color: colors.textMuted,
-    },
-    divider: {
-      height: 1,
-      backgroundColor: colors.text,
-      opacity: 0.12,
-      marginHorizontal: spacing.sm,
-    },
-    emptyContainer: {
-      alignItems: "center",
-      paddingVertical: 48,
-      gap: spacing.xs,
-    },
-    emptyTitle: {
-      fontSize: 14,
-      fontWeight: "500",
-      color: colors.textSecondary,
-    },
-    emptyText: {
-      fontSize: 12,
-      color: colors.textMuted,
-      textAlign: "center",
-    },
-    loadingMore: {
-      paddingVertical: spacing.xl,
-      alignItems: "center",
-    },
-    skeletonContainer: {
-      paddingHorizontal: spacing.md,
-    },
-    skeletonRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingVertical: spacing.md,
-      paddingHorizontal: spacing.md,
-      gap: spacing.md,
-    },
-    skeletonIcon: {
-      width: 20,
-      height: 20,
-      borderRadius: borderRadius.sm,
-      backgroundColor: colors.muted,
-    },
-    skeletonContent: {
-      flex: 1,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.sm,
-    },
-    skeletonTitle: {
-      width: 120,
-      height: 14,
-      borderRadius: 4,
-      backgroundColor: colors.muted,
-    },
-    skeletonDomain: {
-      width: 80,
-      height: 12,
-      borderRadius: 4,
-      backgroundColor: colors.muted,
-    },
-  });
 }

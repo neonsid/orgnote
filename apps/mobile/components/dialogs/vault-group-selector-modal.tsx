@@ -1,11 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { Modal } from "@/components/ui";
 import { useAppTheme } from "@/contexts/app-theme";
-import type { AppColors } from "@/lib/theme-colors";
-import { spacing, borderRadius } from "@/lib/constants";
+import { cn } from "@/lib/cn";
 import { FALLBACK_COLORS } from "@goldfish/shared";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
@@ -24,6 +22,9 @@ interface VaultGroupSelectorModalProps {
   onCreateGroup: () => void;
   onRenameGroup?: () => void;
   onDeleteGroup?: () => void;
+  duplicateSetCount?: number;
+  viewingDuplicates?: boolean;
+  onShowDuplicates?: () => void;
 }
 
 export function VaultGroupSelectorModal({
@@ -35,28 +36,31 @@ export function VaultGroupSelectorModal({
   onCreateGroup,
   onRenameGroup,
   onDeleteGroup,
+  duplicateSetCount = 0,
+  viewingDuplicates = false,
+  onShowDuplicates,
 }: VaultGroupSelectorModalProps) {
   const { colors } = useAppTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
   const selectedGroup = groups.find((g) => g._id === selectedGroupId) ?? null;
   const showManage =
     groups.length > 0 && selectedGroup && onRenameGroup && onDeleteGroup;
+  const hasDuplicates = duplicateSetCount > 0;
 
   return (
     <Modal visible={visible} onClose={onClose} variant="center">
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        className="max-h-[420px]"
+        contentContainerClassName="pb-3"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={groups.length > 8}
       >
-        <View style={styles.inner}>
+        <View className="p-1.5">
           {groups.length === 0 ? (
-            <View style={styles.empty}>
-              <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>
+            <View className="items-center px-3 py-4">
+              <Text className="text-center text-sm text-secondary-foreground">
                 No groups found
               </Text>
-              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+              <Text className="mt-1 text-center text-xs text-secondary-foreground">
                 Create a group to get started
               </Text>
             </View>
@@ -66,73 +70,98 @@ export function VaultGroupSelectorModal({
               return (
                 <Pressable
                   key={group._id}
-                  style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                  className="min-h-10 flex-row items-center gap-2.5 rounded-md px-3 py-2 active:bg-muted"
                   onPress={() => {
                     onSelectGroup(group._id);
                     onClose();
                   }}
                 >
                   <View
-                    style={[
-                      styles.colorDot,
-                      {
-                        backgroundColor:
-                          group.color ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length],
-                      },
-                    ]}
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{
+                      backgroundColor:
+                        group.color ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length],
+                    }}
                   />
-                  <Text style={[styles.rowLabel, { color: colors.text }]} numberOfLines={1}>
+                  <Text className="flex-1 text-sm font-medium text-foreground" numberOfLines={1}>
                     {group.title}
                   </Text>
                   {isSelected ? (
                     <Ionicons name="checkmark" size={18} color={colors.text} />
                   ) : (
-                    <View style={styles.checkSpacer} />
+                    <View className="w-[18px]" />
                   )}
                 </Pressable>
               );
             })
           )}
 
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          <View className="mx-1 my-1 h-px bg-border" />
 
           <Pressable
-            style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+            className="min-h-10 flex-row items-center gap-2.5 rounded-md px-3 py-2 active:bg-muted"
             onPress={onCreateGroup}
           >
-            <Ionicons name="add" size={18} color={colors.text} style={styles.leadingIcon} />
-            <Text style={[styles.rowLabel, { color: colors.text }]}>Create Group</Text>
+            <View className="w-[18px] items-center">
+              <Ionicons name="add" size={18} color={colors.text} />
+            </View>
+            <Text className="flex-1 text-sm font-medium text-foreground">Create Group</Text>
           </Pressable>
+
+          {onShowDuplicates ? (
+            <Pressable
+              className={cn(
+                "min-h-10 flex-row items-center gap-2.5 rounded-md px-3 py-2 active:bg-muted",
+                !hasDuplicates && "opacity-70"
+              )}
+              onPress={onShowDuplicates}
+            >
+              <View className="w-[18px] items-center">
+                <Ionicons
+                  name={viewingDuplicates ? "copy" : "copy-outline"}
+                  size={18}
+                  color={viewingDuplicates ? colors.primaryAccent : colors.textSecondary}
+                />
+              </View>
+              <Text
+                className={cn(
+                  "flex-1 text-sm font-medium",
+                  viewingDuplicates ? "text-primary-accent" : "text-foreground"
+                )}
+              >
+                {viewingDuplicates
+                  ? "Viewing duplicates"
+                  : hasDuplicates
+                    ? `Duplicates (${duplicateSetCount} sets)`
+                    : "Duplicates"}
+              </Text>
+              {viewingDuplicates ? (
+                <Ionicons name="checkmark" size={18} color={colors.primaryAccent} />
+              ) : (
+                <View className="w-[18px]" />
+              )}
+            </Pressable>
+          ) : null}
 
           {showManage && (
             <>
               <Pressable
-                style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-                onPress={() => {
-                  onRenameGroup();
-                }}
+                className="min-h-10 flex-row items-center gap-2.5 rounded-md px-3 py-2 active:bg-muted"
+                onPress={onRenameGroup}
               >
-                <Ionicons
-                  name="pencil"
-                  size={18}
-                  color={colors.textSecondary}
-                  style={styles.leadingIcon}
-                />
-                <Text style={[styles.rowLabel, { color: colors.text }]}>Rename</Text>
+                <View className="w-[18px] items-center">
+                  <Ionicons name="pencil" size={18} color={colors.textSecondary} />
+                </View>
+                <Text className="flex-1 text-sm font-medium text-foreground">Rename</Text>
               </Pressable>
               <Pressable
-                style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-                onPress={() => {
-                  onDeleteGroup();
-                }}
+                className="min-h-10 flex-row items-center gap-2.5 rounded-md px-3 py-2 active:bg-muted"
+                onPress={onDeleteGroup}
               >
-                <Ionicons
-                  name="trash-outline"
-                  size={18}
-                  color={colors.error}
-                  style={styles.leadingIcon}
-                />
-                <Text style={[styles.rowLabel, { color: colors.error }]}>Delete Group</Text>
+                <View className="w-[18px] items-center">
+                  <Ionicons name="trash-outline" size={18} color={colors.error} />
+                </View>
+                <Text className="flex-1 text-sm font-medium text-destructive">Delete Group</Text>
               </Pressable>
             </>
           )}
@@ -140,67 +169,4 @@ export function VaultGroupSelectorModal({
       </ScrollView>
     </Modal>
   );
-}
-
-function makeStyles(colors: AppColors) {
-  const pad = 6;
-  return StyleSheet.create({
-    scroll: {
-      maxHeight: 420,
-    },
-    scrollContent: {
-      paddingBottom: spacing.md,
-    },
-    inner: {
-      padding: pad,
-    },
-    empty: {
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.lg,
-      alignItems: "center",
-    },
-    emptyTitle: {
-      fontSize: 14,
-      textAlign: "center",
-    },
-    emptySubtitle: {
-      fontSize: 12,
-      textAlign: "center",
-      marginTop: spacing.xs,
-    },
-    row: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
-      minHeight: 40,
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      borderRadius: borderRadius.md,
-    },
-    rowPressed: {
-      backgroundColor: colors.muted,
-    },
-    rowLabel: {
-      flex: 1,
-      fontSize: 14,
-      fontWeight: "500",
-    },
-    colorDot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-    },
-    leadingIcon: {
-      width: 18,
-      alignItems: "center",
-    },
-    checkSpacer: {
-      width: 18,
-    },
-    divider: {
-      height: StyleSheet.hairlineWidth,
-      marginVertical: 4,
-      marginHorizontal: 4,
-    },
-  });
 }

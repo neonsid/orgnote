@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import { useMutation } from "convex/react";
 
 import { Button, Input, Modal } from "@/components/ui";
 import { showThemedAlert } from "@/contexts/themed-alert";
-import { spacing } from "@/lib/constants";
 import { normalizeUrl } from "@/lib/utils";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -48,7 +47,7 @@ export function AddBookmarkModal({ visible, onClose, groupId }: AddBookmarkModal
 
   return (
     <Modal visible={visible} onClose={handleClose} title="Add Bookmark" variant="center">
-      <View style={styles.content}>
+      <View className="gap-3 p-4">
         <Input
           placeholder="Enter URL or paste link..."
           value={url}
@@ -61,7 +60,7 @@ export function AddBookmarkModal({ visible, onClose, groupId }: AddBookmarkModal
           onPress={handleAdd}
           disabled={!url.trim()}
           loading={loading}
-          style={styles.button}
+          className="mt-1"
         >
           <Button.Text>Add Bookmark</Button.Text>
         </Button>
@@ -69,13 +68,3 @@ export function AddBookmarkModal({ visible, onClose, groupId }: AddBookmarkModal
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  content: {
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  button: {
-    marginTop: spacing.xs,
-  },
-});

@@ -3,12 +3,11 @@ import { AuthView } from "@clerk/expo/native";
 import { AntDesign } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import * as AuthSession from "expo-auth-session";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Platform,
   Pressable,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -17,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OrgNoteLogo } from "@/components/ui/orgnote-logo";
 import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/contexts/themed-alert";
+import { cn } from "@/lib/cn";
 
 /** Expo Go cannot use your app.json `scheme`; OAuth must use `exp://…` from makeRedirectUri. */
 function oauthRedirectUrl() {
@@ -65,7 +65,7 @@ function useBrowserOAuthInsteadOfNativeAuthView() {
 }
 
 function SignInPanel() {
-  const { colors, isDark } = useAppTheme();
+  const { isDark } = useAppTheme();
   const { startSSOFlow } = useSSO();
   const [loading, setLoading] = useState(false);
 
@@ -90,127 +90,43 @@ function SignInPanel() {
     }
   }
 
-  const styles = useMemo(
-    () =>
-      StyleSheet.create({
-        centered: {
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 24,
-        },
-        logoContainer: {
-          alignItems: "center",
-          marginBottom: 40,
-          maxWidth: 360,
-        },
-        logoMark: {
-          marginBottom: 16,
-          padding: 12,
-          borderRadius: 16,
-          borderWidth: 1,
-          borderColor: colors.border,
-          backgroundColor: colors.surface,
-        },
-        logoText: {
-          fontSize: 28,
-          fontWeight: "700",
-          color: colors.text,
-          letterSpacing: -0.5,
-        },
-        signInCard: {
-          backgroundColor: colors.surface,
-          borderRadius: 20,
-          padding: 28,
-          width: "100%",
-          maxWidth: 360,
-          borderWidth: 1,
-          borderColor: colors.border,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.06,
-          shadowRadius: 12,
-          elevation: 4,
-        },
-        signInTitle: {
-          fontSize: 26,
-          fontWeight: "700",
-          color: colors.text,
-          textAlign: "center",
-          marginBottom: 8,
-        },
-        signInSubtitle: {
-          fontSize: 15,
-          color: colors.textSecondary,
-          textAlign: "center",
-          marginBottom: 28,
-          lineHeight: 22,
-        },
-        googleButton: {
-          backgroundColor: isDark ? "#fafafa" : colors.primary,
-          borderRadius: 14,
-          paddingVertical: 16,
-          alignItems: "center",
-        },
-        googleButtonContent: {
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 10,
-        },
-        googleButtonText: {
-          color: isDark ? "#18181b" : "#fafafa",
-          fontSize: 16,
-          fontWeight: "600",
-        },
-        buttonPressed: {
-          opacity: 0.9,
-          transform: [{ scale: 0.98 }],
-        },
-        buttonDisabled: {
-          opacity: 0.7,
-        },
-      }),
-    [colors, isDark],
-  );
+  const googleButtonTextColor = isDark ? "#18181b" : "#fafafa";
 
   return (
-    <View style={styles.centered}>
-      <View style={styles.logoContainer}>
-        <View style={styles.logoMark}>
+    <View className="flex-1 items-center justify-center p-6">
+      <View className="mb-10 max-w-[360px] items-center">
+        <View className="mb-4 rounded-2xl border border-border bg-surface p-3">
           <OrgNoteLogo size={72} />
         </View>
-        <Text style={styles.logoText}>OrgNote</Text>
+        <Text className="text-[28px] font-bold tracking-tight text-foreground">OrgNote</Text>
       </View>
 
-      <View style={styles.signInCard}>
-        <Text style={styles.signInTitle}>Welcome</Text>
-        <Text style={styles.signInSubtitle}>
+      <View className="w-full max-w-[360px] rounded-[20px] border border-border bg-surface p-7 shadow-md">
+        <Text className="mb-2 text-center text-[26px] font-bold text-foreground">Welcome</Text>
+        <Text className="mb-7 text-center text-[15px] leading-[22px] text-secondary-foreground">
           Sign in with the same account you use on the web app.
         </Text>
 
         <Pressable
           onPress={onGoogle}
           disabled={loading}
-          style={({ pressed }) => [
-            styles.googleButton,
-            pressed && styles.buttonPressed,
-            loading && styles.buttonDisabled,
-          ]}
+          className={cn(
+            "items-center rounded-[14px] py-4 active:scale-[0.98] active:opacity-90",
+            isDark ? "bg-[#fafafa]" : "bg-primary",
+            loading && "opacity-70"
+          )}
         >
           {loading ? (
-            <ActivityIndicator
-              size="small"
-              color={isDark ? "#18181b" : "#fafafa"}
-            />
+            <ActivityIndicator size="small" color={googleButtonTextColor} />
           ) : (
-            <View style={styles.googleButtonContent}>
-              <AntDesign
-                name="google"
-                size={18}
-                color={isDark ? "#18181b" : "#fafafa"}
-              />
-              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            <View className="flex-row items-center justify-center gap-2.5">
+              <AntDesign name="google" size={18} color={googleButtonTextColor} />
+              <Text
+                className="text-base font-semibold"
+                style={{ color: googleButtonTextColor }}
+              >
+                Continue with Google
+              </Text>
             </View>
           )}
         </Pressable>
@@ -225,57 +141,11 @@ export default function IndexScreen() {
   const { colors } = useAppTheme();
   const browserAuth = useBrowserOAuthInsteadOfNativeAuthView();
 
-  const screenStyles = useMemo(
-    () =>
-      StyleSheet.create({
-        screen: {
-          flex: 1,
-          backgroundColor: colors.background,
-        },
-        centered: {
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-        },
-        content: {
-          flex: 1,
-        },
-        brand: {
-          alignItems: "center",
-          paddingTop: 24,
-          paddingBottom: 12,
-          paddingHorizontal: 24,
-        },
-        logoMark: {
-          padding: 10,
-          borderRadius: 14,
-          borderWidth: 1,
-          borderColor: colors.border,
-          backgroundColor: colors.surface,
-          marginBottom: 10,
-        },
-        logoText: {
-          fontSize: 22,
-          fontWeight: "700",
-          color: colors.text,
-          letterSpacing: -0.4,
-        },
-        authHost: {
-          flex: 1,
-          minHeight: 0,
-        },
-      }),
-    [colors],
-  );
-
   if (!isLoaded) {
     return (
       <View
-        style={[
-          screenStyles.screen,
-          screenStyles.centered,
-          { paddingTop: insets.top },
-        ]}
+        className="flex-1 items-center justify-center bg-background"
+        style={{ paddingTop: insets.top }}
       >
         <ActivityIndicator size="large" color={colors.primaryAccent} />
       </View>
@@ -285,10 +155,8 @@ export default function IndexScreen() {
   if (browserAuth) {
     return (
       <View
-        style={[
-          screenStyles.screen,
-          { paddingTop: insets.top, paddingBottom: insets.bottom },
-        ]}
+        className="flex-1 bg-background"
+        style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
       >
         <SignInPanel />
       </View>
@@ -297,19 +165,17 @@ export default function IndexScreen() {
 
   return (
     <View
-      style={[
-        screenStyles.screen,
-        { paddingTop: insets.top, paddingBottom: insets.bottom },
-      ]}
+      className="flex-1 bg-background"
+      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
     >
-      <View style={screenStyles.content}>
-        <View style={screenStyles.brand}>
-          <View style={screenStyles.logoMark}>
+      <View className="flex-1">
+        <View className="items-center px-6 pb-3 pt-6">
+          <View className="mb-2.5 rounded-[14px] border border-border bg-surface p-2.5">
             <OrgNoteLogo size={48} />
           </View>
-          <Text style={screenStyles.logoText}>OrgNote</Text>
+          <Text className="text-[22px] font-bold tracking-tight text-foreground">OrgNote</Text>
         </View>
-        <View style={screenStyles.authHost}>
+        <View className="min-h-0 flex-1">
           <AuthView mode="signInOrUp" isDismissable={false} />
         </View>
       </View>

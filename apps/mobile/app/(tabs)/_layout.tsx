@@ -7,10 +7,11 @@ import {
 } from "@react-navigation/material-top-tabs";
 import type { ParamListBase, TabNavigationState } from "@react-navigation/native";
 import { withLayoutContext } from "expo-router";
-import { Platform, StyleSheet, View } from "react-native";
+import { Platform, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAppTheme } from "@/contexts/app-theme";
+import { cn } from "@/lib/cn";
 
 const { Navigator } = createMaterialTopTabNavigator();
 const SwipeableTabs = withLayoutContext<
@@ -31,15 +32,13 @@ export default function TabLayout() {
     <SwipeableTabs
       tabBar={(props) => (
         <View
-          style={[
-            styles.tabBarContainer,
-            {
-              backgroundColor: colors.tabBarBg,
-              borderTopColor: colors.tabBarBorder,
-              paddingBottom: bottomInset + 6,
-              minHeight: tabBarHeight,
-            },
-          ]}
+          className={cn(
+            "absolute bottom-0 left-0 right-0 border-t border-tab-bar-border bg-tab-bar shadow-none"
+          )}
+          style={{
+            paddingBottom: bottomInset + 6,
+            minHeight: tabBarHeight,
+          }}
         >
           <MaterialTopTabBar {...props} />
         </View>
@@ -118,15 +117,3 @@ export default function TabLayout() {
     </SwipeableTabs>
   );
 }
-
-const styles = StyleSheet.create({
-  tabBarContainer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderTopWidth: 1,
-    elevation: 0,
-    shadowOpacity: 0,
-  },
-});

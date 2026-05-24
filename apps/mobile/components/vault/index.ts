@@ -1,1 +1,11 @@
+export { FileActionsModal } from "./file-actions-modal";
 export { FileTile } from "./file-tile";
+export { UploadProgressOverlay } from "./upload-progress-overlay";
+export { VaultDuplicatesBanner } from "./vault-duplicates-banner";
+export { VaultFileList } from "./vault-file-list";
+export type { VaultListFile } from "./vault-file-list";
+export { VaultHeader } from "./vault-header";
+export { VaultMultiSelectToolbar } from "./vault-multi-select-toolbar";
+export type { VaultSelectionFile } from "./vault-multi-select-toolbar";
+export { VaultStatsBar } from "./vault-stats-bar";
+export { VaultUploadBar } from "./vault-upload-bar";

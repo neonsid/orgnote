@@ -7,7 +7,6 @@ import {
   Linking,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -15,221 +14,42 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Loading, EmptyState } from "@/components/ui";
 import { useAppTheme } from "@/contexts/app-theme";
-import { spacing, borderRadius } from "@/lib/constants";
+import { cn } from "@/lib/cn";
 import { openInAppBrowser } from "@/lib/open-in-app-browser";
-import type { AppColors } from "@/lib/theme-colors";
 import { getHostname } from "@/lib/utils";
 import { api } from "../../../../convex/_generated/api";
 
-function makePublicUserProfileStyles(colors: AppColors) {
-  return StyleSheet.create({
-    screen: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    header: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.md,
-      backgroundColor: colors.surface,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    headerTitle: {
-      fontSize: 18,
-      fontWeight: "600",
-      color: colors.text,
-    },
-
-    profileHeader: {
-      alignItems: "center",
-      padding: spacing.xl,
-      backgroundColor: colors.surface,
-      marginBottom: spacing.lg,
-      borderRadius: borderRadius.lg,
-    },
-    avatar: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: colors.primary,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: spacing.md,
-    },
-    avatarText: {
-      fontSize: 32,
-      fontWeight: "700",
-      color: "#fff",
-    },
-    username: {
-      fontSize: 22,
-      fontWeight: "700",
-      color: colors.text,
-    },
-    bio: {
-      fontSize: 15,
-      color: colors.textSecondary,
-      textAlign: "center",
-      marginTop: spacing.sm,
-      lineHeight: 22,
-    },
-    links: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      justifyContent: "center",
-      gap: spacing.sm,
-      marginTop: spacing.lg,
-    },
-    linkButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.xs,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      backgroundColor: colors.borderLight,
-      borderRadius: borderRadius.full,
-    },
-    linkText: {
-      fontSize: 14,
-      fontWeight: "500",
-      color: colors.primary,
-    },
-
-    groupSection: {
-      marginBottom: spacing.lg,
-    },
-    sectionLabel: {
-      fontSize: 13,
-      fontWeight: "600",
-      color: colors.textMuted,
-      textTransform: "uppercase",
-      letterSpacing: 0.5,
-      marginBottom: spacing.sm,
-    },
-    groupChipsContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      flexGrow: 1,
-      gap: spacing.sm,
-      paddingRight: spacing.lg,
-    },
-    chip: {
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.sm,
-      borderRadius: borderRadius.full,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    chipActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
-    },
-    chipText: {
-      fontSize: 14,
-      fontWeight: "500",
-      color: colors.textSecondary,
-    },
-    chipTextActive: {
-      color: "#fff",
-    },
-
-    listContent: {
-      padding: spacing.lg,
-      gap: spacing.md,
-    },
-    bookmarkCard: {
-      backgroundColor: colors.surface,
-      borderRadius: borderRadius.lg,
-      padding: spacing.lg,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
-      shadowRadius: 8,
-      elevation: 2,
-    },
-    bookmarkCardPressed: {
-      backgroundColor: colors.background,
-      transform: [{ scale: 0.98 }],
-    },
-    bookmarkHeader: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      justifyContent: "space-between",
-      gap: spacing.sm,
-    },
-    bookmarkTitle: {
-      flex: 1,
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.text,
-      lineHeight: 22,
-    },
-    groupBadge: {
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 2,
-      borderRadius: borderRadius.sm,
-    },
-    groupBadgeText: {
-      fontSize: 11,
-      fontWeight: "600",
-    },
-    bookmarkUrl: {
-      fontSize: 13,
-      color: colors.primary,
-      marginTop: spacing.xs,
-    },
-    bookmarkDescription: {
-      fontSize: 13,
-      color: colors.textSecondary,
-      marginTop: spacing.sm,
-      lineHeight: 18,
-    },
-    emptyList: {
-      alignItems: "center",
-      paddingVertical: 48,
-    },
-    emptyText: {
-      fontSize: 15,
-      color: colors.textMuted,
-    },
-  });
-}
-
-type PublicUserProfileStyles = ReturnType<typeof makePublicUserProfileStyles>;
-
 function ProfileHeader({
   profile,
-  styles,
-  colors,
 }: {
   profile: {
     username?: string;
     bio?: string;
     links?: Array<{ label: string; url: string }>;
   };
-  styles: PublicUserProfileStyles;
-  colors: AppColors;
 }) {
+  const { colors } = useAppTheme();
+
   return (
-    <View style={styles.profileHeader}>
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>
+    <View className="mb-4 items-center rounded-lg bg-surface p-6">
+      <View className="mb-3 h-20 w-20 items-center justify-center rounded-full bg-primary">
+        <Text className="text-[32px] font-bold text-white">
           {profile.username?.[0]?.toUpperCase() ?? "?"}
         </Text>
       </View>
-      <Text style={styles.username}>@{profile.username}</Text>
-      {profile.bio && <Text style={styles.bio}>{profile.bio}</Text>}
+      <Text className="text-[22px] font-bold text-foreground">@{profile.username}</Text>
+      {profile.bio ? (
+        <Text className="mt-2 text-center text-[15px] leading-[22px] text-secondary-foreground">
+          {profile.bio}
+        </Text>
+      ) : null}
 
-      {profile.links && profile.links.length > 0 && (
-        <View style={styles.links}>
+      {profile.links && profile.links.length > 0 ? (
+        <View className="mt-4 flex-row flex-wrap justify-center gap-2">
           {profile.links.map((link) => (
             <Pressable
               key={link.url}
-              style={styles.linkButton}
+              className="flex-row items-center gap-1 rounded-full bg-muted px-3 py-2 active:bg-muted"
               onPress={() => Linking.openURL(link.url)}
             >
               <Ionicons
@@ -243,11 +63,11 @@ function ProfileHeader({
                 size={18}
                 color={colors.primary}
               />
-              <Text style={styles.linkText}>{link.label}</Text>
+              <Text className="text-sm font-medium text-primary">{link.label}</Text>
             </Pressable>
           ))}
         </View>
-      )}
+      ) : null}
     </View>
   );
 }
@@ -256,51 +76,62 @@ function GroupChips({
   groups,
   selectedGroupId,
   onSelectGroup,
-  styles,
 }: {
   groups: Array<{ _id: string; title: string; color: string }>;
   selectedGroupId: string | null;
   onSelectGroup: (id: string | null) => void;
-  styles: PublicUserProfileStyles;
 }) {
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.groupChipsContainer}
+      contentContainerClassName="flex-row items-center gap-2 pr-4"
     >
       <Pressable
-        style={[styles.chip, !selectedGroupId && styles.chipActive]}
+        className={cn(
+          "rounded-full border border-border bg-surface px-4 py-2 active:bg-muted",
+          !selectedGroupId && "border-primary bg-primary"
+        )}
         onPress={() => onSelectGroup(null)}
       >
-        <Text style={[styles.chipText, !selectedGroupId && styles.chipTextActive]}>
+        <Text
+          className={cn(
+            "text-sm font-medium text-secondary-foreground",
+            !selectedGroupId && "text-white"
+          )}
+        >
           All
         </Text>
       </Pressable>
-      {groups.map((group) => (
-        <Pressable
-          key={group._id}
-          style={[styles.chip, selectedGroupId === group._id && styles.chipActive]}
-          onPress={() => onSelectGroup(group._id)}
-        >
-          <Text
-            style={[
-              styles.chipText,
-              selectedGroupId === group._id && styles.chipTextActive,
-            ]}
-            numberOfLines={1}
+      {groups.map((group) => {
+        const isActive = selectedGroupId === group._id;
+        return (
+          <Pressable
+            key={group._id}
+            className={cn(
+              "rounded-full border border-border bg-surface px-4 py-2 active:bg-muted",
+              isActive && "border-primary bg-primary"
+            )}
+            onPress={() => onSelectGroup(group._id)}
           >
-            {group.title}
-          </Text>
-        </Pressable>
-      ))}
+            <Text
+              className={cn(
+                "text-sm font-medium text-secondary-foreground",
+                isActive && "text-white"
+              )}
+              numberOfLines={1}
+            >
+              {group.title}
+            </Text>
+          </Pressable>
+        );
+      })}
     </ScrollView>
   );
 }
 
 function BookmarkItem({
   bookmark,
-  styles,
 }: {
   bookmark: {
     _id: string;
@@ -310,33 +141,35 @@ function BookmarkItem({
     groupTitle: string;
     groupColor: string;
   };
-  styles: PublicUserProfileStyles;
 }) {
   const hostname = getHostname(bookmark.url);
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.bookmarkCard, pressed && styles.bookmarkCardPressed]}
+      className="rounded-lg bg-surface p-4 active:scale-[0.98] active:bg-background"
       onPress={() => void openInAppBrowser(bookmark.url, bookmark.title)}
     >
-      <View style={styles.bookmarkHeader}>
-        <Text style={styles.bookmarkTitle} numberOfLines={2}>
+      <View className="flex-row items-start justify-between gap-2">
+        <Text className="flex-1 text-base font-semibold leading-[22px] text-foreground" numberOfLines={2}>
           {bookmark.title || "Untitled"}
         </Text>
-        <View style={[styles.groupBadge, { backgroundColor: bookmark.groupColor + "20" }]}>
-          <Text style={[styles.groupBadgeText, { color: bookmark.groupColor }]}>
+        <View
+          className="rounded-sm px-2 py-0.5"
+          style={{ backgroundColor: bookmark.groupColor + "20" }}
+        >
+          <Text className="text-[11px] font-semibold" style={{ color: bookmark.groupColor }}>
             {bookmark.groupTitle}
           </Text>
         </View>
       </View>
-      <Text style={styles.bookmarkUrl} numberOfLines={1}>
+      <Text className="mt-1 text-[13px] text-primary" numberOfLines={1}>
         {hostname}
       </Text>
-      {bookmark.description && (
-        <Text style={styles.bookmarkDescription} numberOfLines={2}>
+      {bookmark.description ? (
+        <Text className="mt-2 text-[13px] leading-[18px] text-secondary-foreground" numberOfLines={2}>
           {bookmark.description}
         </Text>
-      )}
+      ) : null}
     </Pressable>
   );
 }
@@ -346,7 +179,6 @@ export default function PublicProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
-  const styles = useMemo(() => makePublicUserProfileStyles(colors), [colors]);
 
   const profileData = useQuery(
     api.profile.queries.getPublicProfileData,
@@ -363,7 +195,7 @@ export default function PublicProfileScreen() {
 
   if (profileData === undefined) {
     return (
-      <View style={[styles.screen, { paddingTop: insets.top }]}>
+      <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
         <Stack.Screen options={{ headerShown: false }} />
         <Loading message="Loading profile..." />
       </View>
@@ -372,14 +204,14 @@ export default function PublicProfileScreen() {
 
   if (!profileData) {
     return (
-      <View style={[styles.screen, { paddingTop: insets.top }]}>
+      <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
         <Stack.Screen options={{ headerShown: false }} />
-        <View style={styles.header}>
+        <View className="flex-row items-center justify-between border-b border-border bg-surface px-4 py-3">
           <Pressable onPress={() => router.back()} hitSlop={8}>
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </Pressable>
-          <Text style={styles.headerTitle}>Profile</Text>
-          <View style={{ width: 24 }} />
+          <Text className="text-lg font-semibold text-foreground">Profile</Text>
+          <View className="w-6" />
         </View>
         <EmptyState
           icon="person-outline"
@@ -391,52 +223,47 @@ export default function PublicProfileScreen() {
   }
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.header}>
+      <View className="flex-row items-center justify-between border-b border-border bg-surface px-4 py-3">
         <Pressable onPress={() => router.back()} hitSlop={8}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </Pressable>
-        <Text style={styles.headerTitle}>@{profileData.profile.username}</Text>
-        <View style={{ width: 24 }} />
+        <Text className="text-lg font-semibold text-foreground">@{profileData.profile.username}</Text>
+        <View className="w-6" />
       </View>
 
       <FlatList
         data={filteredBookmarks}
         keyExtractor={(item) => item._id}
-        contentContainerStyle={styles.listContent}
+        contentContainerClassName="gap-3 p-4"
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <>
-            <ProfileHeader
-              profile={profileData.profile}
-              styles={styles}
-              colors={colors}
-            />
-            {profileData.groups.length > 0 && (
-              <View style={styles.groupSection}>
-                <Text style={styles.sectionLabel}>Collections</Text>
+            <ProfileHeader profile={profileData.profile} />
+            {profileData.groups.length > 0 ? (
+              <View className="mb-4">
+                <Text className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Collections
+                </Text>
                 <GroupChips
                   groups={profileData.groups}
                   selectedGroupId={selectedGroupId}
                   onSelectGroup={setSelectedGroupId}
-                  styles={styles}
                 />
               </View>
-            )}
-            <Text style={styles.sectionLabel}>
+            ) : null}
+            <Text className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">
               {filteredBookmarks.length} Bookmarks
             </Text>
           </>
         }
         ListEmptyComponent={
-          <View style={styles.emptyList}>
-            <Text style={styles.emptyText}>No public bookmarks</Text>
+          <View className="items-center py-12">
+            <Text className="text-[15px] text-muted-foreground">No public bookmarks</Text>
           </View>
         }
-        renderItem={({ item }) => (
-          <BookmarkItem bookmark={item} styles={styles} />
-        )}
+        renderItem={({ item }) => <BookmarkItem bookmark={item} />}
       />
     </View>
   );

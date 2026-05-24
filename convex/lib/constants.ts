@@ -14,6 +14,8 @@ export const ALLOWED_FILE_TYPES = [
 export const MAX_BULK_BOOKMARK_DELETE = 100
 export const MAX_BULK_BOOKMARK_MOVE = 100
 export const MAX_BULK_BOOKMARK_IMPORT = 100
+export const MAX_BULK_VAULT_DELETE = 100
+export const MAX_BULK_VAULT_MOVE = 100
 
 export const SCIRA_DAILY_LIMIT = 20
 export const MAX_FILENAME_LENGTH = 255
