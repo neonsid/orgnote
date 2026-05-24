@@ -1,5 +1,6 @@
 import { useCallback, useState, type ReactNode } from "react";
 import {
+  InteractionManager,
   Modal,
   Pressable,
   ScrollView,
@@ -68,7 +69,7 @@ export function showThemedAlert(
     buttons: normalizedButtons,
   };
 
-  queueMicrotask(() => {
+  InteractionManager.runAfterInteractions(() => {
     setAlertGlobal?.(payload);
   });
 }

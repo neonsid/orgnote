@@ -33,7 +33,7 @@ export function getCanonicalFileId(group: VaultFileRow[]): Id<"vaultFiles"> {
 }
 
 export function getCanonicalFile(group: VaultFileRow[]): VaultFileRow {
-  return group.toSorted((a, b) => (a._creationTime ?? 0) - (b._creationTime ?? 0))[0]!;
+  return [...group].sort((a, b) => (a._creationTime ?? 0) - (b._creationTime ?? 0))[0]!;
 }
 
 /** Every file id that belongs to a duplicate set (2+ with the same key). */

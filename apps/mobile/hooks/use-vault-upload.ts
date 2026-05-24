@@ -1,7 +1,9 @@
-import { useCallback, useState } from "react";
-import { useConvex, useMutation } from "convex/react";
+import { useAuth } from "@clerk/expo";
+import { useCallback, useRef, useState } from "react";
+import { useConvex, useConvexAuth, useMutation } from "convex/react";
 
 import { showThemedAlert } from "@/contexts/themed-alert";
+import { useMountEffect } from "@/hooks/use-mount-effect";
 import { waitForVaultUploadRequest } from "@/lib/poll-convex-query";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -70,12 +72,29 @@ function phaseLabel(phase: VaultUploadFilePhase): string {
 
 export { phaseLabel as vaultUploadPhaseLabel };
 
+const NOT_AUTHENTICATED_MESSAGE =
+  "Your session expired. Sign in again and retry the upload.";
+
 export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
   const convex = useConvex();
+  const { isSignedIn } = useAuth();
+  const { isAuthenticated } = useConvexAuth();
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<VaultUploadStatus | null>(null);
   const requestPresignedUploadUrl = useMutation(api.vault.mutations.requestPresignedUploadUrl);
   const saveFileMetadata = useMutation(api.vault.mutations.saveFileMetadata);
+  const uploadGenerationRef = useRef(0);
+  const authRef = useRef({ isSignedIn: false, isAuthenticated: false });
+  authRef.current = {
+    isSignedIn: isSignedIn === true,
+    isAuthenticated,
+  };
+
+  useMountEffect(() => {
+    return () => {
+      uploadGenerationRef.current += 1;
+    };
+  });
 
   const updateFilePhase = useCallback(
     (id: string, patch: Partial<VaultUploadFileItem>) => {
@@ -99,6 +118,22 @@ export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
       );
       return;
     }
+
+    if (!authRef.current.isSignedIn || !authRef.current.isAuthenticated) {
+      showThemedAlert("Sign in required", NOT_AUTHENTICATED_MESSAGE);
+      return;
+    }
+
+    const uploadGeneration = ++uploadGenerationRef.current;
+
+    const assertUploadActive = () => {
+      if (uploadGenerationRef.current !== uploadGeneration) {
+        throw new Error("Upload cancelled");
+      }
+      if (!authRef.current.isSignedIn || !authRef.current.isAuthenticated) {
+        throw new Error(NOT_AUTHENTICATED_MESSAGE);
+      }
+    };
 
     const DocumentPicker = await getDocumentPicker();
     if (!DocumentPicker) {
@@ -129,6 +164,8 @@ export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
       if (result.canceled || !result.assets?.length) {
         return;
       }
+
+      assertUploadActive();
 
       const assets = result.assets.slice(0, VAULT_MAX_FILES_PER_BATCH);
       if (result.assets.length > VAULT_MAX_FILES_PER_BATCH) {
@@ -195,14 +232,18 @@ export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
       const settlements = await Promise.allSettled(
         workItems.map(async ({ id, asset, name, size, fileType }) => {
           try {
+            assertUploadActive();
             updateFilePhase(id, { phase: "preparing" });
             const requestId = await requestPresignedUploadUrl({
               fileName: name,
               fileType,
             });
+            assertUploadActive();
             const { uploadUrl, fileUrl } = await waitForVaultUploadRequest(convex, requestId);
+            assertUploadActive();
             updateFilePhase(id, { phase: "uploading" });
             await uploadFn(asset.uri, fileType, uploadUrl);
+            assertUploadActive();
             updateFilePhase(id, { phase: "saving" });
             await saveFileMetadata({
               fileName: name,

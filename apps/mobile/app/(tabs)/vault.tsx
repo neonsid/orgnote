@@ -396,7 +396,7 @@ function VaultContent() {
 
 export default function VaultScreen() {
   const insets = useSafeAreaInsets();
-  const { isLoaded: clerkLoaded, isSignedIn } = useAuth();
+  const { isLoaded: clerkLoaded, isSignedIn, userId } = useAuth();
   const { isLoading: convexLoading, isAuthenticated } = useConvexAuth();
 
   if (!clerkLoaded) {
@@ -421,7 +421,7 @@ export default function VaultScreen() {
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
-      <VaultContent />
+      <VaultContent key={userId ?? "unknown-user"} />
     </View>
   );
 }

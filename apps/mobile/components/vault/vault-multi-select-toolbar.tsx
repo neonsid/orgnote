@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { InteractionManager } from "react-native";
 import { useMutation } from "convex/react";
 
 import {
@@ -11,6 +12,7 @@ import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/contexts/themed-alert";
 import { promptOpenExternalUrl } from "@/lib/open-external-url";
 import { downloadAndShareFile } from "@/lib/download-file-native";
+import { deleteVaultFilesInBatches, getErrorMessage } from "@/lib/vault-bulk-delete";
 import {
   filterIdsToExtraDuplicatesOnly,
   type VaultFileRow,
@@ -93,10 +95,12 @@ export function VaultMultiSelectToolbar({
         style: "destructive",
         onPress: async () => {
           try {
-            await deleteVaultFilesBulk({ fileIds: deletableIds });
+            await deleteVaultFilesInBatches(deleteVaultFilesBulk, deletableIds);
             onClearSelection();
-          } catch {
-            showThemedAlert("Error", "Failed to delete files");
+          } catch (err) {
+            InteractionManager.runAfterInteractions(() => {
+              showThemedAlert("Error", getErrorMessage(err, "Failed to delete files"));
+            });
           }
         },
       },

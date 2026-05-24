@@ -1,18 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useMutation } from "convex/react";
-import { Pressable, Text, View } from "react-native";
+import { useAuth } from "@clerk/expo";
+import { useConvexAuth, useMutation } from "convex/react";
+import { useState } from "react";
+import { InteractionManager, Pressable, Text, View } from "react-native";
 
 import { Button } from "@/components/ui";
 import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/contexts/themed-alert";
 import { cn } from "@/lib/cn";
+import { deleteVaultFilesInBatches, getErrorMessage } from "@/lib/vault-bulk-delete";
 import {
   countExtraDuplicateFiles,
   getExtraDuplicateFileIds,
   type VaultFileRow,
 } from "@/lib/vault-duplicates";
 import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
 
 export function VaultDuplicatesBanner({
   allFiles,
@@ -26,11 +28,24 @@ export function VaultDuplicatesBanner({
   onDuplicatesCleared: () => void;
 }) {
   const { colors } = useAppTheme();
+  const { isSignedIn } = useAuth();
+  const { isAuthenticated } = useConvexAuth();
+  const [removing, setRemoving] = useState(false);
   const deleteVaultFilesBulk = useMutation(api.vault.mutations.deleteVaultFilesBulk);
   const extraCount = countExtraDuplicateFiles(allFiles);
 
   function handleRemoveAllExtras() {
-    const extraIds = [...getExtraDuplicateFileIds(allFiles)] as Id<"vaultFiles">[];
+    if (removing) return;
+
+    if (isSignedIn !== true || !isAuthenticated) {
+      showThemedAlert(
+        "Sign in required",
+        "Your session expired. Sign in again and retry removing duplicates."
+      );
+      return;
+    }
+
+    const extraIds = [...getExtraDuplicateFileIds(allFiles)];
     if (extraIds.length === 0) return;
 
     showThemedAlert(
@@ -42,11 +57,19 @@ export function VaultDuplicatesBanner({
           text: "Remove all",
           style: "destructive",
           onPress: async () => {
+            setRemoving(true);
             try {
-              await deleteVaultFilesBulk({ fileIds: extraIds });
+              await deleteVaultFilesInBatches(deleteVaultFilesBulk, extraIds);
               onDuplicatesCleared();
-            } catch {
-              showThemedAlert("Error", "Failed to remove duplicate copies");
+            } catch (err) {
+              InteractionManager.runAfterInteractions(() => {
+                showThemedAlert(
+                  "Error",
+                  getErrorMessage(err, "Failed to remove duplicate copies")
+                );
+              });
+            } finally {
+              setRemoving(false);
             }
           },
         },
@@ -71,7 +94,7 @@ export function VaultDuplicatesBanner({
         </Pressable>
       </View>
       {extraCount > 0 ? (
-        <Button variant="destructive" onPress={handleRemoveAllExtras}>
+        <Button variant="destructive" loading={removing} disabled={removing} onPress={handleRemoveAllExtras}>
           <Button.Text>Remove all {extraCount} duplicate cop{extraCount === 1 ? "y" : "ies"}</Button.Text>
         </Button>
       ) : null}

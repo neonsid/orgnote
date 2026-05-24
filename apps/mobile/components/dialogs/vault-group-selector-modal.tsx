@@ -114,7 +114,10 @@ export function VaultGroupSelectorModal({
                 "min-h-10 flex-row items-center gap-2.5 rounded-md px-3 py-2 active:bg-muted",
                 !hasDuplicates && "opacity-70"
               )}
-              onPress={onShowDuplicates}
+              onPress={() => {
+                onShowDuplicates();
+                onClose();
+              }}
             >
               <View className="w-[18px] items-center">
                 <Ionicons
