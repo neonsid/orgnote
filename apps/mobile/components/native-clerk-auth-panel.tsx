@@ -1,7 +1,9 @@
 "use no memo";
 
-import { useEffect, useState, type ComponentType } from "react";
+import { useState, type ComponentType } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
+
+import { useMountEffect } from "@/hooks/use-mount-effect";
 
 type NativeAuthViewProps = {
   mode: "signInOrUp";
@@ -12,14 +14,15 @@ export function NativeClerkAuthPanel() {
   const [AuthView, setAuthView] = useState<ComponentType<NativeAuthViewProps> | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    void import("@clerk/expo/native")
-      .then((mod) => setAuthView(() => mod.AuthView))
-      .catch((err) => {
-        console.warn("[mobile auth] Failed to load Clerk native AuthView:", err);
-        setLoadError(err instanceof Error ? err.message : "Failed to load native auth UI");
-      });
-  }, []);
+  useMountEffect(() => {
+    try {
+      const mod = require("@clerk/expo/native") as typeof import("@clerk/expo/native");
+      setAuthView(() => mod.AuthView);
+    } catch (err) {
+      console.warn("[mobile auth] Failed to load Clerk native AuthView:", err);
+      setLoadError(err instanceof Error ? err.message : "Failed to load native auth UI");
+    }
+  });
 
   if (loadError) {
     return (

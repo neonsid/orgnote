@@ -13,7 +13,7 @@ import type { TokenCache } from "@clerk/expo";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as WebBrowser from "expo-web-browser";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { ActivityIndicator, Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -143,17 +143,14 @@ function AppContent() {
     });
   }
 
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      hideSplash();
-    }
-  }, [fontsLoaded, fontError]);
+  if ((fontsLoaded || fontError) && !splashHiddenRef.current) {
+    hideSplash();
+  }
 
-  // Never leave Expo Go stuck on the native splash if font loading hangs.
-  useEffect(() => {
+  useMountEffect(() => {
     const timeout = setTimeout(hideSplash, 4000);
     return () => clearTimeout(timeout);
-  }, []);
+  });
 
   if (fontError) {
     console.warn("[mobile fonts] Failed to load Poppins:", fontError);

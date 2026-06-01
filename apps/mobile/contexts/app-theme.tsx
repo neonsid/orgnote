@@ -1,11 +1,11 @@
 import {
   createContext,
   useContext,
-  useEffect,
   type ReactNode,
 } from "react";
 import * as SystemUI from "expo-system-ui";
 
+import { useMountEffect } from "@/hooks/use-mount-effect";
 import { darkColors, type AppColors } from "@/lib/theme-colors";
 
 type AppThemeContextValue = {
@@ -19,9 +19,9 @@ const AppThemeContext = createContext<AppThemeContextValue | null>(null);
 export function AppThemeProvider({ children }: { children: ReactNode }) {
   const colors = darkColors;
 
-  useEffect(() => {
+  useMountEffect(() => {
     void SystemUI.setBackgroundColorAsync(colors.tabBarBg);
-  }, [colors.tabBarBg]);
+  });
 
   const value: AppThemeContextValue = {
     colors,

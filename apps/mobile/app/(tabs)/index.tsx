@@ -34,6 +34,27 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 function BookmarksContent() {
   const { userId } = useAuth();
   const groups = useQuery(api.groups.queries.list);
+
+  if (!groups) {
+    return <Loading message="Loading..." />;
+  }
+
+  return (
+    <BookmarksContentWithGroups
+      key={groups.length > 0 ? "groups-ready" : "groups-empty"}
+      userId={userId}
+      groups={groups}
+    />
+  );
+}
+
+function BookmarksContentWithGroups({
+  userId,
+  groups,
+}: {
+  userId: string | null | undefined;
+  groups: Array<{ _id: Id<"groups">; title: string; color?: string }>;
+}) {
   const {
     selectedGroupId,
     setSelectedGroupId,
@@ -148,10 +169,6 @@ function BookmarksContent() {
 
   function onGroupCreated(id: Id<"groups">) {
     setSelectedGroupId(id);
-  }
-
-  if (!groups) {
-    return <Loading message="Loading..." />;
   }
 
   if (groups.length === 0) {

@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { AppState, type AppStateStatus } from "react-native";
 
+import { useMountEffect } from "@/hooks/use-mount-effect";
 import {
   loadPersistedSelectedGroupId,
   savePersistedSelectedGroupId,
@@ -9,25 +10,25 @@ import type { Id } from "../../../convex/_generated/dataModel";
 
 type GroupRow = { _id: Id<"groups"> };
 
+type PersistSnapshot = {
+  userId: string | undefined | null;
+  effectiveGroupId: Id<"groups"> | null;
+  groupPreferenceRestored: boolean;
+};
+
 /**
  * Persists the selected bookmark collection per user (AsyncStorage) and flushes on background.
- * Parent should remount the consumer on `userId` change (`key={userId}`) so in-memory state resets.
+ * Parent should remount with `key={userId}` when the user changes, and
+ * `key={...-${hasGroups ? "ready" : "empty"}}` when groups first become available,
+ * so restore runs via useMountEffect instead of a reactive useEffect.
  */
 export function usePersistedSelectedGroupId(
   userId: string | undefined | null,
   groups: GroupRow[] | undefined
 ) {
-  const [selectedGroupId, setSelectedGroupId] = useState<Id<"groups"> | null>(null);
+  const [selectedGroupId, setSelectedGroupIdState] = useState<Id<"groups"> | null>(null);
   const [groupPreferenceRestored, setGroupPreferenceRestored] = useState(false);
   const hasGroups = Boolean(groups && groups.length > 0);
-
-  const [prevHasGroups, setPrevHasGroups] = useState(hasGroups);
-  if (hasGroups !== prevHasGroups) {
-    setPrevHasGroups(hasGroups);
-    if (!hasGroups) {
-      setGroupPreferenceRestored(false);
-    }
-  }
 
   const effectiveGroupId =
     !groups || groups.length === 0
@@ -36,16 +37,28 @@ export function usePersistedSelectedGroupId(
         ? selectedGroupId
         : groups[0]._id;
 
-  useEffect(() => {
-    if (!userId || !hasGroups) return;
-    if (groupPreferenceRestored) return;
+  const persistSnapshotRef = useRef<PersistSnapshot>({
+    userId,
+    effectiveGroupId,
+    groupPreferenceRestored: false,
+  });
+  persistSnapshotRef.current = {
+    userId,
+    effectiveGroupId,
+    groupPreferenceRestored: hasGroups && groupPreferenceRestored,
+  };
+
+  useMountEffect(() => {
+    if (!userId || !groups?.length) {
+      return;
+    }
 
     let cancelled = false;
     void (async () => {
       const stored = await loadPersistedSelectedGroupId(userId);
       if (cancelled) return;
-      if (stored && groups!.some((g) => g._id === stored)) {
-        setSelectedGroupId(stored as Id<"groups">);
+      if (stored && groups.some((g) => g._id === stored)) {
+        setSelectedGroupIdState(stored as Id<"groups">);
       }
       setGroupPreferenceRestored(true);
     })();
@@ -53,27 +66,30 @@ export function usePersistedSelectedGroupId(
     return () => {
       cancelled = true;
     };
-  }, [userId, groups, groupPreferenceRestored, hasGroups]);
+  });
 
-  useEffect(() => {
-    if (!userId || !effectiveGroupId || !groupPreferenceRestored) return;
-
-    const uid = userId;
-    const groupId = effectiveGroupId;
-
-    function persist() {
+  useMountEffect(() => {
+    function persistLatest() {
+      const { userId: uid, effectiveGroupId: groupId, groupPreferenceRestored: restored } =
+        persistSnapshotRef.current;
+      if (!uid || !groupId || !restored) return;
       void savePersistedSelectedGroupId(uid, groupId);
     }
 
-    persist();
-
     const sub = AppState.addEventListener("change", (s: AppStateStatus) => {
       if (s === "background" || s === "inactive") {
-        persist();
+        persistLatest();
       }
     });
     return () => sub.remove();
-  }, [userId, effectiveGroupId, groupPreferenceRestored]);
+  });
+
+  function setSelectedGroupId(id: Id<"groups"> | null) {
+    setSelectedGroupIdState(id);
+    if (userId && id && hasGroups && groupPreferenceRestored) {
+      void savePersistedSelectedGroupId(userId, id);
+    }
+  }
 
   return {
     selectedGroupId,
