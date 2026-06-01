@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import {
   memo,
@@ -7,41 +7,41 @@ import {
   type ChangeEvent,
   type KeyboardEvent,
   type Ref,
-} from "react";
-import { Plus, Command } from "lucide-react";
+} from 'react'
+import { Plus, Command } from 'lucide-react'
 
 interface BookmarkSearchProps {
-  ref?: Ref<HTMLInputElement | null>;
-  onSearch: (query: string) => void;
-  onSubmit: (value: string) => void;
+  ref?: Ref<HTMLInputElement | null>
+  onSearch: (query: string) => void
+  onSubmit: (value: string) => void
 }
 
-const DEBOUNCE_MS = 300;
+const DEBOUNCE_MS = 300
 
 export const BookmarkSearch = memo(function BookmarkSearch({
   ref,
   onSearch,
   onSubmit,
 }: BookmarkSearchProps) {
-  const [localValue, setLocalValue] = useState("");
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [localValue, setLocalValue] = useState('')
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function scheduleSearchFromInput(e: ChangeEvent<HTMLInputElement>) {
-    const val = e.target.value;
-    setLocalValue(val);
+    const val = e.target.value
+    setLocalValue(val)
 
-    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
-      onSearch(val);
-    }, DEBOUNCE_MS);
+      onSearch(val)
+    }, DEBOUNCE_MS)
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter" && localValue.trim()) {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      onSubmit(localValue.trim());
-      setLocalValue("");
-      onSearch("");
+    if (e.key === 'Enter' && localValue.trim()) {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      onSubmit(localValue.trim())
+      setLocalValue('')
+      onSearch('')
     }
   }
 
@@ -67,5 +67,5 @@ export const BookmarkSearch = memo(function BookmarkSearch({
         </kbd>
       </div>
     </div>
-  );
-});
+  )
+})
