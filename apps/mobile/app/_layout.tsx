@@ -13,7 +13,7 @@ import type { TokenCache } from "@clerk/expo";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as WebBrowser from "expo-web-browser";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { ActivityIndicator, Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -133,27 +133,27 @@ function AppContent() {
     Poppins_600SemiBold,
     Poppins_700Bold,
   });
-  const [splashHidden, setSplashHidden] = useState(false);
+  const splashHiddenRef = useRef(false);
 
-  const hideSplash = useCallback(() => {
-    if (splashHidden) return;
-    setSplashHidden(true);
+  function hideSplash() {
+    if (splashHiddenRef.current) return;
+    splashHiddenRef.current = true;
     void SplashScreen.hideAsync().catch(() => {
       /* ignore */
     });
-  }, [splashHidden]);
+  }
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
       hideSplash();
     }
-  }, [fontsLoaded, fontError, hideSplash]);
+  }, [fontsLoaded, fontError]);
 
   // Never leave Expo Go stuck on the native splash if font loading hangs.
   useEffect(() => {
     const timeout = setTimeout(hideSplash, 4000);
     return () => clearTimeout(timeout);
-  }, [hideSplash]);
+  }, []);
 
   if (fontError) {
     console.warn("[mobile fonts] Failed to load Poppins:", fontError);

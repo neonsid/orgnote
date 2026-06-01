@@ -84,11 +84,6 @@ export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
   const requestPresignedUploadUrl = useMutation(api.vault.mutations.requestPresignedUploadUrl);
   const saveFileMetadata = useMutation(api.vault.mutations.saveFileMetadata);
   const uploadGenerationRef = useRef(0);
-  const authRef = useRef({ isSignedIn: false, isAuthenticated: false });
-  authRef.current = {
-    isSignedIn: isSignedIn === true,
-    isAuthenticated,
-  };
 
   useMountEffect(() => {
     return () => {
@@ -119,7 +114,7 @@ export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
       return;
     }
 
-    if (!authRef.current.isSignedIn || !authRef.current.isAuthenticated) {
+    if (!isSignedIn || !isAuthenticated) {
       showThemedAlert("Sign in required", NOT_AUTHENTICATED_MESSAGE);
       return;
     }
@@ -130,7 +125,7 @@ export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
       if (uploadGenerationRef.current !== uploadGeneration) {
         throw new Error("Upload cancelled");
       }
-      if (!authRef.current.isSignedIn || !authRef.current.isAuthenticated) {
+      if (!isSignedIn || !isAuthenticated) {
         throw new Error(NOT_AUTHENTICATED_MESSAGE);
       }
     };
@@ -161,128 +156,123 @@ export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
         copyToCacheDirectory: true,
       });
 
-      if (result.canceled || !result.assets?.length) {
-        return;
-      }
+      if (!result.canceled && result.assets?.length) {
+        assertUploadActive();
 
-      assertUploadActive();
-
-      const assets = result.assets.slice(0, VAULT_MAX_FILES_PER_BATCH);
-      if (result.assets.length > VAULT_MAX_FILES_PER_BATCH) {
-        showThemedAlert(
-          "Too many files",
-          `Only the first ${VAULT_MAX_FILES_PER_BATCH} files were uploaded (max ${VAULT_MAX_FILES_PER_BATCH} per batch).`
-        );
-      }
-
-      type WorkItem = {
-        id: string;
-        asset: (typeof assets)[number];
-        name: string;
-        size: number;
-        fileType: string;
-      };
-
-      const workItems: WorkItem[] = [];
-      for (const [index, asset] of assets.entries()) {
-        const name = asset.name ?? "file";
-        if (name.length > MAX_FILENAME_LENGTH) {
+        const assets = result.assets.slice(0, VAULT_MAX_FILES_PER_BATCH);
+        if (result.assets.length > VAULT_MAX_FILES_PER_BATCH) {
           showThemedAlert(
-            "Invalid file",
-            `"${name}" is too long (max ${MAX_FILENAME_LENGTH} characters).`
+            "Too many files",
+            `Only the first ${VAULT_MAX_FILES_PER_BATCH} files were uploaded (max ${VAULT_MAX_FILES_PER_BATCH} per batch).`
           );
-          continue;
         }
-        const size = asset.size ?? 0;
-        if (size > VAULT_MAX_FILE_SIZE_BYTES) {
-          const mb = VAULT_MAX_FILE_SIZE_BYTES / (1024 * 1024);
-          showThemedAlert("File too large", `"${name}" exceeds the ${mb} MB limit.`);
-          continue;
-        }
-        const mime = asset.mimeType ?? "";
-        const fileType = normalizeVaultFileTypeForUpload(name, mime);
-        if (!isAllowedVaultUploadType(name, fileType)) {
-          showThemedAlert(
-            "Unsupported type",
-            `"${name}" is not allowed. Use images, video, audio, PDF, EPUB, zip, text, or Word documents.`
-          );
-          continue;
-        }
-        workItems.push({
-          id: `upload-${index}-${Date.now()}`,
-          asset,
-          name,
-          size,
-          fileType,
-        });
-      }
 
-      if (workItems.length === 0) {
-        return;
-      }
+        type WorkItem = {
+          id: string;
+          asset: (typeof assets)[number];
+          name: string;
+          size: number;
+          fileType: string;
+        };
 
-      setUploadStatus({
-        files: workItems.map((item) => ({
-          id: item.id,
-          fileName: item.name,
-          phase: "queued" as const,
-        })),
-      });
-
-      const settlements = await Promise.allSettled(
-        workItems.map(async ({ id, asset, name, size, fileType }) => {
-          try {
-            assertUploadActive();
-            updateFilePhase(id, { phase: "preparing" });
-            const requestId = await requestPresignedUploadUrl({
-              fileName: name,
-              fileType,
-            });
-            assertUploadActive();
-            const { uploadUrl, fileUrl } = await waitForVaultUploadRequest(convex, requestId);
-            assertUploadActive();
-            updateFilePhase(id, { phase: "uploading" });
-            await uploadFn(asset.uri, fileType, uploadUrl);
-            assertUploadActive();
-            updateFilePhase(id, { phase: "saving" });
-            await saveFileMetadata({
-              fileName: name,
-              fileType,
-              fileSize: size,
-              fileUrl,
-              groupId,
-            });
-            updateFilePhase(id, { phase: "done" });
-          } catch (err) {
-            const message = err instanceof Error ? err.message : "Upload failed";
-            updateFilePhase(id, { phase: "error", errorMessage: message });
-            throw err;
+        const workItems: WorkItem[] = [];
+        for (const [index, asset] of assets.entries()) {
+          const name = asset.name ?? "file";
+          if (name.length > MAX_FILENAME_LENGTH) {
+            showThemedAlert(
+              "Invalid file",
+              `"${name}" is too long (max ${MAX_FILENAME_LENGTH} characters).`
+            );
+            continue;
           }
-        })
-      );
+          const size = asset.size ?? 0;
+          if (size > VAULT_MAX_FILE_SIZE_BYTES) {
+            const mb = VAULT_MAX_FILE_SIZE_BYTES / (1024 * 1024);
+            showThemedAlert("File too large", `"${name}" exceeds the ${mb} MB limit.`);
+            continue;
+          }
+          const mime = asset.mimeType ?? "";
+          const fileType = normalizeVaultFileTypeForUpload(name, mime);
+          if (!isAllowedVaultUploadType(name, fileType)) {
+            showThemedAlert(
+              "Unsupported type",
+              `"${name}" is not allowed. Use images, video, audio, PDF, EPUB, zip, text, or Word documents.`
+            );
+            continue;
+          }
+          workItems.push({
+            id: `upload-${index}-${Date.now()}`,
+            asset,
+            name,
+            size,
+            fileType,
+          });
+        }
 
-      const okCount = settlements.filter((s) => s.status === "fulfilled").length;
-      const firstReject = settlements.find(
-        (s): s is PromiseRejectedResult => s.status === "rejected"
-      );
+        if (workItems.length > 0) {
+          setUploadStatus({
+            files: workItems.map((item) => ({
+              id: item.id,
+              fileName: item.name,
+              phase: "queued" as const,
+            })),
+          });
 
-      if (firstReject && okCount < workItems.length) {
-        const extra =
-          firstReject.reason instanceof Error ? ` ${firstReject.reason.message}` : "";
-        showThemedAlert("Some uploads failed", `${okCount}/${workItems.length} uploaded.${extra}`);
-      } else if (okCount > 0) {
-        showThemedAlert("Upload complete", `${okCount} file${okCount === 1 ? "" : "s"} uploaded.`);
+          const settlements = await Promise.allSettled(
+            workItems.map(async ({ id, asset, name, size, fileType }) => {
+              try {
+                assertUploadActive();
+                updateFilePhase(id, { phase: "preparing" });
+                const requestId = await requestPresignedUploadUrl({
+                  fileName: name,
+                  fileType,
+                });
+                assertUploadActive();
+                const { uploadUrl, fileUrl } = await waitForVaultUploadRequest(convex, requestId);
+                assertUploadActive();
+                updateFilePhase(id, { phase: "uploading" });
+                await uploadFn(asset.uri, fileType, uploadUrl);
+                assertUploadActive();
+                updateFilePhase(id, { phase: "saving" });
+                await saveFileMetadata({
+                  fileName: name,
+                  fileType,
+                  fileSize: size,
+                  fileUrl,
+                  groupId,
+                });
+                updateFilePhase(id, { phase: "done" });
+              } catch (err) {
+                const message = err instanceof Error ? err.message : "Upload failed";
+                updateFilePhase(id, { phase: "error", errorMessage: message });
+                throw err;
+              }
+            })
+          );
+
+          const okCount = settlements.filter((s) => s.status === "fulfilled").length;
+          const firstReject = settlements.find(
+            (s): s is PromiseRejectedResult => s.status === "rejected"
+          );
+
+          if (firstReject && okCount < workItems.length) {
+            const extra =
+              firstReject.reason instanceof Error ? ` ${firstReject.reason.message}` : "";
+            showThemedAlert("Some uploads failed", `${okCount}/${workItems.length} uploaded.${extra}`);
+          } else if (okCount > 0) {
+            showThemedAlert("Upload complete", `${okCount} file${okCount === 1 ? "" : "s"} uploaded.`);
+          }
+        }
       }
     } catch (e) {
       showThemedAlert(
         "Upload failed",
         e instanceof Error ? e.message : "Something went wrong while uploading."
       );
-    } finally {
-      setUploadStatus(null);
-      setUploading(false);
     }
-  }, [convex, groupId, requestPresignedUploadUrl, saveFileMetadata, updateFilePhase]);
+    setUploadStatus(null);
+    setUploading(false);
+  }, [convex, groupId, isAuthenticated, isSignedIn, requestPresignedUploadUrl, saveFileMetadata, updateFilePhase]);
 
   return { uploading, uploadStatus, pickAndUpload };
 }

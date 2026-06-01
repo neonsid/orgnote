@@ -19,6 +19,15 @@ export function usePersistedSelectedGroupId(
 ) {
   const [selectedGroupId, setSelectedGroupId] = useState<Id<"groups"> | null>(null);
   const [groupPreferenceRestored, setGroupPreferenceRestored] = useState(false);
+  const hasGroups = Boolean(groups && groups.length > 0);
+
+  const [prevHasGroups, setPrevHasGroups] = useState(hasGroups);
+  if (hasGroups !== prevHasGroups) {
+    setPrevHasGroups(hasGroups);
+    if (!hasGroups) {
+      setGroupPreferenceRestored(false);
+    }
+  }
 
   const effectiveGroupId = useMemo(() => {
     if (!groups || groups.length === 0) return null;
@@ -29,18 +38,14 @@ export function usePersistedSelectedGroupId(
   }, [groups, selectedGroupId]);
 
   useEffect(() => {
-    if (!userId) return;
-    if (!groups || groups.length === 0) {
-      setGroupPreferenceRestored(false);
-      return;
-    }
+    if (!userId || !hasGroups) return;
     if (groupPreferenceRestored) return;
 
     let cancelled = false;
     void (async () => {
       const stored = await loadPersistedSelectedGroupId(userId);
       if (cancelled) return;
-      if (stored && groups.some((g) => g._id === stored)) {
+      if (stored && groups!.some((g) => g._id === stored)) {
         setSelectedGroupId(stored as Id<"groups">);
       }
       setGroupPreferenceRestored(true);
@@ -49,7 +54,7 @@ export function usePersistedSelectedGroupId(
     return () => {
       cancelled = true;
     };
-  }, [userId, groups, groupPreferenceRestored]);
+  }, [userId, groups, groupPreferenceRestored, hasGroups]);
 
   useEffect(() => {
     if (!userId || !effectiveGroupId || !groupPreferenceRestored) return;
@@ -74,7 +79,7 @@ export function usePersistedSelectedGroupId(
   return {
     selectedGroupId,
     setSelectedGroupId,
-    groupPreferenceRestored,
+    groupPreferenceRestored: hasGroups && groupPreferenceRestored,
     effectiveGroupId,
   };
 }
