@@ -20,7 +20,7 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
   const colors = darkColors;
 
   useMountEffect(() => {
-    void SystemUI.setBackgroundColorAsync(colors.tabBarBg);
+    void SystemUI.setBackgroundColorAsync(colors.background);
   });
 
   const value: AppThemeContextValue = {

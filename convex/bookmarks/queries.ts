@@ -113,6 +113,7 @@ export const listBookmarksForGroupPaginated = authQuery({
         title: bookmark.title,
         url: bookmark.url,
         description: bookmark.description,
+        imageUrl: bookmark.imageUrl,
         doneReading: bookmark.doneReading,
         _creationTime: bookmark._creationTime,
         groupId: bookmark.groupId,

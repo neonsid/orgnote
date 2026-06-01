@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Text, View, type GestureResponderEvent } from "react-native";
@@ -6,14 +6,18 @@ import { Text, View, type GestureResponderEvent } from "react-native";
 import { AppPressable } from "@/components/ui/app-pressable";
 import { useAppTheme } from "@/contexts/app-theme";
 import { cn } from "@/lib/cn";
-import { getHostname } from "@/lib/utils";
+import { bookmarkIconUrl, getHostname } from "@/lib/utils";
+import { FALLBACK_COLORS } from "@goldfish/shared";
 import type { BookmarkMenuAnchor } from "./bookmark-context-menu";
 import type { Id } from "../../../../convex/_generated/dataModel";
+
+const ICON_SIZE = 24;
 
 export interface BookmarkData {
   _id: Id<"bookmarks">;
   title: string;
   url: string;
+  imageUrl?: string;
   doneReading?: boolean;
   description?: string;
   /** Convex `_creationTime` (ms); used for export parity with web. */
@@ -29,6 +33,35 @@ interface BookmarkCardProps {
   isSelected?: boolean;
 }
 
+function BookmarkIcon({ bookmark }: { bookmark: BookmarkData }) {
+  const iconUrl = bookmarkIconUrl(bookmark.url, bookmark.imageUrl);
+  const [imgError, setImgError] = useState(false);
+  const fallbackColor =
+    FALLBACK_COLORS[(bookmark.title || bookmark.url || "?").charCodeAt(0) % FALLBACK_COLORS.length];
+  const letter = (bookmark.title || bookmark.url || "?").charAt(0).toUpperCase();
+
+  if (!iconUrl || imgError) {
+    return (
+      <View
+        className="items-center justify-center rounded-md"
+        style={{ width: ICON_SIZE, height: ICON_SIZE, backgroundColor: fallbackColor }}
+      >
+        <Text className="font-sans text-xs font-bold text-white">{letter}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <Image
+      source={{ uri: iconUrl }}
+      style={{ width: ICON_SIZE, height: ICON_SIZE }}
+      contentFit="contain"
+      recyclingKey={iconUrl}
+      onError={() => setImgError(true)}
+    />
+  );
+}
+
 export function BookmarkCard({
   bookmark,
   onPress,
@@ -40,7 +73,6 @@ export function BookmarkCard({
   const { colors } = useAppTheme();
   const rowRef = useRef<View>(null);
   const hostname = getHostname(bookmark.url);
-  const faviconUrl = `https://www.google.com/s2/favicons?domain=${hostname}&sz=64`;
 
   function handleToggleRead(event: GestureResponderEvent) {
     event.stopPropagation();
@@ -78,7 +110,7 @@ export function BookmarkCard({
         </View>
       ) : (
         <View className="mt-px size-9 items-center justify-center overflow-hidden rounded-lg bg-muted">
-          <Image source={{ uri: faviconUrl }} className="size-6" />
+          <BookmarkIcon bookmark={bookmark} />
         </View>
       )}
 

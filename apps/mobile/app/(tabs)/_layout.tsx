@@ -68,7 +68,16 @@ export default function TabLayout() {
             paddingBottom: bottomInset,
             height: tabBarHeight,
             zIndex: 100,
-            boxShadow: "0px -8px 24px rgba(0, 0, 0, 0.35)",
+            ...Platform.select({
+              android: { elevation: 24 },
+              ios: {
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: -2 },
+                shadowOpacity: 0.12,
+                shadowRadius: 8,
+              },
+              default: {},
+            }),
           }}
         >
           <BlurView
@@ -106,7 +115,8 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: "transparent",
           height: TAB_BAR_CONTENT_HEIGHT,
-          boxShadow: "none",
+          elevation: 0,
+          shadowOpacity: 0,
         },
         tabBarIndicatorStyle: {
           backgroundColor: "transparent",

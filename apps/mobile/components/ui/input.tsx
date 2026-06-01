@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  Platform,
   Text,
   TextInput,
   View,
@@ -39,12 +40,19 @@ export function Input({
       ) : null}
       <TextInput
         className={cn(
-          "h-10 rounded-xl border border-input bg-surface px-3 font-sans text-sm text-foreground",
+          "h-10 rounded-xl border border-input bg-surface px-3 py-0 font-sans text-sm leading-5 text-foreground",
           focused && "border-ring",
           error && "border-destructive",
           className
         )}
-        style={style}
+        style={[
+          Platform.select({
+            android: { includeFontPadding: false, textAlignVertical: "center" },
+            default: undefined,
+          }),
+          style,
+        ]}
+        scrollEnabled={false}
         placeholderTextColor={colors.textMuted}
         onFocus={(event) => {
           setFocused(true);

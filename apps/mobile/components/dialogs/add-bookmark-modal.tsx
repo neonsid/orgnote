@@ -2,13 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMutation } from "convex/react";
 import * as Clipboard from "expo-clipboard";
 import { useState } from "react";
-import { Text, TextInput, View } from "react-native";
+import { Platform, Text, TextInput, View } from "react-native";
 
 import { AppPressable } from "@/components/ui/app-pressable";
 import { Button, Modal } from "@/components/ui";
 import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/lib/show-themed-alert";
-import { normalizeUrl } from "@/lib/utils";
+import { normalizeUrl, faviconUrlForUrl } from "@/lib/utils";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
@@ -44,7 +44,7 @@ export function AddBookmarkModal({
         groupId,
         url: normalizedUrl,
         title: normalizedUrl,
-        imageUrl: "",
+        imageUrl: faviconUrlForUrl(normalizedUrl),
       });
       setUrl("");
       onClose();
@@ -86,7 +86,7 @@ export function AddBookmarkModal({
         <View className="gap-2">
           <Text className="font-sans text-sm font-medium text-foreground">Link</Text>
           <View
-            className="flex-row items-center gap-2.5 rounded-xl border bg-surface px-3"
+            className="h-11 flex-row items-center gap-2.5 rounded-xl border bg-surface px-3"
             style={{ borderColor: focused ? colors.ring : colors.input }}
           >
             <View
@@ -96,7 +96,11 @@ export function AddBookmarkModal({
               <Ionicons name="link-outline" size={18} color={colors.primaryAccent} />
             </View>
             <TextInput
-              className="min-h-11 flex-1 py-2.5 font-sans text-base text-foreground"
+              className="h-full flex-1 py-0 font-sans text-base leading-[22px] text-foreground"
+              style={Platform.select({
+                android: { includeFontPadding: false, textAlignVertical: "center" },
+                default: undefined,
+              })}
               placeholder="https://example.com/article"
               placeholderTextColor={colors.textMuted}
               value={url}
@@ -109,6 +113,8 @@ export function AddBookmarkModal({
               onSubmitEditing={() => void handleAdd()}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
+              scrollEnabled={false}
+              numberOfLines={1}
             />
             {url.length > 0 ? (
               <AppPressable onPress={() => setUrl("")} hitSlop={8} className="p-1">
