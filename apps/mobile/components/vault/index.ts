@@ -8,4 +8,5 @@ export { VaultHeader } from "./vault-header";
 export { VaultMultiSelectToolbar } from "./vault-multi-select-toolbar";
 export type { VaultSelectionFile } from "./vault-multi-select-toolbar";
 export { VaultStatsBar } from "./vault-stats-bar";
+export { VaultContentModals } from "./vault-content-modals";
 export { VaultUploadBar } from "./vault-upload-bar";

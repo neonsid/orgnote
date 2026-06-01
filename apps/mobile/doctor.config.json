@@ -1,0 +1,8 @@
+{
+  "ignore": {
+    "files": [
+      "components/convex-clerk-bridge.tsx",
+      "components/native-clerk-auth-panel.tsx"
+    ]
+  }
+}

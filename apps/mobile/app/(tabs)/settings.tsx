@@ -8,7 +8,7 @@ import {
   SettingsItem,
 } from "@/components/settings";
 import { Button, Loading, ScreenShell } from "@/components/ui";
-import { showThemedAlert } from "@/contexts/themed-alert";
+import { showThemedAlert } from "@/lib/show-themed-alert";
 
 function SettingsContent() {
   const { signOut } = useClerk();

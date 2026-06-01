@@ -1,6 +1,6 @@
 import {
   createContext,
-  useContext,
+  use,
   type ReactNode,
 } from "react";
 import * as SystemUI from "expo-system-ui";
@@ -35,7 +35,7 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAppTheme(): AppThemeContextValue {
-  const ctx = useContext(AppThemeContext);
+  const ctx = use(AppThemeContext);
   if (!ctx) {
     throw new Error("useAppTheme must be used within AppThemeProvider");
   }
@@ -44,6 +44,6 @@ export function useAppTheme(): AppThemeContextValue {
 
 /** Safe when provider is optional; defaults to dark. */
 function useAppThemeColors(): AppColors {
-  const ctx = useContext(AppThemeContext);
+  const ctx = use(AppThemeContext);
   return ctx?.colors ?? darkColors;
 }

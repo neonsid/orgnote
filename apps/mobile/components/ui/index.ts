@@ -1,4 +1,5 @@
-export { AlertDialog, inferAlertVariant, type AlertVariant } from "./alert-dialog";
+export { AlertDialog } from "./alert-dialog";
+export { inferAlertVariant, type AlertVariant } from "@/lib/infer-alert-variant";
 export { AppPressable } from "./app-pressable";
 export { Button } from "./button";
 export { DetailSheet } from "./detail-sheet";

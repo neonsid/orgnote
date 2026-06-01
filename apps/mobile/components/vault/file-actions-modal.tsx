@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Modal } from "@/components/ui";
 import { SheetBody, SheetDivider, SheetRow, SheetSectionLabel } from "@/components/ui/sheet-row";
 import { useAppTheme } from "@/contexts/app-theme";
-import { showThemedAlert } from "@/contexts/themed-alert";
+import { showThemedAlert } from "@/lib/show-themed-alert";
 import { downloadAndShareFile } from "@/lib/download-file-native";
 import { openInAppBrowser } from "@/lib/open-in-app-browser";
 import { api } from "../../../../convex/_generated/api";

@@ -54,7 +54,7 @@ export function FilterModal({ visible, onClose, value, onChange }: FilterModalPr
                 isSelected ? (
                   <Ionicons name="checkmark" size={18} color={colors.primaryAccent} />
                 ) : (
-                  <View className="h-[18px] w-[18px] rounded-full border border-border" />
+                  <View className="size-[18px] rounded-full border border-border" />
                 )
               }
             />

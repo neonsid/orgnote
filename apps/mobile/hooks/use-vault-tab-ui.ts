@@ -19,7 +19,7 @@ type VaultTabUiState = {
   selectedFile: VaultSelectedFileRow | null;
 };
 
-type VaultTabUiAction =
+export type VaultTabUiAction =
   | { type: "setSelectedGroupId"; id: Id<"vaultGroups"> | null }
   | { type: "setShowGroupSelector"; open: boolean }
   | { type: "setShowCreateGroup"; open: boolean }

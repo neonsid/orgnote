@@ -3,11 +3,12 @@ import { ScrollView, Text, View } from "react-native";
 
 import { useAppTheme } from "@/contexts/app-theme";
 import { cn } from "@/lib/cn";
+import type { AlertVariant } from "@/lib/infer-alert-variant";
 
 import { AppPressable } from "./app-pressable";
 import { Modal } from "./modal";
 
-export type AlertVariant = "success" | "error" | "warning" | "destructive" | "info";
+export type { AlertVariant } from "@/lib/infer-alert-variant";
 
 export type AlertDialogButton = {
   text: string;
@@ -59,37 +60,6 @@ const VARIANT_CONFIG: Record<AlertVariant, VariantConfig> = {
     color: (c) => c.primaryAccent,
   },
 };
-
-export function inferAlertVariant(title: string, buttons: AlertDialogButton[]): AlertVariant {
-  const lower = title.toLowerCase();
-  const isConfirm = buttons.length > 1;
-  const hasDestructive = buttons.some((b) => b.style === "destructive");
-
-  if (hasDestructive || (isConfirm && (lower.includes("delete") || lower.includes("remove") || lower.includes("sign out")))) {
-    return "destructive";
-  }
-  if (
-    lower.includes("error") ||
-    lower.includes("failed") ||
-    lower.includes("could not") ||
-    lower.includes("cannot") ||
-    lower.includes("missing")
-  ) {
-    return "error";
-  }
-  if (
-    lower.includes("complete") ||
-    lower.includes("done") ||
-    lower.includes("copied") ||
-    lower.includes("success")
-  ) {
-    return "success";
-  }
-  if (lower.includes("some uploads") || lower.includes("warning") || lower.includes("required")) {
-    return "warning";
-  }
-  return "info";
-}
 
 const ALERT_TONE_CLASSES = {
   primary: "bg-primary-accent active:opacity-90",

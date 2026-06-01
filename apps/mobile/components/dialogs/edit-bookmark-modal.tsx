@@ -6,7 +6,7 @@ import { useConvex, useMutation } from "convex/react";
 import { AppPressable } from "@/components/ui/app-pressable";
 import { Button, Input, Modal } from "@/components/ui";
 import { useAppTheme } from "@/contexts/app-theme";
-import { showThemedAlert } from "@/contexts/themed-alert";
+import { showThemedAlert } from "@/lib/show-themed-alert";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { waitForBookmarkDescriptionJob } from "@/lib/poll-convex-query";
 import { MAX_DESCRIPTION_LENGTH } from "../../../../convex/lib/constants";

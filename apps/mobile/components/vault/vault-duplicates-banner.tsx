@@ -7,7 +7,7 @@ import { InteractionManager, Text, View } from "react-native";
 import { AppPressable } from "@/components/ui/app-pressable";
 import { Button } from "@/components/ui";
 import { useAppTheme } from "@/contexts/app-theme";
-import { showThemedAlert } from "@/contexts/themed-alert";
+import { showThemedAlert } from "@/lib/show-themed-alert";
 import { cn } from "@/lib/cn";
 import { deleteVaultFilesInBatches, getErrorMessage } from "@/lib/vault-bulk-delete";
 import {

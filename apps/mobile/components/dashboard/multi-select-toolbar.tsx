@@ -9,7 +9,7 @@ import type { BookmarkData } from "@/components/dashboard/bookmark-card";
 import { AppPressable } from "@/components/ui/app-pressable";
 import { useAppTheme } from "@/contexts/app-theme";
 import { useTabBarHeight } from "@/hooks/use-tab-bar-height";
-import { showThemedAlert } from "@/contexts/themed-alert";
+import { showThemedAlert } from "@/lib/show-themed-alert";
 import {
   generateCSVExport,
   generateJSONExport,
@@ -59,6 +59,10 @@ function MoveTargetList({
   maxHeight: number;
   onSelectGroup: (groupId: Id<"groups">) => void;
 }) {
+  function renderMoveTarget({ item, index }: { item: Group; index: number }) {
+    return <MoveTargetRow group={item} index={index} onSelect={onSelectGroup} />;
+  }
+
   return (
     <FlatList
       style={{ maxHeight }}
@@ -68,9 +72,7 @@ function MoveTargetList({
       className="border-t border-border px-2 py-1.5"
       data={groups}
       keyExtractor={(group) => group._id}
-      renderItem={({ item, index }) => (
-        <MoveTargetRow group={item} index={index} onSelect={onSelectGroup} />
-      )}
+      renderItem={renderMoveTarget}
     />
   );
 }

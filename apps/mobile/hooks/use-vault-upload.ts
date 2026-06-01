@@ -2,7 +2,7 @@ import { useAuth } from "@clerk/expo";
 import { useRef, useState } from "react";
 import { useConvex, useConvexAuth, useMutation } from "convex/react";
 
-import { showThemedAlert } from "@/contexts/themed-alert";
+import { showThemedAlert } from "@/lib/show-themed-alert";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { waitForVaultUploadRequest } from "@/lib/poll-convex-query";
 import { api } from "../../../convex/_generated/api";

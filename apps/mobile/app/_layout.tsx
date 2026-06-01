@@ -13,7 +13,6 @@ import type { TokenCache } from "@clerk/expo";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as WebBrowser from "expo-web-browser";
-import { useRef } from "react";
 import { ActivityIndicator, Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -126,6 +125,15 @@ function AppShell({ fontsReady }: { fontsReady: boolean }) {
   );
 }
 
+function HideSplashOnMount() {
+  useMountEffect(() => {
+    void SplashScreen.hideAsync().catch(() => {
+      /* ignore */
+    });
+  });
+  return null;
+}
+
 function AppContent() {
   const [fontsLoaded, fontError] = useFonts({
     Poppins_400Regular,
@@ -133,22 +141,14 @@ function AppContent() {
     Poppins_600SemiBold,
     Poppins_700Bold,
   });
-  const splashHiddenRef = useRef(false);
-
-  function hideSplash() {
-    if (splashHiddenRef.current) return;
-    splashHiddenRef.current = true;
-    void SplashScreen.hideAsync().catch(() => {
-      /* ignore */
-    });
-  }
-
-  if ((fontsLoaded || fontError) && !splashHiddenRef.current) {
-    hideSplash();
-  }
+  const fontsReady = fontsLoaded || Boolean(fontError);
 
   useMountEffect(() => {
-    const timeout = setTimeout(hideSplash, 4000);
+    const timeout = setTimeout(() => {
+      void SplashScreen.hideAsync().catch(() => {
+        /* ignore */
+      });
+    }, 4000);
     return () => clearTimeout(timeout);
   });
 
@@ -156,7 +156,12 @@ function AppContent() {
     console.warn("[mobile fonts] Failed to load Poppins:", fontError);
   }
 
-  return <AppShell fontsReady={fontsLoaded || Boolean(fontError)} />;
+  return (
+    <>
+      {fontsReady ? <HideSplashOnMount /> : null}
+      <AppShell fontsReady={fontsReady} />
+    </>
+  );
 }
 
 export default function RootLayout() {

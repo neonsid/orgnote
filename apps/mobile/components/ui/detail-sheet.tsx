@@ -10,7 +10,13 @@ interface DetailSheetProps {
   children: React.ReactNode;
 }
 
-export function DetailSheet({ visible, onClose, title, subtitle, children }: DetailSheetProps) {
+function DetailSheetText({ children }: { children: string }) {
+  return (
+    <Text className="font-sans text-[15px] leading-6 text-foreground">{children}</Text>
+  );
+}
+
+function DetailSheetRoot({ visible, onClose, title, subtitle, children }: DetailSheetProps) {
   return (
     <Modal
       visible={visible}
@@ -21,11 +27,9 @@ export function DetailSheet({ visible, onClose, title, subtitle, children }: Det
       compact={false}
       scrollable
     >
-      {typeof children === "string" ? (
-        <Text className="font-sans text-[15px] leading-6 text-foreground">{children}</Text>
-      ) : (
-        children
-      )}
+      {children}
     </Modal>
   );
 }
+
+export const DetailSheet = Object.assign(DetailSheetRoot, { Text: DetailSheetText });

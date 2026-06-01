@@ -67,15 +67,15 @@ function UploadProgressBar({ done, total }: { done: number; total: number }) {
   );
 }
 
+function renderUploadFileItem({ item }: ListRenderItemInfo<VaultUploadFileItem>) {
+  return <UploadFileRow file={item} />;
+}
+
 export function UploadProgressOverlay({ status }: { status: VaultUploadStatus }) {
   const doneCount = status.files.filter((f) => f.phase === "done").length;
   const activeCount = status.files.filter(
     (f) => f.phase !== "done" && f.phase !== "error" && f.phase !== "queued"
   ).length;
-
-  function renderItem({ item }: ListRenderItemInfo<VaultUploadFileItem>) {
-    return <UploadFileRow file={item} />;
-  }
 
   return (
     <Modal
@@ -102,7 +102,7 @@ export function UploadProgressOverlay({ status }: { status: VaultUploadStatus })
           contentContainerClassName="gap-2"
           showsVerticalScrollIndicator={false}
           scrollEnabled={status.files.length > 4}
-          renderItem={renderItem}
+          renderItem={renderUploadFileItem}
         />
       </View>
     </Modal>

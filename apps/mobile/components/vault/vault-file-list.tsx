@@ -112,7 +112,7 @@ export function VaultFileList({
       numColumns={2}
       columnWrapperClassName="justify-between"
       contentContainerClassName="gap-y-3 p-4"
-      contentContainerStyle={{ paddingBottom: scrollPadding }}
+      contentInset={{ bottom: scrollPadding }}
       showsVerticalScrollIndicator={false}
       renderItem={renderItem}
     />

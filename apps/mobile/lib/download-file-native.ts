@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform, Share } from "react-native";
 import { File, Paths } from "expo-file-system";
 
-import { showThemedAlert } from "@/contexts/themed-alert";
+import { showThemedAlert } from "@/lib/show-themed-alert";
 
 /**
  * Download a remote file to the device.

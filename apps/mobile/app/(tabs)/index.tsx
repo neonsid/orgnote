@@ -3,7 +3,7 @@ import { useConvexAuth, useMutation, usePaginatedQuery, useQuery } from "convex/
 import { useState } from "react";
 import { View } from "react-native";
 
-import { showThemedAlert } from "@/contexts/themed-alert";
+import { showThemedAlert } from "@/lib/show-themed-alert";
 
 import {
   Header,
@@ -22,6 +22,7 @@ import {
   DeleteGroupModal,
 } from "@/components/dialogs";
 import { Loading, EmptyState, ScreenShell } from "@/components/ui";
+import { PersistGroupOnBackground } from "@/components/persist-group-on-background";
 import {
   useBookmarkSelection,
   useBookmarksTabUiReducer,
@@ -198,6 +199,13 @@ function BookmarksContentWithGroups({
 
   return (
     <View className="flex-1">
+      {userId && effectiveGroupId && groupPreferenceRestored ? (
+        <PersistGroupOnBackground
+          key={`${userId}-${effectiveGroupId}`}
+          userId={userId}
+          groupId={effectiveGroupId}
+        />
+      ) : null}
       <Header
         selectedGroup={selectedGroup}
         onOpenGroupSelector={() => dispatchUi({ type: "setShowGroupSelector", open: true })}

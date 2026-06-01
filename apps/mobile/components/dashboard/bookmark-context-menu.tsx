@@ -20,7 +20,7 @@ import {
   MenuSubItem,
   MenuSubTrigger,
 } from '@/components/ui/menu-item'
-import { showThemedAlert } from '@/contexts/themed-alert'
+import { showThemedAlert } from '@/lib/show-themed-alert'
 import { useMountEffect } from '@/hooks/use-mount-effect'
 import { useTabBarHeight } from '@/hooks/use-tab-bar-height'
 import { openInAppBrowser } from '@/lib/open-in-app-browser'
@@ -346,7 +346,7 @@ export function BookmarkContextMenu({
             title="Description"
             subtitle={b.title || 'Untitled'}
           >
-            {b.description ?? ''}
+            <DetailSheet.Text>{b.description ?? ''}</DetailSheet.Text>
           </DetailSheet>
 
           <EditBookmarkModal

@@ -6,7 +6,7 @@ import { Text, View } from "react-native";
 import { AppPressable } from "@/components/ui/app-pressable";
 import { Button, Input, Modal } from "@/components/ui";
 import { useAppTheme } from "@/contexts/app-theme";
-import { showThemedAlert } from "@/contexts/themed-alert";
+import { showThemedAlert } from "@/lib/show-themed-alert";
 import { GROUP_COLORS } from "@/lib/group-colors";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";

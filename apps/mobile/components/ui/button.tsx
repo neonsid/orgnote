@@ -1,4 +1,4 @@
-import { createContext, useContext, type ComponentProps, type ReactNode } from "react";
+import { createContext, use, type ComponentProps, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Text,
@@ -23,10 +23,10 @@ type ButtonTextContextValue = {
 const ButtonTextContext = createContext<ButtonTextContextValue | null>(null);
 
 function useOptionalButtonTextContext() {
-  return useContext(ButtonTextContext);
+  return use(ButtonTextContext);
 }
 
-function ButtonText({
+export function ButtonText({
   children,
   className,
   style,

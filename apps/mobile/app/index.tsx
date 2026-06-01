@@ -11,7 +11,7 @@ import { NativeClerkAuthPanel } from "@/components/native-clerk-auth-panel";
 import { AppPressable } from "@/components/ui/app-pressable";
 import { OrgNoteLogo } from "@/components/ui/orgnote-logo";
 import { useAppTheme } from "@/contexts/app-theme";
-import { showThemedAlert } from "@/contexts/themed-alert";
+import { showThemedAlert } from "@/lib/show-themed-alert";
 import { cn } from "@/lib/cn";
 
 /** Expo Go cannot use your app.json `scheme`; OAuth must use `exp://…` from makeRedirectUri. */
@@ -26,16 +26,29 @@ function oauthRedirectUrl() {
   });
 }
 
-function clerkGoogleNativeEnv(key: "EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID" | "EXPO_PUBLIC_CLERK_GOOGLE_IOS_CLIENT_ID") {
+function clerkGoogleWebClientId(): string {
   const extra = Constants.expoConfig?.extra as Record<string, string | undefined> | undefined;
-  return String(extra?.[key] ?? process.env[key] ?? "").trim();
+  return String(
+    extra?.EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID ??
+      process.env.EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID ??
+      ""
+  ).trim();
+}
+
+function clerkGoogleIosClientId(): string {
+  const extra = Constants.expoConfig?.extra as Record<string, string | undefined> | undefined;
+  return String(
+    extra?.EXPO_PUBLIC_CLERK_GOOGLE_IOS_CLIENT_ID ??
+      process.env.EXPO_PUBLIC_CLERK_GOOGLE_IOS_CLIENT_ID ??
+      ""
+  ).trim();
 }
 
 function clerkNativeGoogleConfiguredForPlatform(): boolean {
-  const web = clerkGoogleNativeEnv("EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID");
+  const web = clerkGoogleWebClientId();
   if (!web) return false;
   if (Platform.OS === "ios") {
-    return Boolean(clerkGoogleNativeEnv("EXPO_PUBLIC_CLERK_GOOGLE_IOS_CLIENT_ID"));
+    return Boolean(clerkGoogleIosClientId());
   }
   return true;
 }

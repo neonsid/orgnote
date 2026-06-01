@@ -10,7 +10,7 @@ import {
   MenuSubItem,
   MenuSubTrigger,
 } from "@/components/ui/menu-item";
-import { showThemedAlert } from "@/contexts/themed-alert";
+import { showThemedAlert } from "@/lib/show-themed-alert";
 import { promptOpenExternalUrl } from "@/lib/open-external-url";
 import { downloadAndShareFile } from "@/lib/download-file-native";
 import { deleteVaultFilesInBatches, getErrorMessage } from "@/lib/vault-bulk-delete";

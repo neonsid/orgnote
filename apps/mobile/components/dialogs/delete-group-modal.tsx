@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Text, View } from "react-native";
 
 import { Button, Modal } from "@/components/ui";
-import { showThemedAlert } from "@/contexts/themed-alert";
+import { showThemedAlert } from "@/lib/show-themed-alert";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 

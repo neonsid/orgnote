@@ -7,7 +7,7 @@ import { Text, TextInput, View } from "react-native";
 import { AppPressable } from "@/components/ui/app-pressable";
 import { Button, Modal } from "@/components/ui";
 import { useAppTheme } from "@/contexts/app-theme";
-import { showThemedAlert } from "@/contexts/themed-alert";
+import { showThemedAlert } from "@/lib/show-themed-alert";
 import { normalizeUrl } from "@/lib/utils";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";

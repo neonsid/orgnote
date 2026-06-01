@@ -3,25 +3,17 @@ import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { View } from "react-native";
 
-import {
-  VaultGroupSelectorModal,
-  VaultMoveFileModal,
-  CreateGroupModal,
-  EditGroupModal,
-  DeleteGroupModal,
-} from "@/components/dialogs";
 import { Loading, EmptyState, ScreenShell } from "@/components/ui";
 import {
-  FileActionsModal,
-  UploadProgressOverlay,
   VaultDuplicatesBanner,
   VaultFileList,
   VaultHeader,
   VaultMultiSelectToolbar,
   VaultStatsBar,
   VaultUploadBar,
+  VaultContentModals,
 } from "@/components/vault";
-import { showThemedAlert } from "@/contexts/themed-alert";
+import { showThemedAlert } from "@/lib/show-themed-alert";
 import { useVaultTabUiReducer, useVaultUpload, useVaultSelection } from "@/hooks";
 import { openInAppBrowser } from "@/lib/open-in-app-browser";
 import {
@@ -290,72 +282,34 @@ function VaultContent() {
         />
       ) : null}
 
-      <VaultGroupSelectorModal
-        visible={showGroupSelector}
-        onClose={() => vaultDispatch({ type: "setShowGroupSelector", open: false })}
-        groups={vaultData.groups}
-        selectedGroupId={effectiveGroupId}
+      <VaultContentModals
+        vaultDispatch={vaultDispatch}
+        vaultData={vaultData}
+        selectedGroupId={selectedGroupId}
+        selectedGroup={selectedGroup}
+        effectiveGroupId={effectiveGroupId}
+        showGroupSelector={showGroupSelector}
+        showCreateGroup={showCreateGroup}
+        showEditGroup={showEditGroup}
+        showDeleteGroup={showDeleteGroup}
+        movePickerOpen={movePickerOpen}
+        selectedFile={selectedFile}
+        moveTargetGroups={moveTargetGroups}
+        duplicateSetCount={duplicateSetCount}
+        viewingDuplicates={viewingDuplicates}
+        uploading={uploading}
+        uploadStatus={uploadStatus}
+        isSelecting={isSelecting}
+        onVaultGroupCreated={onVaultGroupCreated}
         onSelectGroup={(id) => {
           vaultDispatch({ type: "setSelectedGroupId", id });
           clearSelection();
           setShowDuplicatesOnly(false);
         }}
-        onCreateGroup={() => vaultDispatch({ type: "groupSelectorToCreate" })}
-        onRenameGroup={() => vaultDispatch({ type: "groupSelectorToEdit" })}
-        onDeleteGroup={() => vaultDispatch({ type: "groupSelectorToDelete" })}
-        duplicateSetCount={duplicateSetCount}
-        viewingDuplicates={viewingDuplicates}
-        onShowDuplicates={handleToggleDuplicatesView}
+        onSelectMoveTarget={(groupId) => void handleSelectMoveTarget(groupId)}
+        onToggleDuplicatesView={handleToggleDuplicatesView}
+        onToggleSelection={toggleSelection}
       />
-
-      <CreateGroupModal
-        visible={showCreateGroup}
-        onClose={() => vaultDispatch({ type: "setShowCreateGroup", open: false })}
-        groupKind="vault"
-        onCreated={onVaultGroupCreated}
-      />
-
-      <EditGroupModal
-        visible={showEditGroup}
-        onClose={() => vaultDispatch({ type: "setShowEditGroup", open: false })}
-        groupKind="vault"
-        group={selectedGroup}
-      />
-
-      <DeleteGroupModal
-        visible={showDeleteGroup}
-        onClose={() => vaultDispatch({ type: "setShowDeleteGroup", open: false })}
-        groupKind="vault"
-        group={selectedGroup}
-        onDeleted={(deletedId) => {
-          if (selectedGroupId === deletedId) {
-            vaultDispatch({ type: "setSelectedGroupId", id: null });
-          }
-        }}
-      />
-
-      <FileActionsModal
-        visible={!!selectedFile && !movePickerOpen && !isSelecting}
-        onClose={() => vaultDispatch({ type: "setSelectedFile", file: null })}
-        file={selectedFile}
-        canMoveToAnotherGroup={moveTargetGroups.length > 0}
-        onRequestMoveToAnotherGroup={() => vaultDispatch({ type: "openMovePicker" })}
-        onSelectMultiple={() => {
-          if (!selectedFile) return;
-          toggleSelection(selectedFile._id);
-          vaultDispatch({ type: "setSelectedFile", file: null });
-        }}
-      />
-
-      <VaultMoveFileModal
-        visible={movePickerOpen && !!selectedFile}
-        onClose={() => vaultDispatch({ type: "setMovePickerOpen", open: false })}
-        fileName={selectedFile?.name ?? ""}
-        groups={moveTargetGroups}
-        onSelectGroup={(groupId) => void handleSelectMoveTarget(groupId)}
-      />
-
-      {uploading && uploadStatus ? <UploadProgressOverlay status={uploadStatus} /> : null}
     </View>
   );
 }
