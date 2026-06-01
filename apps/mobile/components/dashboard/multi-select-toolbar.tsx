@@ -26,6 +26,55 @@ interface Group {
   color?: string;
 }
 
+function MoveTargetRow({
+  group,
+  index,
+  onSelect,
+}: {
+  group: Group;
+  index: number;
+  onSelect: (groupId: Id<"groups">) => void;
+}) {
+  const dotColor = group.color ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length];
+
+  return (
+    <AppPressable
+      onPress={() => onSelect(group._id)}
+      className="flex-row items-center gap-3 rounded-lg px-3 py-2.5 active:bg-accent"
+    >
+      <View className="size-2.5 rounded-full" style={{ backgroundColor: dotColor }} />
+      <Text className="min-w-0 flex-1 font-sans text-base text-foreground" numberOfLines={1}>
+        {group.title}
+      </Text>
+    </AppPressable>
+  );
+}
+
+function MoveTargetList({
+  groups,
+  maxHeight,
+  onSelectGroup,
+}: {
+  groups: Group[];
+  maxHeight: number;
+  onSelectGroup: (groupId: Id<"groups">) => void;
+}) {
+  return (
+    <FlatList
+      style={{ maxHeight }}
+      nestedScrollEnabled
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator
+      className="border-t border-border px-2 py-1.5"
+      data={groups}
+      keyExtractor={(group) => group._id}
+      renderItem={({ item, index }) => (
+        <MoveTargetRow group={item} index={index} onSelect={onSelectGroup} />
+      )}
+    />
+  );
+}
+
 interface MultiSelectToolbarProps {
   selectedCount: number;
   selectedIds: Id<"bookmarks">[];
@@ -235,31 +284,10 @@ export function MultiSelectToolbar({
         </View>
 
         {expandedPanel === "move" ? (
-          <FlatList
-            style={{ maxHeight: movePanelMaxHeight }}
-            nestedScrollEnabled
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator
-            className="border-t border-border px-2 py-1.5"
-            data={moveTargets}
-            keyExtractor={(group) => group._id}
-            renderItem={({ item: group, index }) => (
-              <AppPressable
-                key={group._id}
-                onPress={() => void handleBulkMove(group._id)}
-                className="flex-row items-center gap-3 rounded-lg px-3 py-2.5 active:bg-accent"
-              >
-                <View
-                  className="size-2.5 rounded-full"
-                  style={{
-                    backgroundColor: group.color ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length],
-                  }}
-                />
-                <Text className="min-w-0 flex-1 font-sans text-base text-foreground" numberOfLines={1}>
-                  {group.title}
-                </Text>
-              </AppPressable>
-            )}
+          <MoveTargetList
+            groups={moveTargets}
+            maxHeight={movePanelMaxHeight}
+            onSelectGroup={(groupId) => void handleBulkMove(groupId)}
           />
         ) : null}
 

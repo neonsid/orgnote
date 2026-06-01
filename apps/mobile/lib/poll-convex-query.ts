@@ -23,6 +23,7 @@ export async function waitForVaultUploadRequest(
 ): Promise<{ uploadUrl: string; fileUrl: string }> {
   // Poll sequentially until ready — each iteration depends on the previous query + delay.
   for (let i = 0; i < DEFAULT_MAX_ATTEMPTS; i++) {
+    // eslint-disable-next-line react-doctor/async-await-in-loop -- poll until ready/failed
     const row = await convex.query(api.vault.queries.getVaultUploadRequest, {
       requestId,
     });
@@ -59,6 +60,7 @@ export async function waitForBookmarkDescriptionJob(
       err.name = "AbortError";
       throw err;
     }
+    // eslint-disable-next-line react-doctor/async-await-in-loop -- poll until job completes
     const job = await convex.query(api.bookmarks.queries.getBookmarkDescriptionJob, { jobId });
     if (job?.status === "complete" || job?.status === "cancelled") {
       return {
