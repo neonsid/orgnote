@@ -1,3 +1,5 @@
+"use no memo";
+
 import type { ReactNode } from "react";
 import { useAuth } from "@clerk/expo";
 import { ConvexReactClient } from "convex/react";

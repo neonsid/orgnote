@@ -16,14 +16,12 @@ export function GroupMoveList({
   excludeGroupId?: string | null;
   onSelectGroup: (groupId: string) => void;
 }) {
-  let fallbackIdx = 0;
+  const visibleGroups = groups.filter((group) => group._id !== excludeGroupId);
 
   return (
     <>
-      {groups.map((group) => {
-        if (group._id === excludeGroupId) return null;
-        const dotColor = group.color ?? FALLBACK_COLORS[fallbackIdx % FALLBACK_COLORS.length];
-        fallbackIdx += 1;
+      {visibleGroups.map((group, index) => {
+        const dotColor = group.color ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length];
         return (
           <SheetRow
             key={group._id}

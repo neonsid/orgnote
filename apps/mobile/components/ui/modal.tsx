@@ -66,8 +66,8 @@ function useSheetDismiss(isBottom: boolean, onClose: () => void) {
   const scrollY = useSharedValue(0);
 
   const resetAndClose = useCallback(() => {
-    translateY.value = 0;
-    scrollY.value = 0;
+    translateY.set(0);
+    scrollY.set(0);
     onClose();
   }, [onClose, scrollY, translateY]);
 
@@ -100,7 +100,7 @@ function useSheetDismiss(isBottom: boolean, onClose: () => void) {
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
-      scrollY.value = event.contentOffset.y;
+      scrollY.set(event.contentOffset.y);
     },
   });
 
