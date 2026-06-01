@@ -1,3 +1,5 @@
+"use no memo";
+
 import { useAuth, useSSO } from "@clerk/expo";
 import { AntDesign } from "@expo/vector-icons";
 import Constants from "expo-constants";
@@ -104,9 +106,8 @@ function SignInPanel() {
         "Sign in failed",
         err instanceof Error ? err.message : "Unknown error"
       );
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }
 
   return (

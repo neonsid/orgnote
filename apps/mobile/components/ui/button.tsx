@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, type ComponentProps, type ReactNode } from "react";
+import { createContext, useContext, type ComponentProps, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Text,
@@ -101,13 +101,10 @@ function ButtonRoot({
       ? colors.primaryForeground
       : colors.text;
 
-  const textContext = useMemo<ButtonTextContextValue>(
-    () => ({
-      textClassName: cn("text-sm font-medium", textVariantClasses[variant]),
-      textStyle,
-    }),
-    [variant, textStyle]
-  );
+  const textContext: ButtonTextContextValue = {
+    textClassName: cn("text-sm font-medium", textVariantClasses[variant]),
+    textStyle,
+  };
 
   return (
     <ButtonTextContext.Provider value={textContext}>

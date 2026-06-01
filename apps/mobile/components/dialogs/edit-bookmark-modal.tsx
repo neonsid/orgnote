@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useReducer, useRef } from "react";
+import { useReducer, useRef } from "react";
 import { ActivityIndicator, ScrollView, Text, TextInput, View } from "react-native";
 import { useConvex, useMutation } from "convex/react";
 
@@ -99,7 +99,7 @@ function EditBookmarkFormBody({
   const descriptionAbortRef = useRef<AbortController | null>(null);
   const activeJobIdRef = useRef<Id<"bookmarkDescriptionJobs"> | null>(null);
 
-  const cancelGeneration = useCallback(async () => {
+  async function cancelGeneration() {
     const jobId = activeJobIdRef.current;
     if (jobId) {
       try {
@@ -109,7 +109,7 @@ function EditBookmarkFormBody({
       }
     }
     descriptionAbortRef.current?.abort();
-  }, [cancelBookmarkDescriptionJob]);
+  }
 
   useMountEffect(() => {
     return () => {
@@ -149,17 +149,19 @@ function EditBookmarkFormBody({
       }
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") {
+        activeJobIdRef.current = null;
+        descriptionAbortRef.current = null;
+        dispatch({ type: "setGenerating", generating: false });
         return;
       }
       showThemedAlert(
         "Error",
         e instanceof Error ? e.message : "Failed to generate description. Try again or enter manually."
       );
-    } finally {
-      activeJobIdRef.current = null;
-      descriptionAbortRef.current = null;
-      dispatch({ type: "setGenerating", generating: false });
     }
+    activeJobIdRef.current = null;
+    descriptionAbortRef.current = null;
+    dispatch({ type: "setGenerating", generating: false });
   }
 
   async function handleSave() {
@@ -182,9 +184,8 @@ function EditBookmarkFormBody({
       onClose();
     } catch (err) {
       showThemedAlert("Error", err instanceof Error ? err.message : "Failed to save");
-    } finally {
-      dispatch({ type: "setLoading", loading: false });
     }
+    dispatch({ type: "setLoading", loading: false });
   }
 
   const hasDescription = Boolean(description.trim());

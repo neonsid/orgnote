@@ -68,9 +68,8 @@ export function DeleteGroupModal(props: DeleteGroupModalProps) {
         "Error",
         err instanceof Error ? err.message : "Failed to delete collection"
       );
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }
 
   if (!group) return null;

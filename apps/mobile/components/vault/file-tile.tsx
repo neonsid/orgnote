@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import { memo, useCallback } from "react";
 import { Image, Text, View } from "react-native";
 
 import { AppPressable } from "@/components/ui/app-pressable";
@@ -45,7 +44,7 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export const FileTile = memo(function FileTile({
+export function FileTile({
   file,
   onPress,
   onLongPress,
@@ -57,8 +56,12 @@ export const FileTile = memo(function FileTile({
   selectionLocked = false,
 }: FileTileProps) {
   const { colors } = useAppTheme();
-  const handlePress = useCallback(() => onPress(file._id), [onPress, file._id]);
-  const handleLongPress = useCallback(() => onLongPress(file._id), [onLongPress, file._id]);
+  function handlePress() {
+    onPress(file._id);
+  }
+  function handleLongPress() {
+    onLongPress(file._id);
+  }
   const isImage = file.type.startsWith("image/");
   const previewUrl = file.thumbnailUrl ?? (isImage ? file.url : undefined);
   const showSelectionUi = isSelecting && !selectionLocked;
@@ -139,4 +142,4 @@ export const FileTile = memo(function FileTile({
       </View>
     </AppPressable>
   );
-});
+}

@@ -1,6 +1,6 @@
 import { useAuth } from "@clerk/expo";
 import { useConvexAuth, useMutation, usePaginatedQuery, useQuery } from "convex/react";
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import { View } from "react-native";
 
 import { showThemedAlert } from "@/contexts/themed-alert";
@@ -55,10 +55,10 @@ function BookmarksContent() {
   const [contextMenuAnchor, setContextMenuAnchor] = useState<BookmarkMenuAnchor | null>(null);
   const toggleRead = useMutation(api.bookmarks.mutations.toggleReadStatus);
 
-  const selectedGroup = useMemo(() => {
-    if (!groups || !effectiveGroupId) return null;
-    return groups.find((g) => g._id === effectiveGroupId) ?? null;
-  }, [groups, effectiveGroupId]);
+  const selectedGroup =
+    !groups || !effectiveGroupId
+      ? null
+      : (groups.find((g) => g._id === effectiveGroupId) ?? null);
 
   const { results: bookmarks, status, loadMore } = usePaginatedQuery(
     api.bookmarks.queries.listBookmarksForGroupPaginated,
@@ -68,33 +68,22 @@ function BookmarksContent() {
     { initialNumItems: 20 }
   );
 
-  const filteredBookmarks = useMemo(() => {
-    if (!bookmarks) return [];
+  let filteredBookmarks = bookmarks ?? [];
+  if (filter === "read") {
+    filteredBookmarks = filteredBookmarks.filter((b) => b.doneReading);
+  } else if (filter === "unread") {
+    filteredBookmarks = filteredBookmarks.filter((b) => !b.doneReading);
+  }
+  if (searchQuery.trim()) {
+    const query = searchQuery.toLowerCase();
+    filteredBookmarks = filteredBookmarks.filter(
+      (b) =>
+        b.title?.toLowerCase().includes(query) ||
+        b.url.toLowerCase().includes(query)
+    );
+  }
 
-    let filtered = bookmarks;
-
-    if (filter === "read") {
-      filtered = filtered.filter((b) => b.doneReading);
-    } else if (filter === "unread") {
-      filtered = filtered.filter((b) => !b.doneReading);
-    }
-
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (b) =>
-          b.title?.toLowerCase().includes(query) ||
-          b.url.toLowerCase().includes(query)
-      );
-    }
-
-    return filtered;
-  }, [bookmarks, filter, searchQuery]);
-
-  const bookmarkIds = useMemo(
-    () => filteredBookmarks.map((b) => b._id),
-    [filteredBookmarks]
-  );
+  const bookmarkIds = filteredBookmarks.map((b) => b._id);
 
   const {
     selectedIds,
@@ -108,66 +97,58 @@ function BookmarksContent() {
     exitMultiSelect,
   } = useBookmarkSelection(bookmarkIds);
 
-  const selectedBookmarks = useMemo(
-    () => filteredBookmarks.filter((b) => selectedIds.includes(b._id)),
-    [filteredBookmarks, selectedIds]
+  const selectedBookmarks = filteredBookmarks.filter((b) =>
+    selectedIds.includes(b._id)
   );
 
-  const handleLoadMore = useCallback(() => {
+  function handleLoadMore() {
     if (status === "CanLoadMore") {
       loadMore(20);
     }
-  }, [status, loadMore]);
+  }
 
-  const handleOpenContextMenu = useCallback(
-    (bookmark: BookmarkData, anchor: BookmarkMenuAnchor) => {
-      setContextMenuBookmark(bookmark);
-      setContextMenuAnchor(anchor);
-    },
-    []
-  );
+  function handleOpenContextMenu(
+    bookmark: BookmarkData,
+    anchor: BookmarkMenuAnchor
+  ) {
+    setContextMenuBookmark(bookmark);
+    setContextMenuAnchor(anchor);
+  }
 
-  const handleCloseContextMenu = useCallback(() => {
+  function handleCloseContextMenu() {
     setContextMenuBookmark(null);
     setContextMenuAnchor(null);
-  }, []);
+  }
 
-  const handleEnterMultiSelect = useCallback(
-    (bookmarkId: Id<"bookmarks">) => {
-      handleCloseContextMenu();
-      enterMultiSelect(bookmarkId);
-    },
-    [enterMultiSelect, handleCloseContextMenu]
-  );
+  function handleEnterMultiSelect(bookmarkId: Id<"bookmarks">) {
+    handleCloseContextMenu();
+    enterMultiSelect(bookmarkId);
+  }
 
-  const handleBookmarkPress = useCallback(
-    (bookmark: BookmarkData) => {
-      if (multiSelectMode) {
-        toggleSelection(bookmark._id);
-      } else {
-        void openInAppBrowser(bookmark.url, bookmark.title);
-      }
-    },
-    [multiSelectMode, toggleSelection]
-  );
+  function handleBookmarkPress(bookmark: BookmarkData) {
+    if (multiSelectMode) {
+      toggleSelection(bookmark._id);
+    } else {
+      void openInAppBrowser(bookmark.url, bookmark.title);
+    }
+  }
 
-  const handleToggleRead = useCallback(
-    async (bookmark: BookmarkData) => {
-      try {
-        await toggleRead({ bookmarkId: bookmark._id });
-      } catch {
-        showThemedAlert(
-          "Error",
-          bookmark.doneReading ? "Failed to mark bookmark as unread" : "Failed to mark bookmark as read"
-        );
-      }
-    },
-    [toggleRead]
-  );
+  async function handleToggleRead(bookmark: BookmarkData) {
+    try {
+      await toggleRead({ bookmarkId: bookmark._id });
+    } catch {
+      showThemedAlert(
+        "Error",
+        bookmark.doneReading
+          ? "Failed to mark bookmark as unread"
+          : "Failed to mark bookmark as read"
+      );
+    }
+  }
 
-  const onGroupCreated = useCallback((id: Id<"groups">) => {
+  function onGroupCreated(id: Id<"groups">) {
     setSelectedGroupId(id);
-  }, [setSelectedGroupId]);
+  }
 
   if (!groups) {
     return <Loading message="Loading..." />;

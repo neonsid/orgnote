@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AppState, type AppStateStatus } from "react-native";
 
 import {
@@ -29,13 +29,12 @@ export function usePersistedSelectedGroupId(
     }
   }
 
-  const effectiveGroupId = useMemo(() => {
-    if (!groups || groups.length === 0) return null;
-    if (selectedGroupId && groups.some((g) => g._id === selectedGroupId)) {
-      return selectedGroupId;
-    }
-    return groups[0]._id;
-  }, [groups, selectedGroupId]);
+  const effectiveGroupId =
+    !groups || groups.length === 0
+      ? null
+      : selectedGroupId && groups.some((g) => g._id === selectedGroupId)
+        ? selectedGroupId
+        : groups[0]._id;
 
   useEffect(() => {
     if (!userId || !hasGroups) return;

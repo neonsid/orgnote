@@ -50,9 +50,8 @@ export function AddBookmarkModal({
       onClose();
     } catch (err) {
       showThemedAlert("Error", err instanceof Error ? err.message : "Failed to add bookmark");
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }
 
   function handleClose() {

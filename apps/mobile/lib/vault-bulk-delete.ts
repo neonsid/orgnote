@@ -12,11 +12,10 @@ export async function deleteVaultFilesInBatches(
   deleteBulk: (args: { fileIds: Id<"vaultFiles">[] }) => Promise<{ deletedCount: number }>,
   fileIds: Id<"vaultFiles">[]
 ): Promise<number> {
-  let deletedCount = 0;
+  const chunks: Id<"vaultFiles">[][] = [];
   for (let i = 0; i < fileIds.length; i += MAX_BULK_VAULT_DELETE) {
-    const chunk = fileIds.slice(i, i + MAX_BULK_VAULT_DELETE);
-    const result = await deleteBulk({ fileIds: chunk });
-    deletedCount += result.deletedCount;
+    chunks.push(fileIds.slice(i, i + MAX_BULK_VAULT_DELETE));
   }
-  return deletedCount;
+  const results = await Promise.all(chunks.map((chunk) => deleteBulk({ fileIds: chunk })));
+  return results.reduce((sum, result) => sum + result.deletedCount, 0);
 }

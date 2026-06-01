@@ -96,6 +96,9 @@ export async function downloadAndShareFile(
       await Share.share({ url: destination.uri, title: fileName });
       const result = { fileName: safeName, folderLabel: "Files app" };
       showDownloadCompleteAlert(result);
+      if (destination.exists) {
+        destination.delete();
+      }
       return result;
     }
 
@@ -106,12 +109,14 @@ export async function downloadAndShareFile(
 
     async function writeIntoDirectory(targetDirectoryUri: string, suffix = "") {
       const targetName = `${baseName}${suffix}`;
-      const targetUri = await LegacyFS.StorageAccessFramework.createFileAsync(
-        targetDirectoryUri,
-        targetName,
-        mimeType
-      );
-      const fileBase64 = await destination.base64();
+      const [targetUri, fileBase64] = await Promise.all([
+        LegacyFS.StorageAccessFramework.createFileAsync(
+          targetDirectoryUri,
+          targetName,
+          mimeType
+        ),
+        destination.base64(),
+      ]);
       await LegacyFS.StorageAccessFramework.writeAsStringAsync(targetUri, fileBase64, {
         encoding: LegacyFS.EncodingType.Base64,
       });
@@ -121,8 +126,7 @@ export async function downloadAndShareFile(
     let savedFileName = safeName;
     try {
       savedFileName = await writeIntoDirectory(directoryUri);
-    } catch (error) {
-      // The stored SAF permission may be stale after reinstall or if the user revoked it.
+    } catch {
       await AsyncStorage.removeItem(DOWNLOADS_DIR_URI_KEY);
       directoryUri = await getAndroidDownloadsDirectoryUri(LegacyFS);
 
@@ -135,11 +139,15 @@ export async function downloadAndShareFile(
 
     const result = { fileName: savedNameWithExtension(savedFileName, fileName), folderLabel };
     showDownloadCompleteAlert(result);
-    return result;
-  } finally {
     if (destination.exists) {
       destination.delete();
     }
+    return result;
+  } catch (error) {
+    if (destination.exists) {
+      destination.delete();
+    }
+    throw error;
   }
 }
 

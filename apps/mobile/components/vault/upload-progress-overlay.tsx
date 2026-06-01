@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback } from "react";
 import { ActivityIndicator, FlatList, Text, View, type ListRenderItemInfo } from "react-native";
 
 import { Modal } from "@/components/ui";
@@ -74,10 +73,9 @@ export function UploadProgressOverlay({ status }: { status: VaultUploadStatus })
     (f) => f.phase !== "done" && f.phase !== "error" && f.phase !== "queued"
   ).length;
 
-  const renderItem = useCallback(
-    ({ item }: ListRenderItemInfo<VaultUploadFileItem>) => <UploadFileRow file={item} />,
-    []
-  );
+  function renderItem({ item }: ListRenderItemInfo<VaultUploadFileItem>) {
+    return <UploadFileRow file={item} />;
+  }
 
   return (
     <Modal

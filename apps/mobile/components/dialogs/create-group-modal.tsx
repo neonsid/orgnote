@@ -52,9 +52,8 @@ export function CreateGroupModal(props: CreateGroupModalProps) {
       onClose();
     } catch (err) {
       showThemedAlert("Error", err instanceof Error ? err.message : "Failed to create collection");
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }
 
   function handleClose() {

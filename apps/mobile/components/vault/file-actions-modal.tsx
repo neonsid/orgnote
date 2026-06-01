@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation } from "convex/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { Modal } from "@/components/ui";
 import { SheetBody, SheetDivider, SheetRow, SheetSectionLabel } from "@/components/ui/sheet-row";
@@ -51,16 +51,13 @@ export function FileActionsModal({
   const deleteFile = useMutation(api.vault.mutations.deleteFile);
   const [downloading, setDownloading] = useState(false);
 
-  const tints = useMemo(
-    () => ({
-      primary: `${colors.primaryAccent}18`,
-      success: `${colors.success}18`,
-      cyan: `${colors.brandCyan}18`,
-      muted: `${colors.textMuted}18`,
-      destructive: `${colors.error}18`,
-    }),
-    [colors]
-  );
+  const tints = {
+    primary: `${colors.primaryAccent}18`,
+    success: `${colors.success}18`,
+    cyan: `${colors.brandCyan}18`,
+    muted: `${colors.textMuted}18`,
+    destructive: `${colors.error}18`,
+  };
 
   if (!file) return null;
 
@@ -87,9 +84,8 @@ export function FileActionsModal({
       handleClose();
     } catch (e) {
       showThemedAlert("Download failed", e instanceof Error ? e.message : "Could not download file.");
-    } finally {
-      setDownloading(false);
     }
+    setDownloading(false);
   }
 
   function handleDelete() {

@@ -2,7 +2,6 @@ import {
   createContext,
   useContext,
   useEffect,
-  useMemo,
   type ReactNode,
 } from "react";
 import * as SystemUI from "expo-system-ui";
@@ -24,14 +23,11 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
     void SystemUI.setBackgroundColorAsync(colors.tabBarBg);
   }, [colors.tabBarBg]);
 
-  const value = useMemo(
-    (): AppThemeContextValue => ({
-      colors,
-      resolvedScheme: "dark",
-      isDark: true,
-    }),
-    [colors]
-  );
+  const value: AppThemeContextValue = {
+    colors,
+    resolvedScheme: "dark",
+    isDark: true,
+  };
 
   return (
     <AppThemeContext.Provider value={value}>{children}</AppThemeContext.Provider>

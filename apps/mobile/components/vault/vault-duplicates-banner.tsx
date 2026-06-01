@@ -69,9 +69,8 @@ export function VaultDuplicatesBanner({
                   getErrorMessage(err, "Failed to remove duplicate copies")
                 );
               });
-            } finally {
-              setRemoving(false);
             }
+            setRemoving(false);
           },
         },
       ]

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 
 import type { Id } from "../../../convex/_generated/dataModel";
 
@@ -7,7 +7,7 @@ export function useVaultSelection(fileIds: Id<"vaultFiles">[]) {
 
   const isSelecting = selectedIds.size > 0;
 
-  const toggleSelection = useCallback((id: Id<"vaultFiles">) => {
+  function toggleSelection(id: Id<"vaultFiles">) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -17,34 +17,31 @@ export function useVaultSelection(fileIds: Id<"vaultFiles">[]) {
       }
       return next;
     });
-  }, []);
+  }
 
-  const toggleSelectAllVisible = useCallback(() => {
+  function toggleSelectAllVisible() {
     setSelectedIds((prev) => {
       if (fileIds.length === 0) return new Set();
       const allSelected = fileIds.every((id) => prev.has(id));
       if (allSelected) return new Set();
       return new Set(fileIds);
     });
-  }, [fileIds]);
+  }
 
-  const allVisibleSelected = useMemo(
-    () => fileIds.length > 0 && fileIds.every((id) => selectedIds.has(id)),
-    [fileIds, selectedIds]
-  );
+  const allVisibleSelected =
+    fileIds.length > 0 && fileIds.every((id) => selectedIds.has(id));
 
-  const clearSelection = useCallback(() => {
+  function clearSelection() {
     setSelectedIds(new Set());
-  }, []);
+  }
 
-  const isSelected = useCallback(
-    (id: Id<"vaultFiles">) => selectedIds.has(id),
-    [selectedIds]
-  );
+  function isSelected(id: Id<"vaultFiles">) {
+    return selectedIds.has(id);
+  }
 
   const selectedCount = selectedIds.size;
 
-  const selectedIdsArray = useMemo(() => Array.from(selectedIds), [selectedIds]);
+  const selectedIdsArray = Array.from(selectedIds);
 
   return {
     selectedIds: selectedIdsArray,

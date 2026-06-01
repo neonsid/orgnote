@@ -77,9 +77,8 @@ function EditGroupFormBody({
         "Error",
         err instanceof Error ? err.message : "Failed to rename collection"
       );
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }
 
   return (

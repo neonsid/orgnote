@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useMemo } from "react";
 import {
   KeyboardAvoidingView,
   Modal as RNModal,
@@ -65,38 +64,35 @@ function useSheetDismiss(isBottom: boolean, onClose: () => void) {
   const translateY = useSharedValue(0);
   const scrollY = useSharedValue(0);
 
-  const resetAndClose = useCallback(() => {
+  function resetAndClose() {
     translateY.set(0);
     scrollY.set(0);
     onClose();
-  }, [onClose, scrollY, translateY]);
+  }
 
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
   }));
 
-  const createPanGesture = useCallback(
-    (allowWhileScrolled = false) => {
-      if (!isBottom) {
-        return Gesture.Pan().enabled(false);
-      }
-      return Gesture.Pan()
-        .activeOffsetY(8)
-        .onUpdate((event) => {
-          if ((allowWhileScrolled || scrollY.value <= 0) && event.translationY > 0) {
-            translateY.value = event.translationY;
-          }
-        })
-        .onEnd((event) => {
-          if (translateY.value > DISMISS_THRESHOLD || event.velocityY > 650) {
-            runOnJS(resetAndClose)();
-            return;
-          }
-          translateY.value = withSpring(0, { damping: 22, stiffness: 280 });
-        });
-    },
-    [isBottom, resetAndClose, scrollY, translateY]
-  );
+  function createPanGesture(allowWhileScrolled = false) {
+    if (!isBottom) {
+      return Gesture.Pan().enabled(false);
+    }
+    return Gesture.Pan()
+      .activeOffsetY(8)
+      .onUpdate((event) => {
+        if ((allowWhileScrolled || scrollY.value <= 0) && event.translationY > 0) {
+          translateY.value = event.translationY;
+        }
+      })
+      .onEnd((event) => {
+        if (translateY.value > DISMISS_THRESHOLD || event.velocityY > 650) {
+          runOnJS(resetAndClose)();
+          return;
+        }
+        translateY.value = withSpring(0, { damping: 22, stiffness: 280 });
+      });
+  }
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -145,8 +141,8 @@ export function Modal({
     onClose
   );
 
-  const headerPan = useMemo(() => createPanGesture(true), [createPanGesture]);
-  const bodyPan = useMemo(() => createPanGesture(false), [createPanGesture]);
+  const headerPan = createPanGesture(true);
+  const bodyPan = createPanGesture(false);
 
   const bodyPadding = flushBody ? MENU_BODY_INSET : isMenu ? MENU_BODY_INSET : `${SHEET_BODY_INSET} pt-1`;
   const scrollPadding = flushBody

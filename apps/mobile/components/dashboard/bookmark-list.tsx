@@ -1,4 +1,3 @@
-import { useCallback } from "react";
 import { ActivityIndicator, FlatList, Text, View, type ListRenderItemInfo } from "react-native";
 
 import { useAppTheme } from "@/contexts/app-theme";
@@ -80,8 +79,8 @@ export function BookmarkList({
   const { colors } = useAppTheme();
   const bottomInset = useTabBarScrollPadding(multiSelectMode ? 120 : 24);
 
-  const renderItem = useCallback(
-    ({ item }: ListRenderItemInfo<BookmarkData>) => (
+  function renderItem({ item }: ListRenderItemInfo<BookmarkData>) {
+    return (
       <BookmarkCard
         bookmark={item}
         onPress={() => onBookmarkPress(item)}
@@ -96,16 +95,8 @@ export function BookmarkList({
         multiSelectMode={multiSelectMode}
         isSelected={isSelected?.(item._id)}
       />
-    ),
-    [
-      onBookmarkPress,
-      multiSelectMode,
-      onToggleMultiSelect,
-      onOpenContextMenu,
-      onToggleRead,
-      isSelected,
-    ]
-  );
+    );
+  }
 
   if (loading) {
     return (

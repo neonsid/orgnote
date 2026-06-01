@@ -1,5 +1,5 @@
 import { useAuth } from "@clerk/expo";
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useConvex, useConvexAuth, useMutation } from "convex/react";
 
 import { showThemedAlert } from "@/contexts/themed-alert";
@@ -91,21 +91,18 @@ export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
     };
   });
 
-  const updateFilePhase = useCallback(
-    (id: string, patch: Partial<VaultUploadFileItem>) => {
-      setUploadStatus((prev) => {
-        if (!prev) return prev;
-        return {
-          files: prev.files.map((file) =>
-            file.id === id ? { ...file, ...patch } : file
-          ),
-        };
-      });
-    },
-    []
-  );
+  function updateFilePhase(id: string, patch: Partial<VaultUploadFileItem>) {
+    setUploadStatus((prev) => {
+      if (!prev) return prev;
+      return {
+        files: prev.files.map((file) =>
+          file.id === id ? { ...file, ...patch } : file
+        ),
+      };
+    });
+  }
 
-  const pickAndUpload = useCallback(async () => {
+  async function pickAndUpload() {
     if (!groupId) {
       showThemedAlert(
         "Select a collection",
@@ -272,7 +269,7 @@ export function useVaultUpload(groupId: Id<"vaultGroups"> | null) {
     }
     setUploadStatus(null);
     setUploading(false);
-  }, [convex, groupId, isAuthenticated, isSignedIn, requestPresignedUploadUrl, saveFileMetadata, updateFilePhase]);
+  }
 
   return { uploading, uploadStatus, pickAndUpload };
 }

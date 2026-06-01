@@ -1,6 +1,6 @@
 import { useAuth } from "@clerk/expo";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import { View } from "react-native";
 
 import {
@@ -47,30 +47,26 @@ function VaultContent() {
     selectedFile,
   } = vaultUi;
 
-  const effectiveGroupId = useMemo(() => {
-    if (!vaultData || vaultData.groups.length === 0) return null;
-    if (selectedGroupId && vaultData.groups.some((g) => g._id === selectedGroupId)) {
-      return selectedGroupId;
-    }
-    return vaultData.groups[0]?._id ?? null;
-  }, [vaultData, selectedGroupId]);
+  const effectiveGroupId =
+    !vaultData || vaultData.groups.length === 0
+      ? null
+      : selectedGroupId && vaultData.groups.some((g) => g._id === selectedGroupId)
+        ? selectedGroupId
+        : (vaultData.groups[0]?._id ?? null);
 
   const { uploading, uploadStatus, pickAndUpload } = useVaultUpload(effectiveGroupId);
   const moveVaultFile = useMutation(api.vault.mutations.moveVaultFile);
 
-  const selectedGroup = useMemo(() => {
-    if (!vaultData || !effectiveGroupId) return null;
-    return vaultData.groups.find((g) => g._id === effectiveGroupId) ?? null;
-  }, [vaultData, effectiveGroupId]);
+  const selectedGroup =
+    !vaultData || !effectiveGroupId
+      ? null
+      : (vaultData.groups.find((g) => g._id === effectiveGroupId) ?? null);
 
-  const duplicateSetCount = useMemo(
-    () => (vaultData ? countDuplicateSets(vaultData.files) : 0),
-    [vaultData]
-  );
+  const duplicateSetCount = vaultData ? countDuplicateSets(vaultData.files) : 0;
 
   const viewingDuplicates = showDuplicatesOnly && duplicateSetCount > 0;
 
-  const filteredFiles = useMemo(() => {
+  const filteredFiles = (() => {
     if (!vaultData) return [];
     let files = vaultData.files;
     if (viewingDuplicates) {
@@ -80,42 +76,33 @@ function VaultContent() {
       files = files.filter((f) => f.groupId === effectiveGroupId);
     }
     return files.sort((a, b) => b._creationTime - a._creationTime);
-  }, [vaultData, effectiveGroupId, viewingDuplicates]);
+  })();
 
-  const canonicalFileIds = useMemo(
-    () =>
-      vaultData
-        ? getCanonicalFileIds(vaultData.files)
-        : new Set<Id<"vaultFiles">>(),
-    [vaultData]
-  );
+  const canonicalFileIds = vaultData
+    ? getCanonicalFileIds(vaultData.files)
+    : new Set<Id<"vaultFiles">>();
 
-  const originalInfoForExtras = useMemo(
-    () => (vaultData ? getOriginalInfoForExtras(vaultData.files) : new Map()),
-    [vaultData]
-  );
+  const originalInfoForExtras = vaultData
+    ? getOriginalInfoForExtras(vaultData.files)
+    : new Map();
 
-  const groupTitleById = useMemo(() => {
-    const map = new Map<Id<"vaultGroups">, string>();
-    for (const group of vaultData?.groups ?? []) {
-      map.set(group._id, group.title);
+  const groupTitleById = new Map<Id<"vaultGroups">, string>();
+  for (const group of vaultData?.groups ?? []) {
+    groupTitleById.set(group._id, group.title);
+  }
+
+  const selectableFileIds: Id<"vaultFiles">[] = [];
+  if (!viewingDuplicates) {
+    for (const file of filteredFiles) {
+      selectableFileIds.push(file._id);
     }
-    return map;
-  }, [vaultData?.groups]);
-
-  const selectableFileIds = useMemo(() => {
-    if (!viewingDuplicates) {
-      return filteredFiles.map((f) => f._id);
-    }
-
-    const ids: Id<"vaultFiles">[] = [];
+  } else {
     for (const file of filteredFiles) {
       if (!canonicalFileIds.has(file._id)) {
-        ids.push(file._id);
+        selectableFileIds.push(file._id);
       }
     }
-    return ids;
-  }, [filteredFiles, viewingDuplicates, canonicalFileIds]);
+  }
 
   const visibleFileIds = selectableFileIds;
 
@@ -130,79 +117,65 @@ function VaultContent() {
     clearSelection,
   } = useVaultSelection(visibleFileIds);
 
-  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const selectedIdSet = new Set(selectedIds);
 
-  const selectedFiles = useMemo(() => {
-    const result: Array<{
-      _id: Id<"vaultFiles">;
-      name: string;
-      url: string;
-      type: string;
-    }> = [];
+  const selectedFiles: Array<{
+    _id: Id<"vaultFiles">;
+    name: string;
+    url: string;
+    type: string;
+  }> = [];
+  for (const file of filteredFiles) {
+    if (selectedIdSet.has(file._id)) {
+      selectedFiles.push({
+        _id: file._id,
+        name: file.name,
+        url: file.url,
+        type: file.type,
+      });
+    }
+  }
 
-    for (const file of filteredFiles) {
-      if (selectedIdSet.has(file._id)) {
-        result.push({
-          _id: file._id,
-          name: file.name,
-          url: file.url,
-          type: file.type,
-        });
-      }
+  const filesById = new Map(filteredFiles.map((file) => [file._id, file]));
+
+  function handleFilePress(fileId: Id<"vaultFiles">) {
+    const file = filesById.get(fileId);
+    if (!file) return;
+
+    if (isSelecting) {
+      if (viewingDuplicates && canonicalFileIds.has(file._id)) return;
+      toggleSelection(file._id);
+    } else {
+      void openInAppBrowser(file.url, file.name);
+    }
+  }
+
+  function handleFileLongPress(fileId: Id<"vaultFiles">) {
+    const file = filesById.get(fileId);
+    if (!file) return;
+
+    if (viewingDuplicates && canonicalFileIds.has(file._id)) return;
+
+    if (isSelecting) {
+      toggleSelection(file._id);
+      return;
     }
 
-    return result;
-  }, [filteredFiles, selectedIdSet]);
+    vaultDispatch({
+      type: "setSelectedFile",
+      file: {
+        _id: file._id,
+        name: file.name,
+        url: file.url,
+        type: file.type,
+      },
+    });
+  }
 
-  const filesById = useMemo(
-    () => new Map(filteredFiles.map((file) => [file._id, file])),
-    [filteredFiles]
-  );
-
-  const handleFilePress = useCallback(
-    (fileId: Id<"vaultFiles">) => {
-      const file = filesById.get(fileId);
-      if (!file) return;
-
-      if (isSelecting) {
-        if (viewingDuplicates && canonicalFileIds.has(file._id)) return;
-        toggleSelection(file._id);
-      } else {
-        void openInAppBrowser(file.url, file.name);
-      }
-    },
-    [filesById, isSelecting, toggleSelection, viewingDuplicates, canonicalFileIds]
-  );
-
-  const handleFileLongPress = useCallback(
-    (fileId: Id<"vaultFiles">) => {
-      const file = filesById.get(fileId);
-      if (!file) return;
-
-      if (viewingDuplicates && canonicalFileIds.has(file._id)) return;
-
-      if (isSelecting) {
-        toggleSelection(file._id);
-        return;
-      }
-
-      vaultDispatch({
-        type: "setSelectedFile",
-        file: {
-          _id: file._id,
-          name: file.name,
-          url: file.url,
-          type: file.type,
-        },
-      });
-    },
-    [filesById, isSelecting, toggleSelection, viewingDuplicates, canonicalFileIds]
-  );
-
-  const moveTargetGroups = useMemo(() => {
-    if (!vaultData || !effectiveGroupId) return [];
-    return vaultData.groups.filter((g) => g._id !== effectiveGroupId);
-  }, [vaultData, effectiveGroupId]);
+  const moveTargetGroups =
+    !vaultData || !effectiveGroupId
+      ? []
+      : vaultData.groups.filter((g) => g._id !== effectiveGroupId);
 
   async function handleSelectMoveTarget(groupId: Id<"vaultGroups">) {
     if (!selectedFile) return;
@@ -231,14 +204,11 @@ function VaultContent() {
     vaultDispatch({ type: "setShowGroupSelector", open: false });
   }
 
-  const onVaultGroupCreated = useCallback(
-    (groupId: Id<"vaultGroups">) => {
-      vaultDispatch({ type: "setSelectedGroupId", id: groupId });
-      clearSelection();
-      setShowDuplicatesOnly(false);
-    },
-    [clearSelection]
-  );
+  function onVaultGroupCreated(groupId: Id<"vaultGroups">) {
+    vaultDispatch({ type: "setSelectedGroupId", id: groupId });
+    clearSelection();
+    setShowDuplicatesOnly(false);
+  }
 
   const statsLabel = viewingDuplicates
     ? `${duplicateSetCount} duplicate set${duplicateSetCount === 1 ? "" : "s"} · ${filteredFiles.length} files`

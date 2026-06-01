@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import {
   AlertDialog,
@@ -79,7 +79,9 @@ function ThemedAlertHost() {
     };
   });
 
-  const close = useCallback(() => setPayload(null), []);
+  function close() {
+    setPayload(null);
+  }
 
   if (!payload) return null;
 
