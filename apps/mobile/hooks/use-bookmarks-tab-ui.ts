@@ -2,7 +2,7 @@ import { useReducer } from "react";
 
 import type { FilterType } from "@/components/dialogs";
 
-export type BookmarksTabUiState = {
+type BookmarksTabUiState = {
   searchQuery: string;
   filter: FilterType;
   showGroupSelector: boolean;
@@ -13,7 +13,7 @@ export type BookmarksTabUiState = {
   showDeleteGroup: boolean;
 };
 
-export type BookmarksTabUiAction =
+type BookmarksTabUiAction =
   | { type: "setSearchQuery"; query: string }
   | { type: "setFilter"; filter: FilterType }
   | { type: "setShowGroupSelector"; open: boolean }
@@ -26,7 +26,7 @@ export type BookmarksTabUiAction =
   | { type: "groupSelectorToEdit" }
   | { type: "groupSelectorToDelete" };
 
-export const initialBookmarksTabUi: BookmarksTabUiState = {
+const initialBookmarksTabUi: BookmarksTabUiState = {
   searchQuery: "",
   filter: "all",
   showGroupSelector: false,
@@ -37,7 +37,7 @@ export const initialBookmarksTabUi: BookmarksTabUiState = {
   showDeleteGroup: false,
 };
 
-export function bookmarksTabUiReducer(
+function bookmarksTabUiReducer(
   state: BookmarksTabUiState,
   action: BookmarksTabUiAction,
 ): BookmarksTabUiState {

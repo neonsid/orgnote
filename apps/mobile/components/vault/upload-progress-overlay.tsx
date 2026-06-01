@@ -26,7 +26,7 @@ function FileStatusIcon({ phase }: { phase: VaultUploadFileItem["phase"] }) {
 
 function UploadFileRow({ file }: { file: VaultUploadFileItem }) {
   return (
-    <View className="flex-row items-center gap-3 rounded-xl bg-muted/50 px-3 py-3">
+    <View className="flex-row items-center gap-3 rounded-xl bg-muted/50 p-3">
       <FileStatusIcon phase={file.phase} />
       <View className="min-w-0 flex-1 gap-0.5">
         <Text className="font-sans text-[15px] font-medium leading-5 text-foreground" numberOfLines={2}>

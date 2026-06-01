@@ -93,7 +93,7 @@ export function DeleteGroupModal(props: DeleteGroupModalProps) {
 
         <View className="flex-row items-center gap-3 rounded-xl border border-border bg-muted px-4 py-3.5">
           <View
-            className="h-3 w-3 rounded-full"
+            className="size-3 rounded-full"
             style={{ backgroundColor: group.color ?? FALLBACK_COLOR }}
           />
           <Text className="flex-1 text-[15px] font-semibold text-foreground" numberOfLines={2}>

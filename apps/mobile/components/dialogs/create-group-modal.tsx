@@ -95,7 +95,7 @@ export function CreateGroupModal(props: CreateGroupModalProps) {
                 <AppPressable
                   key={c.value}
                   onPress={() => setSelectedColor(c.value)}
-                  className="h-11 w-11 items-center justify-center rounded-full"
+                  className="size-11 items-center justify-center rounded-full"
                   style={{
                     backgroundColor: c.value,
                     borderWidth: selected ? 3 : 0,

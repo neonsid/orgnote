@@ -68,7 +68,7 @@ export default function TabLayout() {
             paddingBottom: bottomInset,
             height: tabBarHeight,
             zIndex: 100,
-            elevation: 24,
+            boxShadow: "0px -8px 24px rgba(0, 0, 0, 0.35)",
           }}
         >
           <BlurView
@@ -106,8 +106,7 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: "transparent",
           height: TAB_BAR_CONTENT_HEIGHT,
-          elevation: 0,
-          shadowOpacity: 0,
+          boxShadow: "none",
         },
         tabBarIndicatorStyle: {
           backgroundColor: "transparent",

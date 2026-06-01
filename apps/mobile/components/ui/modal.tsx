@@ -27,9 +27,9 @@ import { AppPressable } from "./app-pressable";
 const DISMISS_THRESHOLD = 72;
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
-export const SHEET_BODY_INSET = "px-4 pb-4";
-export const MENU_BODY_INSET = "px-4 pb-4 pt-0";
-export const COMPACT_MENU_MAX_WIDTH = 280;
+const SHEET_BODY_INSET = "px-4 pb-4";
+const MENU_BODY_INSET = "px-4 pb-4 pt-0";
+const COMPACT_MENU_MAX_WIDTH = 280;
 
 interface ModalProps extends RNModalProps {
   title?: string;
@@ -155,7 +155,7 @@ export function Modal({
     <View className="flex-row items-start gap-3 px-4 pb-2 pt-1">
       {onBack ? (
         <AppPressable
-          className="h-9 w-9 items-center justify-center rounded-full bg-muted"
+          className="size-9 items-center justify-center rounded-full bg-muted"
           onPress={onBack}
           hitSlop={8}
         >
@@ -174,7 +174,7 @@ export function Modal({
       </View>
       {showCloseButton ? (
         <AppPressable
-          className="h-9 w-9 items-center justify-center rounded-full bg-muted"
+          className="size-9 items-center justify-center rounded-full bg-muted"
           onPress={resetAndClose}
           hitSlop={8}
         >
@@ -261,25 +261,13 @@ export function Modal({
                 ? {
                     borderWidth: StyleSheet.hairlineWidth,
                     borderColor: "rgba(255, 255, 255, 0.12)",
-                    ...Platform.select({
-                      ios: {
-                        shadowColor: "#000",
-                        shadowOffset: { width: 0, height: isCompact ? 8 : -8 },
-                        shadowOpacity: 0.35,
-                        shadowRadius: isCompact ? 16 : 24,
-                      },
-                      android: { elevation: isCompact ? 12 : 16 },
-                    }),
+                    boxShadow: isCompact
+                      ? "0px 8px 16px rgba(0, 0, 0, 0.35)"
+                      : "0px -8px 24px rgba(0, 0, 0, 0.35)",
                   }
-                : Platform.select({
-                    ios: {
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 12 },
-                      shadowOpacity: 0.4,
-                      shadowRadius: 28,
-                    },
-                    android: { elevation: 12 },
-                  }),
+                : {
+                    boxShadow: "0px 12px 28px rgba(0, 0, 0, 0.4)",
+                  },
               isCompact ? { maxWidth: COMPACT_MENU_MAX_WIDTH, width: "100%" } : undefined,
             ]}
             className={cn(

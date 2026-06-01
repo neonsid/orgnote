@@ -90,7 +90,7 @@ export function AddBookmarkModal({
             style={{ borderColor: focused ? colors.ring : colors.input }}
           >
             <View
-              className="h-9 w-9 items-center justify-center rounded-lg"
+              className="size-9 items-center justify-center rounded-lg"
               style={{ backgroundColor: `${colors.primaryAccent}18` }}
             >
               <Ionicons name="link-outline" size={18} color={colors.primaryAccent} />

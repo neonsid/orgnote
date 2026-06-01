@@ -11,7 +11,7 @@ import { showThemedAlert } from "@/contexts/themed-alert";
  */
 const DOWNLOADS_DIR_URI_KEY = "@orgnote/downloads-directory-uri";
 
-export type DownloadResult = {
+type DownloadResult = {
   fileName: string;
   folderLabel: string;
 };
@@ -48,7 +48,7 @@ function getFolderLabelFromDirectoryUri(directoryUri: string): string {
   return "Downloads";
 }
 
-export function showDownloadCompleteAlert({ fileName, folderLabel }: DownloadResult): void {
+function showDownloadCompleteAlert({ fileName, folderLabel }: DownloadResult): void {
   showThemedAlert(
     "Download complete",
     Platform.OS === "ios"

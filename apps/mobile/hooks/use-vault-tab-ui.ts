@@ -2,14 +2,14 @@ import { useReducer } from "react";
 
 import type { Id } from "../../../convex/_generated/dataModel";
 
-export type VaultSelectedFileRow = {
+type VaultSelectedFileRow = {
   _id: Id<"vaultFiles">;
   name: string;
   url: string;
   type: string;
 };
 
-export type VaultTabUiState = {
+type VaultTabUiState = {
   selectedGroupId: Id<"vaultGroups"> | null;
   showGroupSelector: boolean;
   showCreateGroup: boolean;
@@ -19,7 +19,7 @@ export type VaultTabUiState = {
   selectedFile: VaultSelectedFileRow | null;
 };
 
-export type VaultTabUiAction =
+type VaultTabUiAction =
   | { type: "setSelectedGroupId"; id: Id<"vaultGroups"> | null }
   | { type: "setShowGroupSelector"; open: boolean }
   | { type: "setShowCreateGroup"; open: boolean }
@@ -33,7 +33,7 @@ export type VaultTabUiAction =
   | { type: "openMovePicker" }
   | { type: "afterMoveSuccess" };
 
-export const initialVaultTabUi: VaultTabUiState = {
+const initialVaultTabUi: VaultTabUiState = {
   selectedGroupId: null,
   showGroupSelector: false,
   showCreateGroup: false,
@@ -43,7 +43,7 @@ export const initialVaultTabUi: VaultTabUiState = {
   selectedFile: null,
 };
 
-export function vaultTabUiReducer(state: VaultTabUiState, action: VaultTabUiAction): VaultTabUiState {
+function vaultTabUiReducer(state: VaultTabUiState, action: VaultTabUiAction): VaultTabUiState {
   switch (action.type) {
     case "setSelectedGroupId":
       return { ...state, selectedGroupId: action.id };

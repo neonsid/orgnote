@@ -13,7 +13,7 @@ interface ActionSheetRowProps {
   destructive?: boolean;
 }
 
-export function ActionSheetRow({
+function ActionSheetRow({
   icon,
   label,
   onPress,
@@ -28,7 +28,7 @@ export function ActionSheetRow({
     >
       <View
         className={cn(
-          "h-10 w-10 items-center justify-center rounded-xl",
+          "size-10 items-center justify-center rounded-xl",
           destructive ? "bg-destructive/15" : "bg-muted"
         )}
       >
@@ -50,7 +50,7 @@ export function ActionSheetRow({
   );
 }
 
-export function ActionSheetHeader({
+function ActionSheetHeader({
   title,
   subtitle,
 }: {

@@ -26,7 +26,7 @@ function oauthRedirectUrl() {
   });
 }
 
-function clerkGoogleNativeEnv(key: string) {
+function clerkGoogleNativeEnv(key: "EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID" | "EXPO_PUBLIC_CLERK_GOOGLE_IOS_CLIENT_ID") {
   const extra = Constants.expoConfig?.extra as Record<string, string | undefined> | undefined;
   return String(extra?.[key] ?? process.env[key] ?? "").trim();
 }

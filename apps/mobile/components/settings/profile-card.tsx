@@ -11,7 +11,7 @@ export function ProfileCard() {
 
   return (
     <View className="flex-row items-center gap-4 p-4">
-      <View className="h-14 w-14 items-center justify-center rounded-full bg-primary-accent/15">
+      <View className="size-14 items-center justify-center rounded-full bg-primary-accent/15">
         <Text className="font-sans text-xl font-semibold text-primary-accent">{initials}</Text>
       </View>
       <View className="flex-1">

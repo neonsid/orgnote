@@ -34,7 +34,7 @@ export function ListRow({
   const content = (
     <>
       {icon ? (
-        <View className="mr-3 h-8 w-8 items-center justify-center rounded-lg bg-muted">
+        <View className="mr-3 size-8 items-center justify-center rounded-lg bg-muted">
           <Ionicons
             name={icon}
             size={18}

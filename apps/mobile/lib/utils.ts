@@ -14,7 +14,7 @@ export function normalizeUrl(input: string): string {
   return url;
 }
 
-export function isValidUrl(input: string): boolean {
+function isValidUrl(input: string): boolean {
   try {
     new URL(normalizeUrl(input));
     return true;

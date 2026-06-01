@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { Image, Text, View, type GestureResponderEvent } from "react-native";
+import { Image } from "expo-image";
+import { Text, View, type GestureResponderEvent } from "react-native";
 
 import { AppPressable } from "@/components/ui/app-pressable";
 import { useAppTheme } from "@/contexts/app-theme";
@@ -76,8 +77,8 @@ export function BookmarkCard({
           </View>
         </View>
       ) : (
-        <View className="mt-px h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-muted">
-          <Image source={{ uri: faviconUrl }} className="h-6 w-6" />
+        <View className="mt-px size-9 items-center justify-center overflow-hidden rounded-lg bg-muted">
+          <Image source={{ uri: faviconUrl }} className="size-6" />
         </View>
       )}
 
@@ -106,7 +107,7 @@ export function BookmarkCard({
           <AppPressable
             onPress={handleToggleRead}
             hitSlop={8}
-            className="h-8 w-8 items-center justify-center rounded-full"
+            className="size-8 items-center justify-center rounded-full"
           >
             <Ionicons
               name={bookmark.doneReading ? "checkmark-circle" : "checkmark-circle-outline"}

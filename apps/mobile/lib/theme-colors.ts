@@ -29,7 +29,7 @@ export type AppColors = {
   selectionMuted: string;
 };
 
-export const lightColors: AppColors = {
+const lightColors: AppColors = {
   primary: "#0a0a0a",
   primaryForeground: "#fafafa",
   primaryAccent: "#4f46e5",

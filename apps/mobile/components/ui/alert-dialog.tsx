@@ -91,6 +91,20 @@ export function inferAlertVariant(title: string, buttons: AlertDialogButton[]): 
   return "info";
 }
 
+const ALERT_TONE_CLASSES = {
+  primary: "bg-primary-accent active:opacity-90",
+  secondary: "border border-border bg-muted active:bg-accent",
+  destructive: "bg-destructive active:opacity-90",
+  ghost: "bg-transparent active:bg-accent",
+} as const;
+
+const ALERT_TEXT_CLASSES = {
+  primary: "text-white",
+  secondary: "text-foreground",
+  destructive: "text-destructive-foreground",
+  ghost: "text-muted-foreground",
+} as const;
+
 function AlertActionButton({
   label,
   tone,
@@ -102,31 +116,16 @@ function AlertActionButton({
   onPress: () => void;
   className?: string;
 }) {
-
-  const toneClasses = {
-    primary: "bg-primary-accent active:opacity-90",
-    secondary: "border border-border bg-muted active:bg-accent",
-    destructive: "bg-destructive active:opacity-90",
-    ghost: "bg-transparent active:bg-accent",
-  } as const;
-
-  const textClasses = {
-    primary: "text-white",
-    secondary: "text-foreground",
-    destructive: "text-destructive-foreground",
-    ghost: "text-muted-foreground",
-  } as const;
-
   return (
     <AppPressable
       onPress={onPress}
       className={cn(
         "h-11 min-w-[96px] flex-1 items-center justify-center rounded-xl px-4",
-        toneClasses[tone],
+        ALERT_TONE_CLASSES[tone],
         className
       )}
     >
-      <Text className={cn("font-sans text-sm font-semibold", textClasses[tone])}>{label}</Text>
+      <Text className={cn("font-sans text-sm font-semibold", ALERT_TEXT_CLASSES[tone])}>{label}</Text>
     </AppPressable>
   );
 }
@@ -161,7 +160,7 @@ export function AlertDialog({
     >
       <View className="items-center px-1 pb-1 pt-3">
         <View
-          className="mb-4 h-14 w-14 items-center justify-center rounded-2xl"
+          className="mb-4 size-14 items-center justify-center rounded-2xl"
           style={{ backgroundColor: config.tint(colors) }}
         >
           <Ionicons name={config.icon} size={30} color={config.color(colors)} />

@@ -45,7 +45,7 @@ function SkeletonList() {
     <View className="px-4">
       {(["s-a", "s-b", "s-c", "s-d", "s-e"] as const).map((rowKey) => (
         <View key={rowKey} className="flex-row items-center gap-3 py-3.5">
-          <View className="h-9 w-9 rounded-lg bg-muted" />
+          <View className="size-9 rounded-lg bg-muted" />
           <View className="flex-1 gap-2">
             <View className="h-4 w-[180px] rounded bg-muted" />
             <View className="h-3 w-24 rounded bg-muted" />

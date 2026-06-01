@@ -9,7 +9,7 @@ export type VaultFileRow = {
 };
 
 /** Stable key for duplicate detection across collections (name + size). */
-export function vaultDuplicateKey(file: Pick<VaultFileRow, "name" | "size">): string {
+function vaultDuplicateKey(file: Pick<VaultFileRow, "name" | "size">): string {
   return `${file.name.trim().toLowerCase()}::${file.size}`;
 }
 
@@ -28,11 +28,11 @@ function groupByDuplicateKey(files: VaultFileRow[]): Map<string, VaultFileRow[]>
 }
 
 /** Oldest upload in a duplicate set is treated as the original to keep. */
-export function getCanonicalFileId(group: VaultFileRow[]): Id<"vaultFiles"> {
+function getCanonicalFileId(group: VaultFileRow[]): Id<"vaultFiles"> {
   return getCanonicalFile(group)._id;
 }
 
-export function getCanonicalFile(group: VaultFileRow[]): VaultFileRow {
+function getCanonicalFile(group: VaultFileRow[]): VaultFileRow {
   return group.reduce((oldest, file) =>
     (file._creationTime ?? 0) < (oldest._creationTime ?? 0) ? file : oldest
   );
@@ -89,8 +89,7 @@ export function countDuplicateSets(files: VaultFileRow[]): number {
   return count;
 }
 
-/** @deprecated Prefer {@link countExtraDuplicateFiles} for UI counts. */
-export function countDuplicateVaultFiles(files: VaultFileRow[]): number {
+function countDuplicateVaultFiles(files: VaultFileRow[]): number {
   return countExtraDuplicateFiles(files);
 }
 

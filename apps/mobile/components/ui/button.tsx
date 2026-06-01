@@ -26,7 +26,7 @@ function useOptionalButtonTextContext() {
   return useContext(ButtonTextContext);
 }
 
-export function ButtonText({
+function ButtonText({
   children,
   className,
   style,

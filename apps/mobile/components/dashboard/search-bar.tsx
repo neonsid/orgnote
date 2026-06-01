@@ -45,7 +45,7 @@ export function SearchBar({
       </View>
 
       <AppPressable
-        className="h-11 w-11 items-center justify-center rounded-xl border border-border bg-surface"
+        className="size-11 items-center justify-center rounded-xl border border-border bg-surface"
         onPress={onOpenFilter}
       >
         <Ionicons
@@ -56,7 +56,7 @@ export function SearchBar({
       </AppPressable>
 
       <AppPressable
-        className="h-11 w-11 items-center justify-center rounded-xl bg-primary"
+        className="size-11 items-center justify-center rounded-xl bg-primary"
         haptic
         onPress={onOpenAdd}
       >

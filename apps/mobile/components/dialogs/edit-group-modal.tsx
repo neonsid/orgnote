@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation } from "convex/react";
 import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 import { AppPressable } from "@/components/ui/app-pressable";
 import { Button, Input, Modal } from "@/components/ui";
@@ -90,18 +90,14 @@ function EditGroupFormBody({
       />
 
       <Text className="mt-1 text-[13px] font-semibold text-secondary-foreground">Color</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerClassName="flex-row gap-2 py-1"
-      >
+      <View className="flex-row flex-wrap gap-2 py-1">
         {GROUP_COLORS.map((c) => {
           const selected = selectedColor === c.value;
           return (
             <AppPressable
               key={c.value}
               onPress={() => setSelectedColor(c.value)}
-              className="h-10 w-10 items-center justify-center rounded-full border-[3px]"
+              className="size-10 items-center justify-center rounded-full border-[3px]"
               style={{
                 backgroundColor: c.value,
                 borderColor: selected ? colors.text : "transparent",
@@ -114,7 +110,7 @@ function EditGroupFormBody({
             </AppPressable>
           );
         })}
-      </ScrollView>
+      </View>
 
       <View className="mt-1 flex-row gap-2">
         <Button variant="outline" onPress={onClose} disabled={loading} className="flex-1">

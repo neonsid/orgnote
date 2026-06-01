@@ -63,7 +63,6 @@
     "@types/react": "~19.1.4",
     "@types/react-dom": "~19.1.4",
     "clsx": "^2.1.1",
-    "eas-cli": "^16.28.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
     "postcss": "^8.5.15",

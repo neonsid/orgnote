@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image, Text, View } from "react-native";
+import { Image } from "expo-image";
+import { Text, View } from "react-native";
 
 import { AppPressable } from "@/components/ui/app-pressable";
 import { useAppTheme } from "@/contexts/app-theme";

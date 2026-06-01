@@ -1,5 +1,4 @@
 export { AlertDialog, inferAlertVariant, type AlertVariant } from "./alert-dialog";
-export { ActionSheetHeader, ActionSheetRow } from "./action-sheet-row";
 export { AppPressable } from "./app-pressable";
 export { Button } from "./button";
 export { DetailSheet } from "./detail-sheet";
@@ -11,5 +10,4 @@ export { Loading } from "./loading";
 export { Modal } from "./modal";
 export { OrgNoteLogo } from "./orgnote-logo";
 export { ScreenShell } from "./screen-shell";
-export { SegmentedControl } from "./segmented-control";
 export { SheetBody, SheetDivider, SheetRow, SheetSectionLabel } from "./sheet-row";

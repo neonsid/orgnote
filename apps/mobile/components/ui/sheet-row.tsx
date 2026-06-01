@@ -58,11 +58,11 @@ export function SheetRow({
   );
 
   const leading = dotColor ? (
-    <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: dotColor }} />
+    <View className="size-2.5 rounded-full" style={{ backgroundColor: dotColor }} />
   ) : icon ? (
     iconTint ? (
       <View
-        className="h-10 w-10 items-center justify-center rounded-xl"
+        className="size-10 items-center justify-center rounded-xl"
         style={{ backgroundColor: iconTint }}
       >
         <Ionicons name={icon} size={20} color={resolvedIconColor} />

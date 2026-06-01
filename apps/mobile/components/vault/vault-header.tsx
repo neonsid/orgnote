@@ -19,7 +19,7 @@ export function VaultHeader({
   return (
     <View className="h-14 flex-row items-center px-4">
       <View
-        className="h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-border"
+        className="size-9 items-center justify-center overflow-hidden rounded-xl border border-border"
         style={{ backgroundColor: colors.brandLogoBg }}
       >
         <OrgNoteLogo size={24} />
@@ -30,7 +30,7 @@ export function VaultHeader({
         onPress={onOpenGroupSelector}
       >
         <View
-          className="h-2.5 w-2.5 rounded-full"
+          className="size-2.5 rounded-full"
           style={{
             backgroundColor: selectedGroup?.color ?? FALLBACK_COLORS[0],
           }}

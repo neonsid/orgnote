@@ -41,9 +41,9 @@ export function MultiSelectToolbarLayout({
         ]}
       />
 
-      <View className="flex-row items-center gap-2 border-b border-border/60 px-2 py-2">
+      <View className="flex-row items-center gap-2 border-b border-border/60 p-2">
         <AppPressable
-          className="h-7 w-7 items-center justify-center rounded-full bg-muted/80"
+          className="size-7 items-center justify-center rounded-full bg-muted/80"
           onPress={onClearSelection}
           hitSlop={8}
           accessibilityLabel="Exit selection mode"
@@ -72,7 +72,7 @@ export function MultiSelectToolbarLayout({
       <View
         className="absolute bottom-3 left-0 right-0 items-center px-4"
         pointerEvents="box-none"
-        style={{ zIndex: 90, elevation: 20, bottom: tabBarHeight + 12 }}
+        style={{ zIndex: 90, boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.25)", bottom: tabBarHeight + 12 }}
       >
         <View style={{ width: "100%", maxWidth: TOOLBAR_MAX_WIDTH }} pointerEvents="auto">
           {panel}

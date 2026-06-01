@@ -43,7 +43,7 @@ export function useAppTheme(): AppThemeContextValue {
 }
 
 /** Safe when provider is optional; defaults to dark. */
-export function useAppThemeColors(): AppColors {
+function useAppThemeColors(): AppColors {
   const ctx = useContext(AppThemeContext);
   return ctx?.colors ?? darkColors;
 }

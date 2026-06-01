@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Share, ScrollView, Text, useWindowDimensions, View } from "react-native";
+import { Share, FlatList, Text, useWindowDimensions, View } from "react-native";
 import { useMutation } from "convex/react";
 import * as Clipboard from "expo-clipboard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -187,11 +187,11 @@ export function MultiSelectToolbar({
       style={{
         bottom: tabBarHeight + Math.max(insets.bottom, 8),
         zIndex: 90,
-        elevation: 20,
+        boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.25)",
       }}
     >
       <View className="w-full max-w-[680px] overflow-hidden rounded-2xl border border-border/50 bg-card shadow-lg">
-        <View className="flex-row flex-wrap items-center justify-center gap-0.5 px-1.5 py-1.5">
+        <View className="flex-row flex-wrap items-center justify-center gap-0.5 p-1.5">
           <ToolbarButton
             icon={allVisibleSelected ? "checkbox" : "checkbox-outline"}
             label={allVisibleSelected ? "Clear all" : "Select all"}
@@ -227,7 +227,7 @@ export function MultiSelectToolbar({
 
           <AppPressable
             onPress={onClearSelection}
-            className="h-9 w-9 items-center justify-center rounded-full active:bg-accent"
+            className="size-9 items-center justify-center rounded-full active:bg-accent"
             accessibilityLabel="Exit selection mode"
           >
             <Ionicons name="close" size={18} color={colors.textSecondary} />
@@ -235,29 +235,32 @@ export function MultiSelectToolbar({
         </View>
 
         {expandedPanel === "move" ? (
-          <ScrollView
+          <FlatList
             style={{ maxHeight: movePanelMaxHeight }}
             nestedScrollEnabled
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator
             className="border-t border-border px-2 py-1.5"
-          >
-            {moveTargets.map((group, i) => (
+            data={moveTargets}
+            keyExtractor={(group) => group._id}
+            renderItem={({ item: group, index }) => (
               <AppPressable
                 key={group._id}
                 onPress={() => void handleBulkMove(group._id)}
                 className="flex-row items-center gap-3 rounded-lg px-3 py-2.5 active:bg-accent"
               >
                 <View
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: group.color ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length] }}
+                  className="size-2.5 rounded-full"
+                  style={{
+                    backgroundColor: group.color ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length],
+                  }}
                 />
                 <Text className="min-w-0 flex-1 font-sans text-base text-foreground" numberOfLines={1}>
                   {group.title}
                 </Text>
               </AppPressable>
-            ))}
-          </ScrollView>
+            )}
+          />
         ) : null}
 
         {expandedPanel === "export" ? (
