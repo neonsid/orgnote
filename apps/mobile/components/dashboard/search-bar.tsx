@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, TextInput, View } from "react-native";
+import { TextInput, View } from "react-native";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { useAppTheme } from "@/contexts/app-theme";
 
 type FilterType = "all" | "read" | "unread";
@@ -20,16 +21,16 @@ export function SearchBar({
   onOpenFilter,
   onOpenAdd,
 }: SearchBarProps) {
-  const { colors, resolvedScheme } = useAppTheme();
-  const addIconColor = resolvedScheme === "dark" ? colors.background : "#ffffff";
+  const { colors } = useAppTheme();
+  const filterActive = filter !== "all";
 
   return (
-    <View className="flex-row items-center gap-2 bg-surface px-3 py-2">
-      <View className="h-10 flex-1 flex-row items-center gap-2 rounded-lg border border-border bg-surface px-3">
-        <Ionicons name="add" size={16} color={colors.textMuted} />
+    <View className="flex-row items-center gap-3 px-4 pb-3 pt-1">
+      <View className="h-11 flex-1 flex-row items-center gap-2.5 rounded-xl border border-input bg-surface px-3.5">
+        <Ionicons name="add" size={18} color={colors.textMuted} />
         <TextInput
-          className="flex-1 text-sm text-foreground"
-          placeholder="Insert a link or plain text…"
+          className="flex-1 font-sans text-[15px] text-foreground"
+          placeholder="Insert a link, color, or just plain text…"
           placeholderTextColor={colors.textMuted}
           value={value}
           onChangeText={onChangeText}
@@ -37,30 +38,30 @@ export function SearchBar({
           autoCorrect={false}
         />
         {value.length > 0 ? (
-          <Pressable onPress={() => onChangeText("")} hitSlop={8}>
-            <Ionicons name="close-circle" size={16} color={colors.textMuted} />
-          </Pressable>
+          <AppPressable onPress={() => onChangeText("")} hitSlop={8}>
+            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+          </AppPressable>
         ) : null}
       </View>
 
-      <Pressable
-        className="h-10 w-10 items-center justify-center rounded-sm border border-border bg-surface active:bg-muted"
+      <AppPressable
+        className="h-11 w-11 items-center justify-center rounded-xl border border-border bg-surface"
         onPress={onOpenFilter}
       >
         <Ionicons
-          name={filter === "all" ? "filter-outline" : "filter"}
-          size={18}
-          color={filter === "all" ? colors.textSecondary : colors.text}
+          name={filterActive ? "filter" : "filter-outline"}
+          size={20}
+          color={filterActive ? colors.primaryAccent : colors.textMuted}
         />
-      </Pressable>
+      </AppPressable>
 
-      <Pressable
-        className="h-10 w-10 items-center justify-center rounded-sm bg-primary"
-        style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
+      <AppPressable
+        className="h-11 w-11 items-center justify-center rounded-xl bg-primary"
+        haptic
         onPress={onOpenAdd}
       >
-        <Ionicons name="add" size={20} color={addIconColor} />
-      </Pressable>
+        <Ionicons name="add" size={22} color={colors.primaryForeground} />
+      </AppPressable>
     </View>
   );
 }

@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { FlatList, type ListRenderItemInfo } from "react-native";
 
+import { useTabBarScrollPadding } from "@/hooks/use-tab-bar-height";
 import { FileTile } from "@/components/vault/file-tile";
 import type { DuplicateOriginalInfo } from "@/lib/vault-duplicates";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -87,6 +88,8 @@ export function VaultFileList({
   onFilePress,
   onFileLongPress,
 }: VaultFileListProps) {
+  const scrollPadding = useTabBarScrollPadding(isSelecting ? 120 : 32);
+
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<VaultListFile>) => (
       <VaultFileListItem
@@ -119,7 +122,8 @@ export function VaultFileList({
       keyExtractor={(item) => item._id}
       numColumns={2}
       columnWrapperClassName="justify-between"
-      contentContainerClassName="p-3 pb-32"
+      contentContainerClassName="gap-y-3 p-4"
+      contentContainerStyle={{ paddingBottom: scrollPadding }}
       showsVerticalScrollIndicator={false}
       renderItem={renderItem}
     />

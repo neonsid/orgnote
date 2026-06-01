@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation } from "convex/react";
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { Button, Input, Modal } from "@/components/ui";
 import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/contexts/themed-alert";
@@ -82,7 +83,7 @@ function EditGroupFormBody({
   }
 
   return (
-    <View className="gap-3 p-4">
+    <View className="gap-3">
       <Input
         placeholder={groupKind === "vault" ? "Group name..." : "Collection name..."}
         value={title}
@@ -98,7 +99,7 @@ function EditGroupFormBody({
         {GROUP_COLORS.map((c) => {
           const selected = selectedColor === c.value;
           return (
-            <Pressable
+            <AppPressable
               key={c.value}
               onPress={() => setSelectedColor(c.value)}
               className="h-10 w-10 items-center justify-center rounded-full border-[3px]"
@@ -111,7 +112,7 @@ function EditGroupFormBody({
               {selected && (
                 <Ionicons name="checkmark" size={20} color="#ffffff" />
               )}
-            </Pressable>
+            </AppPressable>
           );
         })}
       </ScrollView>
@@ -150,7 +151,13 @@ export function EditGroupModal(props: EditGroupModalProps) {
   const modalTitle = groupKind === "vault" ? "Rename Group" : "Rename collection";
 
   return (
-    <Modal visible={visible} onClose={handleClose} title={modalTitle} variant="center">
+    <Modal
+      visible={visible}
+      onClose={handleClose}
+      title={modalTitle}
+      subtitle="Update the name and color for this collection"
+      variant="bottom"
+    >
       <EditGroupFormBody
         key={`${group._id}-${visible}`}
         group={group}

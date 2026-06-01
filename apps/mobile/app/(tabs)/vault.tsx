@@ -1,8 +1,7 @@
 import { useAuth } from "@clerk/expo";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   VaultGroupSelectorModal,
@@ -11,7 +10,7 @@ import {
   EditGroupModal,
   DeleteGroupModal,
 } from "@/components/dialogs";
-import { Loading, EmptyState } from "@/components/ui";
+import { Loading, EmptyState, ScreenShell } from "@/components/ui";
 import {
   FileActionsModal,
   UploadProgressOverlay,
@@ -24,7 +23,7 @@ import {
 } from "@/components/vault";
 import { showThemedAlert } from "@/contexts/themed-alert";
 import { useVaultTabUiReducer, useVaultUpload, useVaultSelection } from "@/hooks";
-import { promptOpenExternalUrl } from "@/lib/open-external-url";
+import { openInAppBrowser } from "@/lib/open-in-app-browser";
 import {
   countDuplicateSets,
   getCanonicalFileIds,
@@ -131,13 +130,6 @@ function VaultContent() {
     clearSelection,
   } = useVaultSelection(visibleFileIds);
 
-  useEffect(() => {
-    if (showDuplicatesOnly && duplicateSetCount === 0) {
-      setShowDuplicatesOnly(false);
-      clearSelection();
-    }
-  }, [showDuplicatesOnly, duplicateSetCount, clearSelection]);
-
   const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
   const selectedFiles = useMemo(() => {
@@ -176,7 +168,7 @@ function VaultContent() {
         if (viewingDuplicates && canonicalFileIds.has(file._id)) return;
         toggleSelection(file._id);
       } else {
-        void promptOpenExternalUrl(file.url, file.name);
+        void openInAppBrowser(file.url, file.name);
       }
     },
     [filesById, isSelecting, toggleSelection, viewingDuplicates, canonicalFileIds]
@@ -224,13 +216,17 @@ function VaultContent() {
 
   function handleToggleDuplicatesView() {
     if (duplicateSetCount === 0) {
+      // Reset stale flag when there are no duplicates
+      if (showDuplicatesOnly) setShowDuplicatesOnly(false);
       showThemedAlert(
         "No duplicates",
         "Every file in your vault is unique — no duplicates across collections."
       );
       return;
     }
-    setShowDuplicatesOnly((prev) => !prev);
+    // Use derived viewingDuplicates to determine next state
+    // This handles stale showDuplicatesOnly state correctly
+    setShowDuplicatesOnly(!viewingDuplicates);
     clearSelection();
     vaultDispatch({ type: "setShowGroupSelector", open: false });
   }
@@ -254,25 +250,10 @@ function VaultContent() {
 
   return (
     <View className="flex-1">
-      {isSelecting ? (
-        <VaultMultiSelectToolbar
-          selectedCount={selectedCount}
-          selectedIds={selectedIds}
-          selectedFiles={selectedFiles}
-          groups={vaultData.groups}
-          allVaultFiles={vaultData.files}
-          currentGroupId={viewingDuplicates ? null : effectiveGroupId}
-          isDuplicatesMode={viewingDuplicates}
-          allVisibleSelected={allVisibleSelected}
-          onClearSelection={clearSelection}
-          onToggleSelectAllVisible={toggleSelectAllVisible}
-        />
-      ) : (
-        <VaultHeader
-          selectedGroup={selectedGroup}
-          onOpenGroupSelector={() => vaultDispatch({ type: "setShowGroupSelector", open: true })}
-        />
-      )}
+      <VaultHeader
+        selectedGroup={selectedGroup}
+        onOpenGroupSelector={() => vaultDispatch({ type: "setShowGroupSelector", open: true })}
+      />
 
       {viewingDuplicates ? (
         <VaultDuplicatesBanner
@@ -285,20 +266,20 @@ function VaultContent() {
           }}
         />
       ) : (
-        <VaultStatsBar statsLabel={statsLabel} />
+        <View className="gap-4 px-4 pb-4 pt-3">
+          <VaultStatsBar statsLabel={statsLabel} />
+          {!isSelecting && !viewingDuplicates && vaultData.groups.length > 0 ? (
+            <VaultUploadBar
+              effectiveGroupId={effectiveGroupId}
+              uploading={uploading}
+              onPickAndUpload={() => void pickAndUpload()}
+            />
+          ) : null}
+        </View>
       )}
-
-      {!isSelecting && !viewingDuplicates && vaultData.groups.length > 0 ? (
-        <VaultUploadBar
-          effectiveGroupId={effectiveGroupId}
-          uploading={uploading}
-          onPickAndUpload={() => void pickAndUpload()}
-        />
-      ) : null}
 
       {filteredFiles.length === 0 ? (
         <EmptyState
-          icon="cloud-upload-outline"
           title="No files yet"
           description={
             vaultData.groups.length === 0
@@ -323,6 +304,21 @@ function VaultContent() {
           onFileLongPress={handleFileLongPress}
         />
       )}
+
+      {isSelecting ? (
+        <VaultMultiSelectToolbar
+          selectedCount={selectedCount}
+          selectedIds={selectedIds}
+          selectedFiles={selectedFiles}
+          groups={vaultData.groups}
+          allVaultFiles={vaultData.files}
+          currentGroupId={viewingDuplicates ? null : effectiveGroupId}
+          isDuplicatesMode={viewingDuplicates}
+          allVisibleSelected={allVisibleSelected}
+          onClearSelection={clearSelection}
+          onToggleSelectAllVisible={toggleSelectAllVisible}
+        />
+      ) : null}
 
       <VaultGroupSelectorModal
         visible={showGroupSelector}
@@ -395,33 +391,32 @@ function VaultContent() {
 }
 
 export default function VaultScreen() {
-  const insets = useSafeAreaInsets();
   const { isLoaded: clerkLoaded, isSignedIn, userId } = useAuth();
   const { isLoading: convexLoading, isAuthenticated } = useConvexAuth();
 
   if (!clerkLoaded) {
     return (
-      <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+      <ScreenShell>
         <Loading message="Loading..." />
-      </View>
+      </ScreenShell>
     );
   }
 
   if (!isSignedIn) {
-    return <View className="flex-1 bg-background" style={{ paddingTop: insets.top }} />;
+    return <ScreenShell />;
   }
 
   if (convexLoading || !isAuthenticated) {
     return (
-      <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+      <ScreenShell>
         <Loading message="Connecting..." />
-      </View>
+      </ScreenShell>
     );
   }
 
   return (
-    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+    <ScreenShell>
       <VaultContent key={userId ?? "unknown-user"} />
-    </View>
+    </ScreenShell>
   );
 }

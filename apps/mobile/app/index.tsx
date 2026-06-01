@@ -1,18 +1,12 @@
 import { useAuth, useSSO } from "@clerk/expo";
-import { AuthView } from "@clerk/expo/native";
 import { AntDesign } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import * as AuthSession from "expo-auth-session";
-import { useState } from "react";
-import {
-  ActivityIndicator,
-  Platform,
-  Pressable,
-  Text,
-  View,
-} from "react-native";
+import { useState, useEffect, type ComponentType } from "react";
+import { ActivityIndicator, Platform, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { OrgNoteLogo } from "@/components/ui/orgnote-logo";
 import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/contexts/themed-alert";
@@ -35,14 +29,6 @@ function clerkGoogleNativeEnv(key: string) {
   return String(extra?.[key] ?? process.env[key] ?? "").trim();
 }
 
-/**
- * Clerk's native Google flow (used by `@clerk/expo/native` AuthView on iOS/Android) needs the same
- * Sign in with Google env vars as `useSignInWithGoogle`; otherwise Credential Manager surfaces errors
- * like "Error retrieving Google ID token: No credentials available". Without complete config we use
- * browser SSO like Expo Go (`useSSO` + `oauth_google`).
- *
- * Docs: https://clerk.com/docs/expo/guides/configure/auth-strategies/sign-in-with-google
- */
 function clerkNativeGoogleConfiguredForPlatform(): boolean {
   const web = clerkGoogleNativeEnv("EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID");
   if (!web) return false;
@@ -52,10 +38,6 @@ function clerkNativeGoogleConfiguredForPlatform(): boolean {
   return true;
 }
 
-/**
- * Native AuthView needs a dev client / production build with the @clerk/expo prebuild plugin.
- * Expo Go has no Clerk native UI — it crashes if we mount AuthView. Web has no native view either.
- */
 function useBrowserOAuthInsteadOfNativeAuthView() {
   return (
     Platform.OS === "web" ||
@@ -64,8 +46,45 @@ function useBrowserOAuthInsteadOfNativeAuthView() {
   );
 }
 
+type NativeAuthViewProps = {
+  mode: "signInOrUp";
+  isDismissable: boolean;
+};
+
+function NativeClerkAuthPanel() {
+  const [AuthView, setAuthView] = useState<ComponentType<NativeAuthViewProps> | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void import("@clerk/expo/native")
+      .then((mod) => setAuthView(() => mod.AuthView))
+      .catch((err) => {
+        console.warn("[mobile auth] Failed to load Clerk native AuthView:", err);
+        setLoadError(err instanceof Error ? err.message : "Failed to load native auth UI");
+      });
+  }, []);
+
+  if (loadError) {
+    return (
+      <View className="flex-1 items-center justify-center px-6">
+        <Text className="text-center font-sans text-sm text-muted-foreground">{loadError}</Text>
+      </View>
+    );
+  }
+
+  if (!AuthView) {
+    return (
+      <View className="flex-1 items-center justify-center">
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  return <AuthView mode="signInOrUp" isDismissable={false} />;
+}
+
 function SignInPanel() {
-  const { isDark } = useAppTheme();
+  const { colors } = useAppTheme();
   const { startSSOFlow } = useSSO();
   const [loading, setLoading] = useState(false);
 
@@ -83,53 +102,58 @@ function SignInPanel() {
       console.warn(err);
       showThemedAlert(
         "Sign in failed",
-        err instanceof Error ? err.message : "Unknown error",
+        err instanceof Error ? err.message : "Unknown error"
       );
     } finally {
       setLoading(false);
     }
   }
 
-  const googleButtonTextColor = isDark ? "#18181b" : "#fafafa";
-
   return (
-    <View className="flex-1 items-center justify-center p-6">
-      <View className="mb-10 max-w-[360px] items-center">
-        <View className="mb-4 rounded-2xl border border-border bg-surface p-3">
-          <OrgNoteLogo size={72} />
+    <View className="flex-1 items-center justify-center px-6">
+      <View className="mb-8 max-w-[360px] items-center">
+        <View
+          className="mb-4 rounded-2xl border border-border p-4"
+          style={{ backgroundColor: colors.brandLogoBg }}
+        >
+          <OrgNoteLogo size={64} />
         </View>
-        <Text className="text-[28px] font-bold tracking-tight text-foreground">OrgNote</Text>
+        <Text className="font-sans text-2xl font-semibold tracking-tight text-foreground">
+          Orgnote
+        </Text>
+        <Text className="mt-2 text-center font-sans text-sm text-muted-foreground">
+          Bookmarks you&apos;ll actually find
+        </Text>
       </View>
 
-      <View className="w-full max-w-[360px] rounded-[20px] border border-border bg-surface p-7 shadow-md">
-        <Text className="mb-2 text-center text-[26px] font-bold text-foreground">Welcome</Text>
-        <Text className="mb-7 text-center text-[15px] leading-[22px] text-secondary-foreground">
+      <View className="w-full max-w-[360px] rounded-xl border border-border bg-card p-6">
+        <Text className="mb-1 text-center font-sans text-lg font-semibold text-foreground">
+          Welcome
+        </Text>
+        <Text className="mb-6 text-center font-sans text-sm leading-5 text-muted-foreground">
           Sign in with the same account you use on the web app.
         </Text>
 
-        <Pressable
+        <AppPressable
           onPress={onGoogle}
           disabled={loading}
+          haptic
           className={cn(
-            "items-center rounded-[14px] py-4 active:scale-[0.98] active:opacity-90",
-            isDark ? "bg-[#fafafa]" : "bg-primary",
+            "flex-row items-center justify-center gap-2 rounded-lg border border-border bg-background py-3",
             loading && "opacity-70"
           )}
         >
           {loading ? (
-            <ActivityIndicator size="small" color={googleButtonTextColor} />
+            <ActivityIndicator size="small" color={colors.text} />
           ) : (
-            <View className="flex-row items-center justify-center gap-2.5">
-              <AntDesign name="google" size={18} color={googleButtonTextColor} />
-              <Text
-                className="text-base font-semibold"
-                style={{ color: googleButtonTextColor }}
-              >
+            <>
+              <AntDesign name="google" size={18} color={colors.text} />
+              <Text className="font-sans text-sm font-medium text-foreground">
                 Continue with Google
               </Text>
-            </View>
+            </>
           )}
-        </Pressable>
+        </AppPressable>
       </View>
     </View>
   );
@@ -170,13 +194,21 @@ export default function IndexScreen() {
     >
       <View className="flex-1">
         <View className="items-center px-6 pb-3 pt-6">
-          <View className="mb-2.5 rounded-[14px] border border-border bg-surface p-2.5">
+          <View
+            className="mb-2.5 rounded-xl border border-border p-3"
+            style={{ backgroundColor: colors.brandLogoBg }}
+          >
             <OrgNoteLogo size={48} />
           </View>
-          <Text className="text-[22px] font-bold tracking-tight text-foreground">OrgNote</Text>
+          <Text className="font-sans text-xl font-semibold tracking-tight text-foreground">
+            Orgnote
+          </Text>
+          <Text className="mt-1 font-sans text-sm text-muted-foreground">
+            Bookmarks you&apos;ll actually find
+          </Text>
         </View>
         <View className="min-h-0 flex-1">
-          <AuthView mode="signInOrUp" isDismissable={false} />
+          <NativeClerkAuthPanel />
         </View>
       </View>
     </View>

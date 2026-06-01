@@ -1,15 +1,36 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation } from "convex/react";
-import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { useMemo, useState } from "react";
 
 import { Modal } from "@/components/ui";
+import { SheetBody, SheetDivider, SheetRow, SheetSectionLabel } from "@/components/ui/sheet-row";
 import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/contexts/themed-alert";
 import { downloadAndShareFile } from "@/lib/download-file-native";
-import { promptOpenExternalUrl } from "@/lib/open-external-url";
+import { openInAppBrowser } from "@/lib/open-in-app-browser";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+
+function getFileIcon(type: string): keyof typeof Ionicons.glyphMap {
+  if (type.startsWith("image/")) return "image-outline";
+  if (type.startsWith("video/")) return "videocam-outline";
+  if (type.startsWith("audio/")) return "musical-notes-outline";
+  if (type.includes("pdf")) return "document-text-outline";
+  if (type.includes("epub")) return "book-outline";
+  if (type.includes("zip") || type.includes("rar") || type.includes("tar")) return "archive-outline";
+  return "document-outline";
+}
+
+function formatFileTypeLabel(type: string): string {
+  if (type.startsWith("image/")) return "Image";
+  if (type.startsWith("video/")) return "Video";
+  if (type.startsWith("audio/")) return "Audio";
+  if (type.includes("pdf")) return "PDF document";
+  if (type.includes("epub")) return "E-book";
+  if (type.includes("zip") || type.includes("rar") || type.includes("tar")) return "Archive";
+  if (type.includes("text/")) return "Text file";
+  return "File";
+}
 
 export function FileActionsModal({
   visible,
@@ -30,20 +51,40 @@ export function FileActionsModal({
   const deleteFile = useMutation(api.vault.mutations.deleteFile);
   const [downloading, setDownloading] = useState(false);
 
+  const tints = useMemo(
+    () => ({
+      primary: `${colors.primaryAccent}18`,
+      success: `${colors.success}18`,
+      cyan: `${colors.brandCyan}18`,
+      muted: `${colors.textMuted}18`,
+      destructive: `${colors.error}18`,
+    }),
+    [colors]
+  );
+
   if (!file) return null;
 
   const f = file;
+  const fileIcon = getFileIcon(f.type);
 
-  function handleOpen() {
-    void promptOpenExternalUrl(f.url, f.name);
+  function handleClose() {
     onClose();
+  }
+
+  async function handleOpen() {
+    try {
+      await openInAppBrowser(f.url, f.name);
+    } catch {
+      showThemedAlert("Error", "Could not open this file.");
+    }
+    handleClose();
   }
 
   async function handleDownload() {
     setDownloading(true);
     try {
       await downloadAndShareFile(f.url, f.name, f.type);
-      onClose();
+      handleClose();
     } catch (e) {
       showThemedAlert("Download failed", e instanceof Error ? e.message : "Could not download file.");
     } finally {
@@ -60,7 +101,7 @@ export function FileActionsModal({
         onPress: async () => {
           try {
             await deleteFile({ fileId: f._id });
-            onClose();
+            handleClose();
           } catch {
             showThemedAlert("Error", "Failed to delete file");
           }
@@ -70,60 +111,80 @@ export function FileActionsModal({
   }
 
   return (
-    <Modal visible={visible} onClose={onClose}>
-      <View className="p-4">
-        <Text
-          className="mb-3 border-b border-border pb-2 text-sm font-medium text-secondary-foreground"
-          numberOfLines={1}
-        >
-          {f.name}
-        </Text>
-        <Pressable className="flex-row items-center gap-3 py-3 active:bg-muted" onPress={handleOpen}>
-          <Ionicons name="open-outline" size={22} color={colors.textMuted} />
-          <Text className="text-sm text-foreground">Open with…</Text>
-        </Pressable>
-        <Pressable
-          className="flex-row items-center gap-3 py-3 active:bg-muted"
+    <Modal
+      visible={visible}
+      onClose={handleClose}
+      variant="bottom"
+      title={f.name}
+      subtitle={formatFileTypeLabel(f.type)}
+      scrollable
+      showHandle
+    >
+      <SheetBody>
+        <SheetSectionLabel>Actions</SheetSectionLabel>
+        <SheetRow
+          title="Open"
+          subtitle="View in browser"
+          icon={fileIcon}
+          iconTint={tints.primary}
+          iconColor={colors.primaryAccent}
+          titleTone="primary"
+          onPress={() => void handleOpen()}
+          showChevron
+        />
+        <SheetRow
+          title={downloading ? "Downloading…" : "Download"}
+          subtitle="Save or share this file"
+          icon="download-outline"
+          iconTint={tints.success}
+          iconColor={colors.success}
+          titleTone="success"
           onPress={() => void handleDownload()}
           disabled={downloading}
-        >
-          <Ionicons name="download-outline" size={22} color={colors.textMuted} />
-          <Text className="text-sm text-foreground">
-            {downloading ? "Downloading…" : "Download"}
-          </Text>
-        </Pressable>
+          showChevron
+        />
+        {canMoveToAnotherGroup ? (
+          <SheetRow
+            title="Move to collection"
+            subtitle="Organize into another group"
+            icon="folder-open-outline"
+            iconTint={tints.cyan}
+            iconColor={colors.brandCyan}
+            titleTone="cyan"
+            onPress={onRequestMoveToAnotherGroup}
+            showChevron
+          />
+        ) : null}
         {onSelectMultiple ? (
-          <Pressable
-            className="flex-row items-center gap-3 py-3 active:bg-muted"
+          <SheetRow
+            title="Select multiple"
+            subtitle="Choose more files at once"
+            icon="checkbox-outline"
+            iconTint={tints.muted}
+            iconColor={colors.textSecondary}
             onPress={() => {
               onSelectMultiple();
-              onClose();
+              handleClose();
             }}
-          >
-            <Ionicons name="checkbox-outline" size={22} color={colors.textMuted} />
-            <Text className="text-sm text-foreground">Select multiple</Text>
-          </Pressable>
+            showChevron
+          />
         ) : null}
-        {canMoveToAnotherGroup ? (
-          <Pressable
-            className="flex-row items-center gap-3 py-3 active:bg-muted"
-            onPress={onRequestMoveToAnotherGroup}
-          >
-            <Ionicons name="folder-open-outline" size={22} color={colors.textMuted} />
-            <Text className="text-sm text-foreground">Move to collection</Text>
-          </Pressable>
-        ) : null}
-        <Pressable className="flex-row items-center gap-3 py-3 active:bg-muted" onPress={handleDelete}>
-          <Ionicons name="trash-outline" size={22} color={colors.error} />
-          <Text className="text-sm text-destructive">Delete</Text>
-        </Pressable>
-        <Pressable
-          className="mt-3 items-center rounded-sm bg-muted py-3 active:bg-muted"
-          onPress={onClose}
-        >
-          <Text className="text-sm font-medium text-secondary-foreground">Cancel</Text>
-        </Pressable>
-      </View>
+      </SheetBody>
+
+      <SheetBody>
+        <SheetDivider />
+        <SheetSectionLabel>Danger zone</SheetSectionLabel>
+        <SheetRow
+          title="Delete file"
+          subtitle="Permanently remove from vault"
+          icon="trash-outline"
+          iconTint={tints.destructive}
+          iconColor={colors.error}
+          destructive
+          onPress={handleDelete}
+          showChevron
+        />
+      </SheetBody>
     </Modal>
   );
 }

@@ -1,8 +1,7 @@
 import { useAuth } from "@clerk/expo";
 import { useConvexAuth, useMutation, usePaginatedQuery, useQuery } from "convex/react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { showThemedAlert } from "@/contexts/themed-alert";
 
@@ -13,6 +12,7 @@ import {
   MultiSelectToolbar,
   type BookmarkData,
 } from "@/components/dashboard";
+import type { BookmarkMenuAnchor } from "@/components/dashboard/bookmark-context-menu";
 import {
   GroupSelectorModal,
   FilterModal,
@@ -20,10 +20,8 @@ import {
   CreateGroupModal,
   EditGroupModal,
   DeleteGroupModal,
-  BookmarkActionsModal,
-  EditBookmarkModal,
 } from "@/components/dialogs";
-import { Loading, EmptyState } from "@/components/ui";
+import { Loading, EmptyState, ScreenShell } from "@/components/ui";
 import {
   useBookmarkSelection,
   useBookmarksTabUiReducer,
@@ -52,9 +50,9 @@ function BookmarksContent() {
     showCreateGroup,
     showEditGroup,
     showDeleteGroup,
-    selectedBookmark,
-    toolbarEditBookmark,
   } = ui;
+  const [contextMenuBookmark, setContextMenuBookmark] = useState<BookmarkData | null>(null);
+  const [contextMenuAnchor, setContextMenuAnchor] = useState<BookmarkMenuAnchor | null>(null);
   const toggleRead = useMutation(api.bookmarks.mutations.toggleReadStatus);
 
   const selectedGroup = useMemo(() => {
@@ -101,12 +99,13 @@ function BookmarksContent() {
   const {
     selectedIds,
     selectedCount,
-    isSelecting,
+    multiSelectMode,
     isSelected,
     toggleSelection,
     toggleSelectAllVisible,
     allVisibleSelected,
-    clearSelection,
+    enterMultiSelect,
+    exitMultiSelect,
   } = useBookmarkSelection(bookmarkIds);
 
   const selectedBookmarks = useMemo(
@@ -120,33 +119,36 @@ function BookmarksContent() {
     }
   }, [status, loadMore]);
 
+  const handleOpenContextMenu = useCallback(
+    (bookmark: BookmarkData, anchor: BookmarkMenuAnchor) => {
+      setContextMenuBookmark(bookmark);
+      setContextMenuAnchor(anchor);
+    },
+    []
+  );
+
+  const handleCloseContextMenu = useCallback(() => {
+    setContextMenuBookmark(null);
+    setContextMenuAnchor(null);
+  }, []);
+
+  const handleEnterMultiSelect = useCallback(
+    (bookmarkId: Id<"bookmarks">) => {
+      handleCloseContextMenu();
+      enterMultiSelect(bookmarkId);
+    },
+    [enterMultiSelect, handleCloseContextMenu]
+  );
+
   const handleBookmarkPress = useCallback(
     (bookmark: BookmarkData) => {
-      if (isSelecting) {
+      if (multiSelectMode) {
         toggleSelection(bookmark._id);
       } else {
         void openInAppBrowser(bookmark.url, bookmark.title);
       }
     },
-    [isSelecting, toggleSelection]
-  );
-
-  const handleBookmarkLongPress = useCallback(
-    (bookmark: BookmarkData) => {
-      if (isSelecting) {
-        toggleSelection(bookmark._id);
-      } else {
-        dispatchUi({ type: "setSelectedBookmark", bookmark });
-      }
-    },
-    [isSelecting, toggleSelection]
-  );
-
-  const startSelection = useCallback(
-    (bookmark: BookmarkData) => {
-      toggleSelection(bookmark._id);
-    },
-    [toggleSelection]
+    [multiSelectMode, toggleSelection]
   );
 
   const handleToggleRead = useCallback(
@@ -175,7 +177,6 @@ function BookmarksContent() {
     return (
       <>
         <EmptyState
-          icon="folder-open-outline"
           title="No collections yet"
           description="Create your first collection to start saving bookmarks."
           actionLabel="Create Collection"
@@ -195,9 +196,46 @@ function BookmarksContent() {
       ? "No bookmarks match your filters"
       : "No bookmarks in this collection";
 
+  const contextMenuOpen = contextMenuBookmark !== null;
+
   return (
     <View className="flex-1">
-      {isSelecting ? (
+      <Header
+        selectedGroup={selectedGroup}
+        onOpenGroupSelector={() => dispatchUi({ type: "setShowGroupSelector", open: true })}
+      />
+      {!multiSelectMode ? (
+        <SearchBar
+          value={searchQuery}
+          onChangeText={(q) => dispatchUi({ type: "setSearchQuery", query: q })}
+          filter={filter}
+          onOpenFilter={() => dispatchUi({ type: "setShowFilter", open: true })}
+          onOpenAdd={() => dispatchUi({ type: "setShowAddBookmark", open: true })}
+        />
+      ) : null}
+
+      <BookmarkList
+        bookmarks={filteredBookmarks}
+        loading={!groupPreferenceRestored || status === "LoadingFirstPage"}
+        loadingMore={status === "LoadingMore"}
+        onLoadMore={handleLoadMore}
+        onBookmarkPress={handleBookmarkPress}
+        onToggleRead={handleToggleRead}
+        emptyMessage={emptyMessage}
+        multiSelectMode={multiSelectMode}
+        isSelected={isSelected}
+        onToggleMultiSelect={(bookmark) => toggleSelection(bookmark._id)}
+        scrollEnabled={!contextMenuOpen}
+        groups={groups}
+        currentGroupId={effectiveGroupId}
+        contextMenuBookmark={contextMenuBookmark}
+        contextMenuAnchor={contextMenuAnchor}
+        onOpenContextMenu={handleOpenContextMenu}
+        onCloseContextMenu={handleCloseContextMenu}
+        onEnterMultiSelect={handleEnterMultiSelect}
+      />
+
+      {multiSelectMode ? (
         <MultiSelectToolbar
           selectedCount={selectedCount}
           selectedIds={selectedIds}
@@ -206,43 +244,10 @@ function BookmarksContent() {
           groups={groups}
           currentGroupId={effectiveGroupId}
           allVisibleSelected={allVisibleSelected}
-          onClearSelection={clearSelection}
+          onClearSelection={exitMultiSelect}
           onToggleSelectAllVisible={toggleSelectAllVisible}
-          onEditSingle={
-            selectedCount === 1 && selectedBookmarks[0]
-              ? () =>
-                  dispatchUi({ type: "setToolbarEditBookmark", bookmark: selectedBookmarks[0] })
-              : undefined
-          }
         />
-      ) : (
-        <>
-          <Header
-            selectedGroup={selectedGroup}
-            onOpenGroupSelector={() => dispatchUi({ type: "setShowGroupSelector", open: true })}
-          />
-          <SearchBar
-            value={searchQuery}
-            onChangeText={(q) => dispatchUi({ type: "setSearchQuery", query: q })}
-            filter={filter}
-            onOpenFilter={() => dispatchUi({ type: "setShowFilter", open: true })}
-            onOpenAdd={() => dispatchUi({ type: "setShowAddBookmark", open: true })}
-          />
-        </>
-      )}
-
-      <BookmarkList
-        bookmarks={filteredBookmarks}
-        loading={!groupPreferenceRestored || status === "LoadingFirstPage"}
-        loadingMore={status === "LoadingMore"}
-        onLoadMore={handleLoadMore}
-        onBookmarkPress={handleBookmarkPress}
-        onBookmarkLongPress={isSelecting ? handleBookmarkLongPress : startSelection}
-        onToggleRead={handleToggleRead}
-        emptyMessage={emptyMessage}
-        isSelecting={isSelecting}
-        isSelected={isSelected}
-      />
+      ) : null}
 
       <GroupSelectorModal
         visible={showGroupSelector}
@@ -266,6 +271,7 @@ function BookmarksContent() {
         visible={showAddBookmark}
         onClose={() => dispatchUi({ type: "setShowAddBookmark", open: false })}
         groupId={effectiveGroupId}
+        groupTitle={selectedGroup?.title}
       />
 
       <CreateGroupModal
@@ -290,63 +296,37 @@ function BookmarksContent() {
           }
         }}
       />
-
-      <BookmarkActionsModal
-        visible={!!selectedBookmark && !isSelecting}
-        onClose={() => dispatchUi({ type: "setSelectedBookmark", bookmark: null })}
-        bookmark={selectedBookmark}
-        groups={groups}
-        currentGroupId={effectiveGroupId}
-        onSelectMultiple={() => {
-          if (selectedBookmark) {
-            toggleSelection(selectedBookmark._id);
-            dispatchUi({ type: "setSelectedBookmark", bookmark: null });
-          }
-        }}
-      />
-
-      <EditBookmarkModal
-        visible={!!toolbarEditBookmark}
-        onClose={() => dispatchUi({ type: "setToolbarEditBookmark", bookmark: null })}
-        onSaved={() => {
-          dispatchUi({ type: "setToolbarEditBookmark", bookmark: null });
-          clearSelection();
-        }}
-        bookmark={toolbarEditBookmark}
-      />
     </View>
   );
 }
 
 export default function BookmarksScreen() {
-  const insets = useSafeAreaInsets();
   const { isLoaded: clerkLoaded, isSignedIn, userId } = useAuth();
   const { isLoading: convexLoading, isAuthenticated } = useConvexAuth();
 
   if (!clerkLoaded) {
     return (
-      <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+      <ScreenShell>
         <Loading message="Loading..." />
-      </View>
+      </ScreenShell>
     );
   }
 
   if (!isSignedIn) {
-    return <View className="flex-1 bg-background" style={{ paddingTop: insets.top }} />;
+    return <ScreenShell />;
   }
 
-  /** Avoid “sign in” flash: Clerk is signed in but Convex auth may lag one frame. */
   if (convexLoading || !isAuthenticated) {
     return (
-      <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+      <ScreenShell>
         <Loading message="Connecting..." />
-      </View>
+      </ScreenShell>
     );
   }
 
   return (
-    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+    <ScreenShell>
       <BookmarksContent key={userId ?? "unknown-user"} />
-    </View>
+    </ScreenShell>
   );
 }

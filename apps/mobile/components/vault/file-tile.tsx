@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { memo, useCallback } from "react";
-import { Image, Platform, Pressable, Text, View } from "react-native";
+import { Image, Text, View } from "react-native";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { useAppTheme } from "@/contexts/app-theme";
 import { cn } from "@/lib/cn";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -71,22 +72,14 @@ export const FileTile = memo(function FileTile({
   );
 
   return (
-    <Pressable
+    <AppPressable
       className={cn(
-        "mb-3 w-[48%] rounded-xl border bg-surface",
-        selected ? "border-2 border-primary-accent" : "border-border"
+        "mb-3 w-[48%] overflow-hidden rounded-lg border bg-card",
+        selected ? "border-primary bg-muted" : "border-border"
       )}
-      style={({ pressed }) => [
-        pressed && !selectionLocked ? { opacity: 0.92, transform: [{ scale: 0.98 }] } : undefined,
-      ]}
       onPress={handlePress}
       onLongPress={handleLongPress}
       disabled={selectionLocked && isSelecting}
-      android_ripple={
-        Platform.OS === "android" && !selectionLocked
-          ? { color: `${colors.primaryAccent}22`, foreground: true }
-          : undefined
-      }
     >
       <View className="relative">
         {preview}
@@ -118,10 +111,10 @@ export const FileTile = memo(function FileTile({
         ) : null}
       </View>
       <View className="gap-0.5 p-2">
-        <Text className="text-[13px] font-semibold tracking-wide text-foreground" numberOfLines={2}>
+        <Text className="font-sans text-xs font-medium text-foreground" numberOfLines={2}>
           {file.name}
         </Text>
-        <Text className="text-[11px] text-muted-foreground">{formatFileSize(file.size)}</Text>
+        <Text className="font-sans text-[11px] text-muted-foreground">{formatFileSize(file.size)}</Text>
         {groupLabel ? (
           <Text className="text-[11px] text-muted-foreground" numberOfLines={1}>
             {groupLabel}
@@ -144,6 +137,6 @@ export const FileTile = memo(function FileTile({
           </View>
         ) : null}
       </View>
-    </Pressable>
+    </AppPressable>
   );
 });

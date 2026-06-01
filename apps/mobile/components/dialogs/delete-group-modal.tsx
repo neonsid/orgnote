@@ -82,11 +82,17 @@ export function DeleteGroupModal(props: DeleteGroupModalProps) {
       : "This action cannot be undone. Are you sure you want to permanently delete this collection and its bookmarks?";
 
   return (
-    <Modal visible={visible} onClose={onClose} title={modalTitle} variant="center">
-      <View className="gap-3 p-4">
-        <Text className="text-sm leading-5 text-secondary-foreground">{description}</Text>
+    <Modal
+      visible={visible}
+      onClose={onClose}
+      title={modalTitle}
+      subtitle="This action cannot be undone"
+      variant="bottom"
+    >
+      <View className="gap-4">
+        <Text className="font-sans text-sm leading-5 text-muted-foreground">{description}</Text>
 
-        <View className="flex-row items-center gap-3 rounded-sm border border-border bg-muted px-3 py-2.5">
+        <View className="flex-row items-center gap-3 rounded-xl border border-border bg-muted px-4 py-3.5">
           <View
             className="h-3 w-3 rounded-full"
             style={{ backgroundColor: group.color ?? FALLBACK_COLOR }}

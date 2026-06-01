@@ -1,23 +1,22 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Pressable, Share, Text, View } from "react-native";
+import { Share, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { useMutation } from "convex/react";
 import * as Clipboard from "expo-clipboard";
-import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { BookmarkData } from "@/components/dashboard/bookmark-card";
-import {
-  GroupMoveList,
-  MultiSelectActionChip,
-  MultiSelectToolbarLayout,
-} from "@/components/multi-select";
-import { Modal } from "@/components/ui";
+import { AppPressable } from "@/components/ui/app-pressable";
 import { useAppTheme } from "@/contexts/app-theme";
+import { useTabBarHeight } from "@/hooks/use-tab-bar-height";
 import { showThemedAlert } from "@/contexts/themed-alert";
 import {
   generateCSVExport,
   generateJSONExport,
   toExportedBookmark,
 } from "@/lib/bookmark-export";
+import { cn } from "@/lib/cn";
+import { FALLBACK_COLORS } from "@goldfish/shared";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
@@ -37,7 +36,52 @@ interface MultiSelectToolbarProps {
   allVisibleSelected: boolean;
   onClearSelection: () => void;
   onToggleSelectAllVisible: () => void;
-  onEditSingle?: () => void;
+}
+
+type ExpandedPanel = "move" | "export" | null;
+
+function ToolbarButton({
+  icon,
+  label,
+  onPress,
+  destructive = false,
+  disabled = false,
+  active = false,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+  destructive?: boolean;
+  disabled?: boolean;
+  active?: boolean;
+}) {
+  const { colors } = useAppTheme();
+
+  return (
+    <AppPressable
+      onPress={onPress}
+      disabled={disabled}
+      className={cn(
+        "flex-row items-center gap-1.5 rounded-full px-3 py-2 active:bg-accent",
+        active && "bg-accent",
+        disabled && "opacity-40"
+      )}
+    >
+      <Ionicons
+        name={icon}
+        size={16}
+        color={destructive ? colors.error : colors.textSecondary}
+      />
+      <Text
+        className={cn(
+          "font-sans text-sm font-medium",
+          destructive ? "text-destructive" : "text-foreground"
+        )}
+      >
+        {label}
+      </Text>
+    </AppPressable>
+  );
 }
 
 export function MultiSelectToolbar({
@@ -50,15 +94,25 @@ export function MultiSelectToolbar({
   allVisibleSelected,
   onClearSelection,
   onToggleSelectAllVisible,
-  onEditSingle,
 }: MultiSelectToolbarProps) {
-  const { colors } = useAppTheme();
-  const [showMoveModal, setShowMoveModal] = useState(false);
-  const [showExportModal, setShowExportModal] = useState(false);
+  const [expandedPanel, setExpandedPanel] = useState<ExpandedPanel>(null);
   const deleteBookmarksBulk = useMutation(api.bookmarks.mutations.deleteBookmarksBulk);
   const moveBookmarksBulk = useMutation(api.bookmarks.mutations.moveBookmarksBulk);
+  const tabBarHeight = useTabBarHeight();
+  const insets = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
+  const { colors } = useAppTheme();
+
+  const moveTargets = groups.filter((g) => g._id !== currentGroupId);
+  const movePanelMaxHeight = Math.min(240, Math.floor(screenHeight * 0.3));
+
+  function togglePanel(panel: ExpandedPanel) {
+    setExpandedPanel((current) => (current === panel ? null : panel));
+  }
 
   function handleBulkDelete() {
+    if (selectedCount === 0) return;
+
     showThemedAlert(
       "Delete bookmarks",
       `Delete ${selectedCount} bookmark${selectedCount > 1 ? "s" : ""}?`,
@@ -83,7 +137,7 @@ export function MultiSelectToolbar({
   async function handleBulkMove(targetGroupId: Id<"groups">) {
     try {
       await moveBookmarksBulk({ bookmarkIds: selectedIds, groupId: targetGroupId });
-      setShowMoveModal(false);
+      setExpandedPanel(null);
       onClearSelection();
     } catch {
       showThemedAlert("Error", "Failed to move bookmarks");
@@ -120,90 +174,111 @@ export function MultiSelectToolbar({
         title: `OrgNote bookmarks.${ext}`,
         message: body,
       });
+      setExpandedPanel(null);
     } catch {
       showThemedAlert("Error", "Could not open share sheet");
-    } finally {
-      setShowExportModal(false);
     }
   }
 
   return (
-    <>
-      <MultiSelectToolbarLayout
-        selectedCount={selectedCount}
-        onClearSelection={onClearSelection}
-      >
-        {onEditSingle && selectedCount === 1 ? (
-          <MultiSelectActionChip
-            icon="create-outline"
-            label="Edit"
-            onPress={onEditSingle}
-            iconColor={colors.textSecondary}
+    <View
+      className="absolute left-0 right-0 items-center px-3"
+      pointerEvents="box-none"
+      style={{
+        bottom: tabBarHeight + Math.max(insets.bottom, 8),
+        zIndex: 90,
+        elevation: 20,
+      }}
+    >
+      <View className="w-full max-w-[680px] overflow-hidden rounded-2xl border border-border/50 bg-card shadow-lg">
+        <View className="flex-row flex-wrap items-center justify-center gap-0.5 px-1.5 py-1.5">
+          <ToolbarButton
+            icon={allVisibleSelected ? "checkbox" : "checkbox-outline"}
+            label={allVisibleSelected ? "Clear all" : "Select all"}
+            onPress={onToggleSelectAllVisible}
           />
-        ) : null}
-        <MultiSelectActionChip
-          icon={allVisibleSelected ? "checkbox" : "checkbox-outline"}
-          label={allVisibleSelected ? "Clear all" : "Select all"}
-          onPress={onToggleSelectAllVisible}
-          iconColor={colors.textSecondary}
-        />
-        <MultiSelectActionChip
-          icon="folder-outline"
-          label="Move"
-          onPress={() => setShowMoveModal(true)}
-          iconColor={colors.textSecondary}
-        />
-        <MultiSelectActionChip
-          icon="copy-outline"
-          label="Copy URLs"
-          onPress={() => void handleCopyUrls()}
-          iconColor={colors.textSecondary}
-        />
-        <MultiSelectActionChip
-          icon="share-outline"
-          label="Export"
-          onPress={() => setShowExportModal(true)}
-          iconColor={colors.textSecondary}
-        />
-        <MultiSelectActionChip
-          icon="trash-outline"
-          label="Delete"
-          onPress={handleBulkDelete}
-          iconColor={colors.error}
-          destructive
-        />
-      </MultiSelectToolbarLayout>
 
-      <Modal visible={showMoveModal} onClose={() => setShowMoveModal(false)} title="Move to…">
-        <GroupMoveList
-          groups={groups}
-          excludeGroupId={currentGroupId}
-          onSelectGroup={(groupId) => void handleBulkMove(groupId as Id<"groups">)}
-        />
-      </Modal>
+          <View className="mx-0.5 h-5 w-px bg-border" />
 
-      <Modal visible={showExportModal} onClose={() => setShowExportModal(false)} title="Export">
-        <View className="gap-2 p-3">
-          <Text className="mb-2 text-[13px] leading-[18px] text-muted-foreground">
-            Share {selectedCount} bookmark{selectedCount > 1 ? "s" : ""} as CSV or JSON (same
-            format as the web app).
-          </Text>
-          <Pressable
-            className="flex-row items-center gap-3 rounded-sm p-3 active:bg-muted"
-            onPress={() => void shareExport("csv")}
+          <ToolbarButton
+            icon="arrow-forward-outline"
+            label="Move"
+            onPress={() => togglePanel("move")}
+            active={expandedPanel === "move"}
+            disabled={moveTargets.length === 0 || selectedCount === 0}
+          />
+          <ToolbarButton icon="copy-outline" label="Copy URLs" onPress={() => void handleCopyUrls()} />
+          <ToolbarButton
+            icon="share-outline"
+            label="Export"
+            onPress={() => togglePanel("export")}
+            active={expandedPanel === "export"}
+            disabled={selectedCount === 0}
+          />
+          <ToolbarButton
+            icon="trash-outline"
+            label="Delete"
+            onPress={handleBulkDelete}
+            destructive
+            disabled={selectedCount === 0}
+          />
+
+          <View className="mx-0.5 h-5 w-px bg-border" />
+
+          <AppPressable
+            onPress={onClearSelection}
+            className="h-9 w-9 items-center justify-center rounded-full active:bg-accent"
+            accessibilityLabel="Exit selection mode"
           >
-            <Ionicons name="document-text-outline" size={22} color={colors.textSecondary} />
-            <Text className="text-[15px] text-foreground">Export as CSV</Text>
-          </Pressable>
-          <Pressable
-            className="flex-row items-center gap-3 rounded-sm p-3 active:bg-muted"
-            onPress={() => void shareExport("json")}
-          >
-            <Ionicons name="code-slash-outline" size={22} color={colors.textSecondary} />
-            <Text className="text-[15px] text-foreground">Export as JSON</Text>
-          </Pressable>
+            <Ionicons name="close" size={18} color={colors.textSecondary} />
+          </AppPressable>
         </View>
-      </Modal>
-    </>
+
+        {expandedPanel === "move" ? (
+          <ScrollView
+            style={{ maxHeight: movePanelMaxHeight }}
+            nestedScrollEnabled
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator
+            className="border-t border-border px-2 py-1.5"
+          >
+            {moveTargets.map((group, i) => (
+              <AppPressable
+                key={group._id}
+                onPress={() => void handleBulkMove(group._id)}
+                className="flex-row items-center gap-3 rounded-lg px-3 py-2.5 active:bg-accent"
+              >
+                <View
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: group.color ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length] }}
+                />
+                <Text className="min-w-0 flex-1 font-sans text-base text-foreground" numberOfLines={1}>
+                  {group.title}
+                </Text>
+              </AppPressable>
+            ))}
+          </ScrollView>
+        ) : null}
+
+        {expandedPanel === "export" ? (
+          <View className="border-t border-border px-2 py-1.5">
+            <AppPressable
+              onPress={() => void shareExport("csv")}
+              className="flex-row items-center gap-3 rounded-lg px-3 py-2.5 active:bg-accent"
+            >
+              <Ionicons name="document-text-outline" size={18} color={colors.textSecondary} />
+              <Text className="font-sans text-base text-foreground">Export as CSV</Text>
+            </AppPressable>
+            <AppPressable
+              onPress={() => void shareExport("json")}
+              className="flex-row items-center gap-3 rounded-lg px-3 py-2.5 active:bg-accent"
+            >
+              <Ionicons name="code-slash-outline" size={18} color={colors.textSecondary} />
+              <Text className="font-sans text-base text-foreground">Export as JSON</Text>
+            </AppPressable>
+          </View>
+        ) : null}
+      </View>
+    </View>
   );
 }

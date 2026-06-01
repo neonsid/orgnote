@@ -1,8 +1,11 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useReducer, useRef } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, Text, TextInput, View } from "react-native";
 import { useConvex, useMutation } from "convex/react";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { Button, Input, Modal } from "@/components/ui";
+import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/contexts/themed-alert";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { waitForBookmarkDescriptionJob } from "@/lib/poll-convex-query";
@@ -186,54 +189,97 @@ function EditBookmarkFormBody({
 
   const hasDescription = Boolean(description.trim());
   const genLabel = generating ? "Generating…" : hasDescription ? "Regenerate with AI" : "Generate with AI";
+  const descriptionLength = description.length;
+  const { colors } = useAppTheme();
+  const canGenerate = Boolean(url.trim()) && !loading;
 
   return (
     <ScrollView
-      className="max-h-[520px] bg-surface"
+      className="max-h-[520px]"
       keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
     >
-      <View className="gap-3 p-4">
+      <View className="gap-4">
         <Input
           label="Title"
           value={title}
           onChangeText={(t) => dispatch({ type: "setTitle", title: t })}
-          placeholder="Title"
+          placeholder="Bookmark title"
         />
         <Input
           label="URL"
           value={url}
           onChangeText={(u) => dispatch({ type: "setUrl", url: u })}
-          placeholder="https://…"
+          placeholder="https://example.com"
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="url"
         />
-        <Text className="text-xs leading-4 text-muted-foreground">
-          Description (max {MAX_DESCRIPTION_LENGTH} characters) — generate from the URL or edit manually.
-        </Text>
-        <Input
-          label="Description"
-          value={description}
-          onChangeText={(text) => dispatch({ type: "setDescription", description: text })}
-          placeholder="Optional"
-          multiline
-          numberOfLines={4}
-          className="min-h-24 pt-3"
-          style={{ textAlignVertical: "top" }}
-        />
-        <View className="-mt-1">
+
+        <View className="gap-2">
+          <Text className="font-sans text-sm font-medium text-foreground">
+            Description
+            <Text className="font-normal text-muted-foreground">
+              {" "}
+              ({descriptionLength}/{MAX_DESCRIPTION_LENGTH})
+            </Text>
+          </Text>
+
+          <View className="overflow-hidden rounded-xl border border-input bg-surface">
+            <TextInput
+              value={description}
+              onChangeText={(text) => dispatch({ type: "setDescription", description: text })}
+              placeholder="Enter a description or generate with AI"
+              placeholderTextColor={colors.textMuted}
+              multiline
+              numberOfLines={4}
+              editable={!generating}
+              className="min-h-[112px] px-3 pb-3 pt-3 font-sans text-sm leading-5 text-foreground"
+              style={{ textAlignVertical: "top" }}
+            />
+
+            <View className="border-t border-border bg-muted/35 px-3 py-2.5">
+              <AppPressable
+                onPress={() => void handleGenerateDescription()}
+                disabled={!canGenerate || generating}
+                className="flex-row items-center justify-center gap-2 rounded-lg py-2 active:bg-accent disabled:opacity-45"
+              >
+                {generating ? (
+                  <ActivityIndicator size="small" color={colors.primaryAccent} />
+                ) : (
+                  <Ionicons
+                    name={hasDescription ? "refresh-outline" : "sparkles-outline"}
+                    size={16}
+                    color={canGenerate ? colors.primaryAccent : colors.textMuted}
+                  />
+                )}
+                <Text
+                  className={
+                    canGenerate && !generating
+                      ? "font-sans text-sm font-medium text-primary-accent"
+                      : "font-sans text-sm font-medium text-muted-foreground"
+                  }
+                >
+                  {genLabel}
+                </Text>
+              </AppPressable>
+            </View>
+          </View>
+        </View>
+
+        <View className="flex-row gap-2 pt-1">
+          <Button variant="outline" onPress={onClose} disabled={loading || generating} className="flex-1">
+            <Button.Text>Cancel</Button.Text>
+          </Button>
           <Button
-            variant="outline"
-            onPress={() => void handleGenerateDescription()}
-            disabled={generating || loading || !url.trim()}
-            loading={generating}
+            onPress={handleSave}
+            disabled={loading || generating || !title.trim() || !url.trim()}
+            loading={loading}
+            className="flex-1"
           >
-            <Button.Text>{genLabel}</Button.Text>
+            <Button.Text>Save</Button.Text>
           </Button>
         </View>
-        <Button onPress={handleSave} disabled={loading || generating || !title.trim() || !url.trim()} loading={loading}>
-          <Button.Text>Save</Button.Text>
-        </Button>
       </View>
     </ScrollView>
   );
@@ -248,7 +294,7 @@ export function EditBookmarkModal({
   if (!bookmark) return null;
 
   return (
-    <Modal visible={visible} onClose={onClose} title="Edit bookmark" variant="bottom">
+    <Modal visible={visible} onClose={onClose} title="Edit bookmark" variant="bottom" compact={false}>
       <EditBookmarkFormBody key={bookmark._id} bookmark={bookmark} onClose={onClose} onSaved={onSaved} />
     </Modal>
   );

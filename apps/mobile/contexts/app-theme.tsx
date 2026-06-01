@@ -1,104 +1,36 @@
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
-  useState,
   type ReactNode,
 } from "react";
 import * as SystemUI from "expo-system-ui";
-import { useColorScheme } from "react-native";
 
-import { useMountEffect } from "@/hooks/use-mount-effect";
-import { darkColors, lightColors, type AppColors } from "@/lib/theme-colors";
-
-const STORAGE_KEY = "@orgnote/theme-preference";
-
-export type ThemePreference = "light" | "dark" | "system";
-
-async function readStoredThemePreference(): Promise<ThemePreference | null> {
-  try {
-    const AsyncStorage = (
-      await import("@react-native-async-storage/async-storage")
-    ).default;
-    const stored = await AsyncStorage.getItem(STORAGE_KEY);
-    if (stored === "light" || stored === "dark" || stored === "system") {
-      return stored;
-    }
-    return null;
-  } catch {
-    /** Native module unavailable (Expo Go edge cases, web, misconfigured native build). */
-    return null;
-  }
-}
-
-async function writeStoredThemePreference(p: ThemePreference): Promise<void> {
-  try {
-    const AsyncStorage = (
-      await import("@react-native-async-storage/async-storage")
-    ).default;
-    await AsyncStorage.setItem(STORAGE_KEY, p);
-  } catch {
-    /* ignore */
-  }
-}
+import { darkColors, type AppColors } from "@/lib/theme-colors";
 
 type AppThemeContextValue = {
   colors: AppColors;
-  preference: ThemePreference;
-  setPreference: (p: ThemePreference) => void;
-  resolvedScheme: "light" | "dark";
-  isDark: boolean;
+  resolvedScheme: "dark";
+  isDark: true;
 };
 
 const AppThemeContext = createContext<AppThemeContextValue | null>(null);
 
 export function AppThemeProvider({ children }: { children: ReactNode }) {
-  const systemScheme = useColorScheme();
-  const [preference, setPreferenceState] = useState<ThemePreference>("system");
+  const colors = darkColors;
 
-  useMountEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const stored = await readStoredThemePreference();
-      if (!cancelled && stored) setPreferenceState(stored);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  });
-
-  const setPreference = useCallback((p: ThemePreference) => {
-    setPreferenceState(p);
-    void writeStoredThemePreference(p);
-  }, []);
-
-  const resolvedScheme: "light" | "dark" =
-    preference === "system"
-      ? systemScheme === "dark"
-        ? "dark"
-        : "light"
-      : preference;
-
-  const colors = useMemo((): AppColors => {
-    return resolvedScheme === "dark" ? darkColors : lightColors;
-  }, [resolvedScheme]);
-
-  /** Imperative native bridge: root window chrome tracks themed tab bar surface. */
   useEffect(() => {
     void SystemUI.setBackgroundColorAsync(colors.tabBarBg);
   }, [colors.tabBarBg]);
 
   const value = useMemo(
-    () => ({
+    (): AppThemeContextValue => ({
       colors,
-      preference,
-      setPreference,
-      resolvedScheme,
-      isDark: resolvedScheme === "dark",
+      resolvedScheme: "dark",
+      isDark: true,
     }),
-    [colors, preference, setPreference, resolvedScheme]
+    [colors]
   );
 
   return (
@@ -114,8 +46,8 @@ export function useAppTheme(): AppThemeContextValue {
   return ctx;
 }
 
-/** Safe when provider is optional (e.g. Storybook); defaults to light. */
+/** Safe when provider is optional; defaults to dark. */
 export function useAppThemeColors(): AppColors {
   const ctx = useContext(AppThemeContext);
-  return ctx?.colors ?? lightColors;
+  return ctx?.colors ?? darkColors;
 }

@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { useMutation } from "convex/react";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { Button, Input, Modal } from "@/components/ui";
 import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/contexts/themed-alert";
@@ -18,9 +19,6 @@ type CreateGroupModalProps = {
   | { groupKind: "vault"; onCreated?: (groupId: Id<"vaultGroups">) => void }
 );
 
-/**
- * Bookmark collections: `groups.mutations.create`. Vault: `vault.mutations.createVaultGroup`.
- */
 export function CreateGroupModal(props: CreateGroupModalProps) {
   const { visible, onClose } = props;
   const groupKind = props.groupKind === "vault" ? "vault" : "bookmarks";
@@ -66,37 +64,55 @@ export function CreateGroupModal(props: CreateGroupModalProps) {
   }
 
   return (
-    <Modal visible={visible} onClose={handleClose} title="Create collection" variant="center">
-      <View className="gap-3 p-4">
-        <Input placeholder="Collection name..." value={title} onChangeText={setTitle} />
+    <Modal
+      visible={visible}
+      onClose={handleClose}
+      title="New collection"
+      subtitle={
+        groupKind === "vault"
+          ? "Organize your vault files into collections"
+          : "Group related bookmarks together"
+      }
+      variant="bottom"
+      compact={false}
+    >
+      <View className="gap-5">
+        <View className="gap-2">
+          <Text className="font-sans text-sm font-medium text-foreground">Name</Text>
+          <Input
+            placeholder="e.g. Reading list, Work, Recipes…"
+            value={title}
+            onChangeText={setTitle}
+            autoFocus
+          />
+        </View>
 
-        <Text className="mt-1 text-[13px] font-semibold text-secondary-foreground">Color</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerClassName="flex-row gap-2 py-1"
-        >
-          {GROUP_COLORS.map((c) => {
-            const selected = selectedColor === c.value;
-            return (
-              <Pressable
-                key={c.value}
-                onPress={() => setSelectedColor(c.value)}
-                className="h-10 w-10 items-center justify-center rounded-full border-[3px]"
-                style={{
-                  backgroundColor: c.value,
-                  borderColor: selected ? colors.text : "transparent",
-                }}
-                accessibilityLabel={c.label}
-              >
-                {selected ? <Ionicons name="checkmark" size={20} color="#ffffff" /> : null}
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+        <View className="gap-3">
+          <Text className="font-sans text-sm font-medium text-foreground">Color</Text>
+          <View className="flex-row flex-wrap gap-3">
+            {GROUP_COLORS.map((c) => {
+              const selected = selectedColor === c.value;
+              return (
+                <AppPressable
+                  key={c.value}
+                  onPress={() => setSelectedColor(c.value)}
+                  className="h-11 w-11 items-center justify-center rounded-full"
+                  style={{
+                    backgroundColor: c.value,
+                    borderWidth: selected ? 3 : 0,
+                    borderColor: selected ? colors.text : "transparent",
+                  }}
+                  accessibilityLabel={c.label}
+                >
+                  {selected ? <Ionicons name="checkmark" size={20} color="#ffffff" /> : null}
+                </AppPressable>
+              );
+            })}
+          </View>
+        </View>
 
         <Button onPress={handleCreate} disabled={!title.trim()} loading={loading} className="mt-1">
-          <Button.Text>Create</Button.Text>
+          <Button.Text>Create collection</Button.Text>
         </Button>
       </View>
     </Modal>

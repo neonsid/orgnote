@@ -1,7 +1,7 @@
 import * as WebBrowser from "expo-web-browser";
-import { Appearance, Linking, Platform } from "react-native";
+import { Linking, Platform } from "react-native";
 
-import { darkColors, lightColors } from "@/lib/theme-colors";
+import { darkColors } from "@/lib/theme-colors";
 import { normalizeUrl } from "@/lib/utils";
 
 function isNonEmptyString(value: string | null | undefined): value is string {
@@ -9,8 +9,7 @@ function isNonEmptyString(value: string | null | undefined): value is string {
 }
 
 function getBrowserOptions(): WebBrowser.WebBrowserOpenOptions {
-  const scheme = Appearance.getColorScheme();
-  const colors = scheme === "dark" ? darkColors : lightColors;
+  const colors = darkColors;
 
   return {
     showTitle: true,

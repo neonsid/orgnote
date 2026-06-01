@@ -14,5 +14,4 @@ export {
   type DeleteGroupModalGroup,
   type DeleteVaultGroupModalGroup,
 } from "./delete-group-modal";
-export { BookmarkActionsModal } from "./bookmark-actions-modal";
 export { EditBookmarkModal } from "./edit-bookmark-modal";

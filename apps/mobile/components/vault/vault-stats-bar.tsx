@@ -1,13 +1,9 @@
 import { Text, View } from "react-native";
 
-export function VaultStatsBar({
-  statsLabel,
-}: {
-  statsLabel: string;
-}) {
+export function VaultStatsBar({ statsLabel }: { statsLabel: string }) {
   return (
-    <View className="bg-surface px-4 py-3">
-      <Text className="text-xs text-muted-foreground">{statsLabel}</Text>
+    <View className="rounded-xl border border-border bg-card px-4 py-3.5">
+      <Text className="font-sans text-sm text-muted-foreground">{statsLabel}</Text>
     </View>
   );
 }

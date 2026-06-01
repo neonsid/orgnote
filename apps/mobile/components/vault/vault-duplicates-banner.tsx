@@ -2,8 +2,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@clerk/expo";
 import { useConvexAuth, useMutation } from "convex/react";
 import { useState } from "react";
-import { InteractionManager, Pressable, Text, View } from "react-native";
+import { InteractionManager, Text, View } from "react-native";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { Button } from "@/components/ui";
 import { useAppTheme } from "@/contexts/app-theme";
 import { showThemedAlert } from "@/contexts/themed-alert";
@@ -81,17 +82,16 @@ export function VaultDuplicatesBanner({
     <View className="gap-3 border-b border-border bg-surface px-4 py-3">
       <View className="flex-row items-center justify-between gap-2">
         <Text className="flex-1 text-xs text-muted-foreground">{statsLabel}</Text>
-        <Pressable
+        <AppPressable
           className={cn(
-            "flex-row items-center gap-1 rounded-sm border border-primary-accent bg-primary-accent/10 px-2 py-1",
-            "active:bg-muted"
+            "flex-row items-center gap-1 rounded-lg border border-border bg-muted px-2 py-1"
           )}
           onPress={onToggleDuplicatesView}
           accessibilityLabel="Show collection files"
         >
           <Ionicons name="copy" size={14} color={colors.primaryAccent} />
           <Text className="text-[11px] font-semibold text-primary-accent">Back to collections</Text>
-        </Pressable>
+        </AppPressable>
       </View>
       {extraCount > 0 ? (
         <Button variant="destructive" loading={removing} disabled={removing} onPress={handleRemoveAllExtras}>

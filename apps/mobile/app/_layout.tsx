@@ -1,10 +1,19 @@
 import "../polyfills";
 import "../global.css";
 
+import {
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+  useFonts,
+} from "@expo-google-fonts/poppins";
 import { ClerkProvider, useAuth } from "@clerk/expo";
 import type { TokenCache } from "@clerk/expo";
 import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import * as WebBrowser from "expo-web-browser";
+import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -23,6 +32,9 @@ if (Platform.OS !== "web") {
 }
 
 WebBrowser.maybeCompleteAuthSession();
+void SplashScreen.preventAutoHideAsync().catch(() => {
+  /* Expo Go / web may reject if splash is unavailable */
+});
 
 function maskPublishableKey(value: string) {
   if (!value) {
@@ -76,7 +88,6 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="sso-callback" />
       <Stack.Screen name="+not-found" />
-      <Stack.Screen name="profile/[username]" />
 
       <Stack.Protected guard={!auth.isSignedIn}>
         <Stack.Screen name="index" />
@@ -89,7 +100,7 @@ function RootNavigator() {
   );
 }
 
-function AppContent() {
+function AppShell({ fontsReady }: { fontsReady: boolean }) {
   useMountEffect(() => {
     void warmUpInAppBrowser();
   });
@@ -100,13 +111,55 @@ function AppContent() {
         <AppThemeProvider>
           <ThemedAlertProvider>
             <ThemeRoot>
-              <RootNavigator />
+              {fontsReady ? (
+                <RootNavigator />
+              ) : (
+                <View className="flex-1 items-center justify-center bg-background">
+                  <ActivityIndicator size="large" />
+                </View>
+              )}
             </ThemeRoot>
           </ThemedAlertProvider>
         </AppThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
+}
+
+function AppContent() {
+  const [fontsLoaded, fontError] = useFonts({
+    Poppins_400Regular,
+    Poppins_500Medium,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+  });
+  const [splashHidden, setSplashHidden] = useState(false);
+
+  const hideSplash = useCallback(() => {
+    if (splashHidden) return;
+    setSplashHidden(true);
+    void SplashScreen.hideAsync().catch(() => {
+      /* ignore */
+    });
+  }, [splashHidden]);
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      hideSplash();
+    }
+  }, [fontsLoaded, fontError, hideSplash]);
+
+  // Never leave Expo Go stuck on the native splash if font loading hangs.
+  useEffect(() => {
+    const timeout = setTimeout(hideSplash, 4000);
+    return () => clearTimeout(timeout);
+  }, [hideSplash]);
+
+  if (fontError) {
+    console.warn("[mobile fonts] Failed to load Poppins:", fontError);
+  }
+
+  return <AppShell fontsReady={fontsLoaded || Boolean(fontError)} />;
 }
 
 export default function RootLayout() {

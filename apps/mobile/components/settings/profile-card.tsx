@@ -10,15 +10,15 @@ export function ProfileCard() {
     "?";
 
   return (
-    <View className="mx-4 my-3 flex-row items-center gap-3 rounded-md border border-border bg-surface p-3">
-      <View className="h-12 w-12 items-center justify-center rounded-full bg-primary">
-        <Text className="text-lg font-semibold text-background">{initials}</Text>
+    <View className="flex-row items-center gap-4 p-4">
+      <View className="h-14 w-14 items-center justify-center rounded-full bg-primary-accent/15">
+        <Text className="font-sans text-xl font-semibold text-primary-accent">{initials}</Text>
       </View>
       <View className="flex-1">
-        <Text className="text-[15px] font-semibold text-foreground">
+        <Text className="font-sans text-base font-semibold text-foreground">
           {user?.fullName ?? user?.firstName ?? "User"}
         </Text>
-        <Text className="mt-0.5 text-[13px] text-muted-foreground">
+        <Text className="mt-1 font-sans text-sm text-muted-foreground">
           {user?.emailAddresses[0]?.emailAddress ?? ""}
         </Text>
       </View>

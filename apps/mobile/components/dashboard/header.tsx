@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { OrgNoteLogo } from "@/components/ui/orgnote-logo";
 import { useAppTheme } from "@/contexts/app-theme";
 import { FALLBACK_COLORS } from "@goldfish/shared";
@@ -15,17 +16,16 @@ export function Header({ selectedGroup, onOpenGroupSelector }: HeaderProps) {
   const { colors } = useAppTheme();
 
   return (
-    <View className="flex-row items-center bg-surface p-3">
-      <View className="shrink-0">
-        <View className="h-8 w-8 items-center justify-center overflow-hidden rounded-sm border border-border bg-muted">
-          <OrgNoteLogo size={28} />
-        </View>
+    <View className="h-14 flex-row items-center px-4">
+      <View
+        className="h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-border"
+        style={{ backgroundColor: colors.brandLogoBg }}
+      >
+        <OrgNoteLogo size={24} />
       </View>
-      <View className="justify-center px-3">
-        <Text className="text-lg leading-[22px] text-muted-foreground">/</Text>
-      </View>
-      <Pressable
-        className="min-h-10 flex-1 flex-row items-center gap-2 rounded-sm px-3 py-2 active:bg-muted"
+      <Text className="px-2.5 font-sans text-lg text-muted-foreground">/</Text>
+      <AppPressable
+        className="min-h-11 flex-1 flex-row items-center gap-2.5 rounded-xl px-3 py-2.5 active:bg-muted/60"
         onPress={onOpenGroupSelector}
       >
         <View
@@ -34,11 +34,11 @@ export function Header({ selectedGroup, onOpenGroupSelector }: HeaderProps) {
             backgroundColor: selectedGroup?.color ?? FALLBACK_COLORS[0],
           }}
         />
-        <Text className="flex-1 text-[15px] font-semibold text-foreground" numberOfLines={1}>
+        <Text className="flex-1 font-sans text-[15px] font-semibold text-foreground" numberOfLines={1}>
           {selectedGroup?.title ?? "Select Collection"}
         </Text>
         <Ionicons name="chevron-expand" size={16} color={colors.textMuted} />
-      </Pressable>
+      </AppPressable>
     </View>
   );
 }

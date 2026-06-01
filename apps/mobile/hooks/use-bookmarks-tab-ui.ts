@@ -1,6 +1,5 @@
 import { useReducer } from "react";
 
-import type { BookmarkData } from "@/components/dashboard";
 import type { FilterType } from "@/components/dialogs";
 
 export type BookmarksTabUiState = {
@@ -12,8 +11,6 @@ export type BookmarksTabUiState = {
   showCreateGroup: boolean;
   showEditGroup: boolean;
   showDeleteGroup: boolean;
-  selectedBookmark: BookmarkData | null;
-  toolbarEditBookmark: BookmarkData | null;
 };
 
 export type BookmarksTabUiAction =
@@ -25,8 +22,6 @@ export type BookmarksTabUiAction =
   | { type: "setShowCreateGroup"; open: boolean }
   | { type: "setShowEditGroup"; open: boolean }
   | { type: "setShowDeleteGroup"; open: boolean }
-  | { type: "setSelectedBookmark"; bookmark: BookmarkData | null }
-  | { type: "setToolbarEditBookmark"; bookmark: BookmarkData | null }
   | { type: "groupSelectorToCreate" }
   | { type: "groupSelectorToEdit" }
   | { type: "groupSelectorToDelete" };
@@ -40,8 +35,6 @@ export const initialBookmarksTabUi: BookmarksTabUiState = {
   showCreateGroup: false,
   showEditGroup: false,
   showDeleteGroup: false,
-  selectedBookmark: null,
-  toolbarEditBookmark: null,
 };
 
 export function bookmarksTabUiReducer(
@@ -65,10 +58,6 @@ export function bookmarksTabUiReducer(
       return { ...state, showEditGroup: action.open };
     case "setShowDeleteGroup":
       return { ...state, showDeleteGroup: action.open };
-    case "setSelectedBookmark":
-      return { ...state, selectedBookmark: action.bookmark };
-    case "setToolbarEditBookmark":
-      return { ...state, toolbarEditBookmark: action.bookmark };
     case "groupSelectorToCreate":
       return { ...state, showGroupSelector: false, showCreateGroup: true };
     case "groupSelectorToEdit":

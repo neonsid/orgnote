@@ -1,9 +1,7 @@
-import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useMemo, type ComponentProps, type ReactNode } from "react";
 import {
   ActivityIndicator,
-  Pressable,
   Text,
-  type PressableProps,
   type StyleProp,
   type TextStyle,
   type ViewStyle,
@@ -11,6 +9,8 @@ import {
 
 import { useAppTheme } from "@/contexts/app-theme";
 import { cn } from "@/lib/cn";
+
+import { AppPressable } from "./app-pressable";
 
 type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "destructive";
 type ButtonSize = "sm" | "md" | "lg";
@@ -40,13 +40,16 @@ export function ButtonText({
     throw new Error("Button.Text must be used inside <Button>");
   }
   return (
-    <Text className={cn(ctx.textClassName, className)} style={[ctx.textStyle, style]}>
+    <Text
+      className={cn("font-sans", ctx.textClassName, className)}
+      style={[ctx.textStyle, style]}
+    >
       {children}
     </Text>
   );
 }
 
-interface ButtonProps extends Omit<PressableProps, "style" | "className"> {
+interface ButtonProps extends Omit<ComponentProps<typeof AppPressable>, "style" | "className"> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   loading?: boolean;
@@ -65,17 +68,17 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 const textVariantClasses: Record<ButtonVariant, string> = {
-  primary: "text-surface",
+  primary: "text-primary-foreground",
   secondary: "text-foreground",
   outline: "text-foreground",
   ghost: "text-foreground",
-  destructive: "text-white",
+  destructive: "text-destructive-foreground",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "px-3 py-2",
-  md: "px-4 py-2.5",
-  lg: "px-5 py-3.5",
+  sm: "h-8 px-3",
+  md: "h-9 px-4",
+  lg: "h-10 px-5",
 };
 
 function ButtonRoot({
@@ -87,13 +90,16 @@ function ButtonRoot({
   className,
   style,
   textStyle,
+  haptic = true,
   ...props
 }: ButtonProps) {
   const { colors } = useAppTheme();
   const isDisabled = disabled || loading;
 
   const spinnerColor =
-    variant === "primary" || variant === "destructive" ? colors.surface : colors.text;
+    variant === "primary" || variant === "destructive"
+      ? colors.primaryForeground
+      : colors.text;
 
   const textContext = useMemo<ButtonTextContextValue>(
     () => ({
@@ -105,11 +111,12 @@ function ButtonRoot({
 
   return (
     <ButtonTextContext.Provider value={textContext}>
-      <Pressable
+      <AppPressable
         {...props}
+        haptic={haptic && !isDisabled}
         disabled={isDisabled}
         className={cn(
-          "items-center justify-center rounded-sm active:bg-muted",
+          "items-center justify-center rounded-lg",
           variantClasses[variant],
           sizeClasses[size],
           isDisabled && "opacity-50",
@@ -122,7 +129,7 @@ function ButtonRoot({
         ) : (
           children
         )}
-      </Pressable>
+      </AppPressable>
     </ButtonTextContext.Provider>
   );
 }

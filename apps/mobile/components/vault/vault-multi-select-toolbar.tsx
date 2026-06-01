@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { InteractionManager } from "react-native";
+import { InteractionManager, View } from "react-native";
 import { useMutation } from "convex/react";
 
+import { MultiSelectToolbarLayout } from "@/components/multi-select";
 import {
-  GroupMoveList,
-  MultiSelectActionChip,
-  MultiSelectToolbarLayout,
-} from "@/components/multi-select";
-import { Modal } from "@/components/ui";
-import { useAppTheme } from "@/contexts/app-theme";
+  MenuGroup,
+  MenuItem,
+  MenuSeparator,
+  MenuSubItem,
+  MenuSubTrigger,
+} from "@/components/ui/menu-item";
 import { showThemedAlert } from "@/contexts/themed-alert";
 import { promptOpenExternalUrl } from "@/lib/open-external-url";
 import { downloadAndShareFile } from "@/lib/download-file-native";
@@ -17,6 +18,7 @@ import {
   filterIdsToExtraDuplicatesOnly,
   type VaultFileRow,
 } from "@/lib/vault-duplicates";
+import { FALLBACK_COLORS } from "@goldfish/shared";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
@@ -58,8 +60,7 @@ export function VaultMultiSelectToolbar({
   onClearSelection,
   onToggleSelectAllVisible,
 }: VaultMultiSelectToolbarProps) {
-  const { colors } = useAppTheme();
-  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const deleteVaultFilesBulk = useMutation(api.vault.mutations.deleteVaultFilesBulk);
   const moveVaultFilesBulk = useMutation(api.vault.mutations.moveVaultFilesBulk);
@@ -110,7 +111,7 @@ export function VaultMultiSelectToolbar({
   async function handleBulkMove(targetGroupId: Id<"vaultGroups">) {
     try {
       await moveVaultFilesBulk({ fileIds: selectedIds, groupId: targetGroupId });
-      setShowMoveModal(false);
+      setMoveOpen(false);
       onClearSelection();
     } catch {
       showThemedAlert("Error", "Failed to move files");
@@ -118,31 +119,30 @@ export function VaultMultiSelectToolbar({
   }
 
   return (
-    <>
-      <MultiSelectToolbarLayout
-        selectedCount={selectedCount}
-        countLabel={
-          isDuplicatesMode ? `${selectedCount} cop${selectedCount === 1 ? "y" : "ies"} selected` : undefined
-        }
-        onClearSelection={onClearSelection}
-      >
-        <MultiSelectActionChip
+    <MultiSelectToolbarLayout
+      selectedCount={selectedCount}
+      countLabel={
+        isDuplicatesMode ? `${selectedCount} cop${selectedCount === 1 ? "y" : "ies"} selected` : undefined
+      }
+      onClearSelection={onClearSelection}
+      fixedBottom
+    >
+      <MenuGroup>
+        <MenuItem
           icon={allVisibleSelected ? "checkbox" : "checkbox-outline"}
           label={allVisibleSelected ? "Clear all" : "Select all"}
           onPress={onToggleSelectAllVisible}
-          iconColor={colors.textSecondary}
         />
         {singleFile ? (
           <>
-            <MultiSelectActionChip
+            <MenuItem
               icon="open-outline"
               label="Open"
               onPress={() => void promptOpenExternalUrl(singleFile.url, singleFile.name)}
-              iconColor={colors.textSecondary}
             />
-            <MultiSelectActionChip
+            <MenuItem
               icon="download-outline"
-              label={downloading ? "…" : "Download"}
+              label={downloading ? "Downloading…" : "Download"}
               onPress={() => {
                 setDownloading(true);
                 void downloadAndShareFile(singleFile.url, singleFile.name, singleFile.type)
@@ -155,36 +155,40 @@ export function VaultMultiSelectToolbar({
                   .finally(() => setDownloading(false));
               }}
               disabled={downloading}
-              iconColor={colors.textSecondary}
             />
           </>
         ) : null}
         {hasMoveTargets ? (
-          <MultiSelectActionChip
-            icon="folder-outline"
-            label="Move"
-            onPress={() => setShowMoveModal(true)}
-            iconColor={colors.textSecondary}
-          />
+          <>
+            <MenuSubTrigger
+              icon="chevron-forward-outline"
+              label="Move to"
+              expanded={moveOpen}
+              onPress={() => setMoveOpen((open) => !open)}
+            />
+            {moveOpen ? (
+              <View className="ml-3 border-l border-border pl-1">
+                {moveTargetGroups.map((group, i) => (
+                  <MenuSubItem
+                    key={group._id}
+                    label={group.title}
+                    dotColor={group.color ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length]}
+                    onPress={() => void handleBulkMove(group._id)}
+                  />
+                ))}
+              </View>
+            ) : null}
+          </>
         ) : null}
-        <MultiSelectActionChip
+        <MenuSeparator />
+        <MenuItem
           icon="trash-outline"
-          label={isDuplicatesMode ? "Remove" : "Delete"}
+          label={isDuplicatesMode ? "Remove copies" : "Delete"}
           onPress={handleBulkDelete}
-          iconColor={colors.error}
           destructive
           disabled={selectedCount === 0}
         />
-      </MultiSelectToolbarLayout>
-
-      <Modal visible={showMoveModal} onClose={() => setShowMoveModal(false)} title="Move to…">
-        <GroupMoveList
-          groups={moveTargetGroups}
-          onSelectGroup={(groupId) =>
-            void handleBulkMove(groupId as Id<"vaultGroups">)
-          }
-        />
-      </Modal>
-    </>
+      </MenuGroup>
+    </MultiSelectToolbarLayout>
   );
 }

@@ -7,13 +7,13 @@ interface SettingsSectionProps {
 
 export function SettingsSection({ title, children }: SettingsSectionProps) {
   return (
-    <View className="mb-4">
+    <View className="mb-4 px-4">
       {title ? (
-        <Text className="mb-1 px-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <Text className="mb-2 font-sans text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {title}
         </Text>
       ) : null}
-      <View className="bg-surface">{children}</View>
+      <View className="overflow-hidden rounded-xl border border-border bg-card">{children}</View>
     </View>
   );
 }

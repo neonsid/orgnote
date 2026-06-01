@@ -1,10 +1,20 @@
-import { useState, useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { Id } from "../../../convex/_generated/dataModel";
 
+/** Mirrors web dashboard `multiSelectMode` + `selectedBookmarkIds`. */
 export function useBookmarkSelection(bookmarkIds: Id<"bookmarks">[]) {
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<Id<"bookmarks">>>(new Set());
 
-  const isSelecting = selectedIds.size > 0;
+  const enterMultiSelect = useCallback((id: Id<"bookmarks">) => {
+    setMultiSelectMode(true);
+    setSelectedIds(new Set([id]));
+  }, []);
+
+  const exitMultiSelect = useCallback(() => {
+    setMultiSelectMode(false);
+    setSelectedIds(new Set());
+  }, []);
 
   const toggleSelection = useCallback((id: Id<"bookmarks">) => {
     setSelectedIds((prev) => {
@@ -34,27 +44,23 @@ export function useBookmarkSelection(bookmarkIds: Id<"bookmarks">[]) {
     [bookmarkIds, selectedIds]
   );
 
-  const clearSelection = useCallback(() => {
-    setSelectedIds(new Set());
-  }, []);
-
   const isSelected = useCallback(
     (id: Id<"bookmarks">) => selectedIds.has(id),
     [selectedIds]
   );
 
   const selectedCount = selectedIds.size;
-
   const selectedIdsArray = useMemo(() => Array.from(selectedIds), [selectedIds]);
 
   return {
     selectedIds: selectedIdsArray,
     selectedCount,
-    isSelecting,
+    multiSelectMode,
     isSelected,
     toggleSelection,
     toggleSelectAllVisible,
     allVisibleSelected,
-    clearSelection,
+    enterMultiSelect,
+    exitMultiSelect,
   };
 }
